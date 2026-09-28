@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Survival Realm: Multi-Dimensional Quest</title>
     
-    <!-- Google Fonts & Tailwind CSS CDN -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
@@ -42,7 +41,6 @@
             cursor: crosshair;
         }
 
-        /* Glassmorphism Cards */
         .glass-panel {
             background: rgba(15, 23, 42, 0.75);
             backdrop-filter: blur(16px);
@@ -55,7 +53,6 @@
             box-shadow: 0 0 30px rgba(99, 102, 241, 0.2), 0 20px 50px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.2);
         }
 
-        /* Damage Screen Vignette Flash */
         #damage-flash {
             position: absolute;
             inset: 0;
@@ -66,39 +63,24 @@
             z-index: 5;
         }
 
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 5px;
-        }
-        ::-webkit-scrollbar-track {
-            background: rgba(15, 23, 42, 0.5);
-            border-radius: 99px;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: rgba(99, 102, 241, 0.5);
-            border-radius: 99px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: rgba(129, 140, 248, 0.8);
-        }
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.5); border-radius: 99px; }
+        ::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.5); border-radius: 99px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(129, 140, 248, 0.8); }
 
         @keyframes shardGlow {
             0%, 100% { filter: drop-shadow(0 0 6px rgba(192, 132, 252, 0.8)); transform: scale(1); }
             50% { filter: drop-shadow(0 0 14px rgba(192, 132, 252, 1)); transform: scale(1.08); }
         }
 
-        .shard-pulse {
-            animation: shardGlow 2.5s infinite ease-in-out;
-        }
+        .shard-pulse { animation: shardGlow 2.5s infinite ease-in-out; }
 
         @keyframes toastIn {
             from { opacity: 0; transform: translateY(-20px) scale(0.92); }
             to { opacity: 1; transform: translateY(0) scale(1); }
         }
 
-        .animate-toast {
-            animation: toastIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
+        .animate-toast { animation: toastIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
     </style>
 </head>
 <body class="relative min-h-screen select-none overflow-hidden bg-gray-950 font-sans text-gray-100">
@@ -131,7 +113,7 @@
         </div>
     </div>
 
-    <!-- Active Main Quest Objective -->
+    <!-- Quest Objective -->
     <div class="mb-3.5 rounded-xl border border-indigo-500/30 bg-gradient-to-r from-indigo-950/50 via-purple-950/30 to-slate-900/50 p-3 shadow-inner">
         <div class="flex items-center justify-between">
             <span class="text-[10px] font-extrabold tracking-wider text-indigo-400 uppercase">MAIN OBJECTIVE</span>
@@ -166,13 +148,14 @@
         </div>
     </div>
 
-    <!-- Equipped Weapon Display -->
+    <!-- Equipped Weapon -->
     <div class="flex items-center justify-between rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-xs">
         <span class="text-gray-400">Weapon</span>
         <span id="weapon-val" class="font-bold text-gray-200">Wooden Stick</span>
     </div>
 </div>
 
+<!-- Dimension Selector -->
 <div id="dimension-bar" class="glass-panel pointer-events-auto absolute bottom-5 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full p-2 shadow-2xl">
     <button id="btn-overworld" onclick="switchDimension('overworld')" class="dim-btn flex items-center gap-2 rounded-full px-5 py-2.5 font-display text-xs font-bold transition-all duration-200 bg-indigo-600 text-white shadow-[0_0_15px_rgba(79,70,229,0.5)]">
         <span>🌿</span> Overworld
@@ -185,6 +168,7 @@
     </button>
 </div>
 
+<!-- Crafting Panel -->
 <div id="crafting-panel" class="glass-panel pointer-events-auto absolute top-5 right-5 z-20 w-72 rounded-2xl p-4 shadow-2xl transition-all">
     <div class="mb-3 flex items-center justify-between border-b border-white/10 pb-2">
         <div class="flex items-center gap-2">
@@ -242,7 +226,6 @@
 </div>
 
 <script>
-// --- CANVAS & SYSTEM SETUP ---
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const minimapCanvas = document.getElementById('minimapCanvas');
@@ -266,7 +249,6 @@ const WEAPONS = {
     scythe: { id: 'scythe', name: 'Void Scythe', damage: 190, range: 130, rarity: 'Mythic', color: '#c084fc' }
 };
 
-// MOBS DATA WITH ENCODED RELATIVE PATHS
 const MOBS_CONFIG = {
     gerard:  { name: 'Gerard', spriteSrc: 'images/Gerard.JPEG', hp: 100, speed: 2.8, radius: 24, damage: 0.25, fallbackColor: '#ef4444' },
     jason:   { name: 'Jason', spriteSrc: 'images/Jason.JPEG', hp: 130, speed: 2.5, radius: 24, damage: 0.35, fallbackColor: '#f97316' },
@@ -291,30 +273,30 @@ const DIMENSIONS = {
     overworld: {
         id: 'overworld', name: 'OVERWORLD',
         biomes: [
-            { name: 'Verdant Plains', bg: '#062016', accent: '#10b981' },
-            { name: 'Sunburnt Dunes', bg: '#2d1f05', accent: '#f59e0b' },
-            { name: 'Frostbite Tundra', bg: '#0c222e', accent: '#06b6d4' },
-            { name: 'Shadowwood Forest', bg: '#09180e', accent: '#059669' }
+            { name: 'Verdant Plains', bg: '#0b291a', grid: '#133e28', decor: '#1e5336' },
+            { name: 'Sunburnt Dunes', bg: '#2b1d0c', grid: '#3d2b14', decor: '#4f391c' },
+            { name: 'Frostbite Tundra', bg: '#0f2332', grid: '#173347', decor: '#214660' },
+            { name: 'Shadowwood Forest', bg: '#0f1d16', grid: '#182f24', decor: '#224233' }
         ],
         mobs: ['gerard', 'jason'], requiredShards: 0, nextDim: 'nether'
     },
     nether: {
         id: 'nether', name: 'NETHER',
         biomes: [
-            { name: 'Crimson Wastes', bg: '#2b0404', accent: '#ef4444' },
-            { name: 'Ash Valley', bg: '#141416', accent: '#6b7280' },
-            { name: 'Basalt Delta', bg: '#17110e', accent: '#f97316' },
-            { name: 'Lava Ridges', bg: '#3b0707', accent: '#dc2626' }
+            { name: 'Crimson Wastes', bg: '#2b0707', grid: '#400c0c', decor: '#571212' },
+            { name: 'Ash Valley', bg: '#17171a', grid: '#242429', decor: '#33333b' },
+            { name: 'Basalt Delta', bg: '#1c1510', grid: '#2b211a', decor: '#3d2e24' },
+            { name: 'Lava Ridges', bg: '#360a02', grid: '#4d1004', decor: '#661707' }
         ],
         mobs: ['liuji', 'matthew'], requiredShards: 5, nextDim: 'void'
     },
     void: {
         id: 'void', name: 'THE VOID',
         biomes: [
-            { name: 'Astral Abyss', bg: '#17072b', accent: '#a855f7' },
-            { name: 'Nebula Ridges', bg: '#1e0a38', accent: '#c084fc' },
-            { name: 'Ender Wastes', bg: '#0c0721', accent: '#6366f1' },
-            { name: 'Starfall Ruins', bg: '#120d2e', accent: '#818cf8' }
+            { name: 'Astral Abyss', bg: '#15092b', grid: '#231142', decor: '#32195e' },
+            { name: 'Nebula Ridges', bg: '#1f0933', grid: '#30104e', decor: '#43176d' },
+            { name: 'Ender Wastes', bg: '#0b0821', grid: '#141036', decor: '#1e184e' },
+            { name: 'Starfall Ruins', bg: '#100c2e', grid: '#1a1447', decor: '#261f63' }
         ],
         mobs: ['travia', 'xayven'], requiredShards: 5, nextDim: null
     }
@@ -327,7 +309,7 @@ let player = {
     shards: { overworld: 0, nether: 0, void: 0 },
     unlockedDims: { overworld: true, nether: false, void: false },
     weaponKey: 'stick', weapon: WEAPONS.stick,
-    facingAngle: 0, isAttacking: false, attackProgress: 0, currentBiome: ''
+    facingAngle: 0, isAttacking: false, attackProgress: 0
 };
 
 let dimEntities = {
@@ -337,10 +319,8 @@ let dimEntities = {
 };
 
 let particles = [];
-let floatingTexts = [];
 let gameTime = 0;
 
-// --- PERSISTENT STORAGE ---
 function loadSavedData() {
     const saved = localStorage.getItem('survival_realm_save');
     if (saved) {
@@ -356,27 +336,21 @@ function loadSavedData() {
                 player.weapon = WEAPONS[data.weaponKey];
             }
             gameTime = data.gameTime || 0;
-        } catch (e) {
-            console.error("Failed loading save data:", e);
-        }
+        } catch (e) { console.error("Failed loading save:", e); }
     }
 }
 
 function saveData() {
     const data = {
-        wood: player.wood,
-        stone: player.stone,
-        ore: player.ore,
-        shards: player.shards,
-        unlockedDims: player.unlockedDims,
-        weaponKey: player.weaponKey,
-        gameTime: gameTime
+        wood: player.wood, stone: player.stone, ore: player.ore,
+        shards: player.shards, unlockedDims: player.unlockedDims,
+        weaponKey: player.weaponKey, gameTime: gameTime
     };
     localStorage.setItem('survival_realm_save', JSON.stringify(data));
 }
 
 function resetGameData() {
-    if (confirm("Reset all game progress and start fresh?")) {
+    if (confirm("Reset all game progress?")) {
         localStorage.removeItem('survival_realm_save');
         location.reload();
     }
@@ -393,14 +367,11 @@ function updateHUD() {
     const pct = Math.max(0, (player.hp / player.maxHp) * 100);
     document.getElementById('hp-bar').style.width = `${pct}%`;
 
-    // Portal Buttons State
     Object.keys(player.unlockedDims).forEach(dim => {
         const btn = document.getElementById(`btn-${dim}`);
-        if (btn) {
-            if (player.unlockedDims[dim]) {
-                btn.innerText = dim.toUpperCase();
-                btn.style.opacity = '1';
-            }
+        if (btn && player.unlockedDims[dim]) {
+            btn.innerText = dim.toUpperCase();
+            btn.style.opacity = '1';
         }
     });
 }
@@ -424,14 +395,13 @@ setInterval(() => {
     saveData();
 }, 1000);
 
-// --- WORLD INITIALIZATION ---
 function initWorld() {
     Object.keys(DIMENSIONS).forEach(dim => {
         dimEntities[dim].resources = [];
         dimEntities[dim].structures = [];
         dimEntities[dim].enemies = [];
 
-        for (let i = 0; i < 300; i++) {
+        for (let i = 0; i < 320; i++) {
             const types = ['tree', 'stone', 'ore'];
             const type = types[Math.floor(Math.random() * types.length)];
             dimEntities[dim].resources.push({
@@ -439,7 +409,9 @@ function initWorld() {
                 y: Math.random() * (WORLD_SIZE - 400) + 200,
                 type: type,
                 hp: type === 'ore' ? 4 : type === 'stone' ? 3 : 2,
-                scale: 1
+                maxHp: type === 'ore' ? 4 : type === 'stone' ? 3 : 2,
+                scale: 1,
+                rotation: Math.random() * Math.PI * 2
             });
         }
 
@@ -472,7 +444,6 @@ function initWorld() {
 initWorld();
 updateHUD();
 
-// --- CONTROLS & EVENT LISTENERS ---
 const keys = {};
 let mouseX = canvas.width / 2, mouseY = canvas.height / 2;
 
@@ -544,11 +515,10 @@ canvas.addEventListener('pointerdown', () => {
     const swingY = player.y + Math.sin(player.facingAngle) * player.weapon.range * 0.6;
     createParticles(swingX, swingY, player.weapon.color, 8);
 
-    // Harvesting
     currentData.resources.forEach((res, index) => {
         if (Math.hypot(res.x - player.x, res.y - player.y) <= player.weapon.range + 20) {
             res.hp -= 1;
-            res.scale = 1.35;
+            res.scale = 1.3;
             const pColor = res.type === 'tree' ? '#34d399' : res.type === 'stone' ? '#9ca3af' : '#38bdf8';
             createParticles(res.x, res.y, pColor, 5);
 
@@ -563,7 +533,6 @@ canvas.addEventListener('pointerdown', () => {
         }
     });
 
-    // Opening Ruins & Shards
     currentData.structures.forEach(struct => {
         if (struct.hasChest && !struct.chestOpened) {
             if (Math.hypot(struct.x - player.x, struct.y - player.y) <= player.weapon.range + 30) {
@@ -592,7 +561,6 @@ canvas.addEventListener('pointerdown', () => {
         }
     });
 
-    // Attack Enemies
     currentData.enemies.forEach((enemy, index) => {
         if (Math.hypot(enemy.x - player.x, enemy.y - player.y) <= player.weapon.range + enemy.radius) {
             let isCrit = Math.random() < 0.25;
@@ -601,8 +569,8 @@ canvas.addEventListener('pointerdown', () => {
             enemy.hp -= dmg;
             enemy.hitFlash = 8;
             const angle = Math.atan2(enemy.y - player.y, enemy.x - player.x);
-            enemy.x += Math.cos(angle) * 20;
-            enemy.y += Math.sin(angle) * 20;
+            enemy.x += Math.cos(angle) * 18;
+            enemy.y += Math.sin(angle) * 18;
 
             createParticles(enemy.x, enemy.y, '#f87171', 8);
 
@@ -664,6 +632,10 @@ function update() {
     });
 
     const currentData = dimEntities[currentDim];
+    currentData.resources.forEach(res => {
+        if (res.scale > 1) res.scale -= 0.05;
+    });
+
     currentData.enemies.forEach(enemy => {
         if (enemy.hitFlash > 0) enemy.hitFlash--;
 
@@ -683,11 +655,165 @@ function update() {
     });
 }
 
+// --- GRAPHICS RENDERING HELPERS ---
 function drawBiomeSquare(x, y, w, h, biome, camX, camY) {
     const rx = x - camX, ry = y - camY;
     if (rx + w < 0 || rx > canvas.width || ry + h < 0 || ry > canvas.height) return;
+    
+    // Biome Ground Base
     ctx.fillStyle = biome.bg;
     ctx.fillRect(rx, ry, w, h);
+
+    // Grid Texture Pattern
+    ctx.strokeStyle = biome.grid;
+    ctx.lineWidth = 1;
+    const step = 100;
+    const startX = Math.floor(Math.max(rx, 0) / step) * step;
+    const endX = Math.min(rx + w, canvas.width);
+    const startY = Math.floor(Math.max(ry, 0) / step) * step;
+    const endY = Math.min(ry + h, canvas.height);
+
+    for (let gx = startX; gx < endX; gx += step) {
+        ctx.beginPath();
+        ctx.moveTo(gx, Math.max(ry, 0));
+        ctx.lineTo(gx, endY);
+        ctx.stroke();
+    }
+    for (let gy = startY; gy < endY; gy += step) {
+        ctx.beginPath();
+        ctx.moveTo(Math.max(rx, 0), gy);
+        ctx.lineTo(endX, gy);
+        ctx.stroke();
+    }
+}
+
+function drawResource(res, rx, ry) {
+    ctx.save();
+    ctx.translate(rx, ry);
+    ctx.scale(res.scale, res.scale);
+
+    if (res.type === 'tree') {
+        // Tree Shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.25)';
+        ctx.beginPath();
+        ctx.ellipse(0, 18, 22, 10, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Trunk
+        ctx.fillStyle = '#78350f';
+        ctx.fillRect(-5, -5, 10, 22);
+
+        // Leaves Foliage (Multi-layered pine tree)
+        ctx.fillStyle = '#047857';
+        ctx.beginPath();
+        ctx.arc(0, -12, 22, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#10b981';
+        ctx.beginPath();
+        ctx.arc(-6, -18, 14, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#34d399';
+        ctx.beginPath();
+        ctx.arc(4, -22, 10, 0, Math.PI * 2);
+        ctx.fill();
+    } else if (res.type === 'stone') {
+        // Rock Base & Shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        ctx.beginPath();
+        ctx.ellipse(0, 10, 18, 8, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Bouldered Stone Shape
+        ctx.fillStyle = '#64748b';
+        ctx.beginPath();
+        ctx.moveTo(-16, 8);
+        ctx.lineTo(-20, -6);
+        ctx.lineTo(-6, -18);
+        ctx.lineTo(14, -14);
+        ctx.lineTo(20, 4);
+        ctx.lineTo(8, 14);
+        ctx.closePath();
+        ctx.fill();
+
+        // Stone Highlight Facet
+        ctx.fillStyle = '#94a3b8';
+        ctx.beginPath();
+        ctx.moveTo(-6, -18);
+        ctx.lineTo(14, -14);
+        ctx.lineTo(2, -2);
+        ctx.lineTo(-12, -4);
+        ctx.closePath();
+        ctx.fill();
+    } else if (res.type === 'ore') {
+        // Glowing Ore Node
+        ctx.fillStyle = 'rgba(0,0,0,0.35)';
+        ctx.beginPath();
+        ctx.ellipse(0, 10, 20, 8, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Dark Ore Base Rock
+        ctx.fillStyle = '#334155';
+        ctx.beginPath();
+        ctx.moveTo(-18, 6);
+        ctx.lineTo(-14, -14);
+        ctx.lineTo(10, -18);
+        ctx.lineTo(18, -2);
+        ctx.lineTo(12, 12);
+        ctx.lineTo(-10, 14);
+        ctx.closePath();
+        ctx.fill();
+
+        // Glowing Crystals
+        ctx.fillStyle = '#06b6d4';
+        ctx.shadowColor = '#38bdf8';
+        ctx.shadowBlur = 10;
+        
+        ctx.beginPath();
+        ctx.moveTo(-8, 2); ctx.lineTo(-2, -12); ctx.lineTo(4, 2); ctx.closePath();
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(2, 0); ctx.lineTo(12, -10); ctx.lineTo(12, 4); ctx.closePath();
+        ctx.fill();
+        ctx.shadowBlur = 0;
+    }
+    ctx.restore();
+}
+
+function drawStructure(struct, cameraX, cameraY) {
+    const sx = struct.x - cameraX, sy = struct.y - cameraY;
+    if (sx < -150 || sx > canvas.width + 150 || sy < -150 || sy > canvas.height + 150) return;
+
+    // Ancient Ruin Floor
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+    ctx.fillRect(sx - struct.width / 2, sy - struct.height / 2, struct.width, struct.height);
+    
+    // Border Pillars
+    ctx.strokeStyle = struct.containsShard && !struct.chestOpened ? '#c084fc' : '#475569';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(sx - struct.width / 2, sy - struct.height / 2, struct.width, struct.height);
+
+    // Chest Object
+    if (struct.hasChest) {
+        ctx.fillStyle = 'rgba(0,0,0,0.4)';
+        ctx.fillRect(sx - 14, sy - 10, 28, 24);
+
+        if (struct.chestOpened) {
+            ctx.fillStyle = '#475569';
+            ctx.fillRect(sx - 12, sy - 12, 24, 20);
+            ctx.fillStyle = '#1e293b';
+            ctx.fillRect(sx - 10, sy - 10, 20, 8);
+        } else {
+            ctx.fillStyle = struct.containsShard ? '#9333ea' : '#d97706';
+            ctx.fillRect(sx - 12, sy - 12, 24, 20);
+
+            // Lock / Latch
+            ctx.fillStyle = struct.containsShard ? '#e9d5ff' : '#fef08a';
+            ctx.fillRect(sx - 3, sy - 4, 6, 8);
+        }
+    }
 }
 
 function draw() {
@@ -697,6 +823,7 @@ function draw() {
 
     const dimConfig = DIMENSIONS[currentDim];
 
+    // Render Biomes Backgrounds
     drawBiomeSquare(0, 0, HALF_WORLD, HALF_WORLD, dimConfig.biomes[0], cameraX, cameraY);
     drawBiomeSquare(HALF_WORLD, 0, HALF_WORLD, HALF_WORLD, dimConfig.biomes[1], cameraX, cameraY);
     drawBiomeSquare(0, HALF_WORLD, HALF_WORLD, HALF_WORLD, dimConfig.biomes[2], cameraX, cameraY);
@@ -704,34 +831,29 @@ function draw() {
 
     const currentData = dimEntities[currentDim];
 
-    // Render Ruins
-    currentData.structures.forEach(struct => {
-        const sx = struct.x - cameraX, sy = struct.y - cameraY;
-        ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
-        ctx.fillRect(sx - struct.width / 2, sy - struct.height / 2, struct.width, struct.height);
-        ctx.strokeStyle = struct.containsShard && !struct.chestOpened ? "#c084fc" : "rgba(255,255,255,0.2)";
-        ctx.lineWidth = 2;
-        ctx.strokeRect(sx - struct.width / 2, sy - struct.height / 2, struct.width, struct.height);
-
-        if (struct.hasChest) {
-            ctx.fillStyle = struct.chestOpened ? "#475569" : struct.containsShard ? "#c084fc" : "#fbbf24";
-            ctx.fillRect(sx - 12, sy - 12, 24, 24);
-        }
-    });
+    // Render Ruins & Structures
+    currentData.structures.forEach(struct => drawStructure(struct, cameraX, cameraY));
 
     // Render Resources
     currentData.resources.forEach(res => {
         const rx = res.x - cameraX, ry = res.y - cameraY;
-        ctx.fillStyle = res.type === 'tree' ? '#059669' : res.type === 'stone' ? '#64748b' : '#0284c7';
-        ctx.beginPath();
-        ctx.arc(rx, ry, (res.type === 'tree' ? 22 : 16) * res.scale, 0, Math.PI * 2);
-        ctx.fill();
+        if (rx >= -40 && rx <= canvas.width + 40 && ry >= -40 && ry <= canvas.height + 40) {
+            drawResource(res, rx, ry);
+        }
     });
 
-    // Render Mobs (With Fallbacks)
+    // Render Enemies & Mobs
     currentData.enemies.forEach(enemy => {
         const ex = enemy.x - cameraX, ey = enemy.y - cameraY;
+        if (ex < -50 || ex > canvas.width + 50 || ey < -50 || ey > canvas.height + 50) return;
+
         const sprite = loadedSprites[enemy.key];
+
+        // Enemy Shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.35)';
+        ctx.beginPath();
+        ctx.ellipse(ex, ey + enemy.radius * 0.8, enemy.radius * 0.9, enemy.radius * 0.4, 0, 0, Math.PI * 2);
+        ctx.fill();
 
         if (sprite && sprite.isLoaded) {
             ctx.save();
@@ -740,19 +862,35 @@ function draw() {
             ctx.clip();
             ctx.drawImage(sprite, ex - enemy.radius, ey - enemy.radius, enemy.radius * 2, enemy.radius * 2);
             ctx.restore();
+
+            ctx.strokeStyle = enemy.hitFlash > 0 ? '#ffffff' : 'rgba(255,255,255,0.4)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(ex, ey, enemy.radius, 0, Math.PI * 2);
+            ctx.stroke();
         } else {
-            // Circle Fallback if image fails to load
+            // Fallback Circle
             ctx.fillStyle = enemy.hitFlash > 0 ? '#ffffff' : MOBS_CONFIG[enemy.key].fallbackColor;
             ctx.beginPath();
             ctx.arc(ex, ey, enemy.radius, 0, Math.PI * 2);
             ctx.fill();
         }
 
-        // Enemy HP Bar
-        ctx.fillStyle = "rgba(0,0,0,0.5)";
-        ctx.fillRect(ex - 20, ey - enemy.radius - 12, 40, 5);
-        ctx.fillStyle = "#ef4444";
-        ctx.fillRect(ex - 20, ey - enemy.radius - 12, (enemy.hp / enemy.maxHp) * 40, 5);
+        // ENEMY NAME TAG & HP BAR
+        ctx.font = 'bold 11px "Plus Jakarta Sans", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#f3f4f6';
+        ctx.shadowColor = '#000000';
+        ctx.shadowBlur = 4;
+        ctx.fillText(enemy.name, ex, ey - enemy.radius - 14);
+        ctx.shadowBlur = 0;
+
+        // Health Bar
+        const barWidth = Math.max(36, enemy.radius * 1.6);
+        ctx.fillStyle = 'rgba(0,0,0,0.6)';
+        ctx.fillRect(ex - barWidth / 2, ey - enemy.radius - 9, barWidth, 5);
+        ctx.fillStyle = '#ef4444';
+        ctx.fillRect(ex - barWidth / 2, ey - enemy.radius - 9, (Math.max(0, enemy.hp) / enemy.maxHp) * barWidth, 5);
     });
 
     // Render Particles
@@ -769,24 +907,44 @@ function draw() {
     const px = canvas.width / 2, py = canvas.height / 2;
     ctx.save();
     ctx.translate(px, py);
+
+    // Player Shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.beginPath();
+    ctx.ellipse(0, 14, player.radius * 0.9, player.radius * 0.4, 0, 0, Math.PI * 2);
+    ctx.fill();
+
     ctx.rotate(player.facingAngle);
 
-    // Draw Weapon Swing
+    // Weapon Swing
     ctx.strokeStyle = player.weapon.color;
     ctx.lineWidth = 6;
+    ctx.lineCap = 'round';
     ctx.beginPath();
     ctx.moveTo(0, 0);
     ctx.lineTo(player.weapon.range, 0);
     ctx.stroke();
 
-    // Player Body
+    // Player Avatar Circle
     ctx.fillStyle = '#6366f1';
     ctx.beginPath();
     ctx.arc(0, 0, player.radius, 0, Math.PI * 2);
     ctx.fill();
+
+    ctx.strokeStyle = '#a5b4fc';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // Eye Indicators
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(6, -5, 3.5, 0, Math.PI * 2);
+    ctx.arc(6, 5, 3.5, 0, Math.PI * 2);
+    ctx.fill();
+
     ctx.restore();
 
-    // Render Minimap
+    // Minimap
     minimapCtx.fillStyle = '#030712';
     minimapCtx.fillRect(0, 0, 160, 160);
     const mmScale = 160 / WORLD_SIZE;
