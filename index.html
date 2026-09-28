@@ -6,7 +6,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>Survival Realm: Advanced Crafting & Save</title>
+    <title>Survival Realm: Custom Enemies & Crafting</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&display=swap');
 
@@ -29,7 +29,7 @@
         /* Stats HUD Panel */
         #stats-hud {
             position: absolute; top: 20px; left: 20px;
-            background: rgba(13, 17, 23, 0.8); border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(13, 17, 23, 0.85); border: 1px solid rgba(255, 255, 255, 0.12);
             padding: 14px; border-radius: 16px; backdrop-filter: blur(16px);
             box-shadow: 0 16px 32px rgba(0,0,0,0.5); width: 260px; pointer-events: none; z-index: 10;
         }
@@ -68,7 +68,7 @@
             position: absolute; bottom: 20px; left: 20px;
             background: rgba(13, 17, 23, 0.85); border: 1px solid rgba(255, 255, 255, 0.12);
             padding: 14px; border-radius: 16px; backdrop-filter: blur(16px);
-            box-shadow: 0 16px 32px rgba(0,0,0,0.5); width: 320px; max-height: 280px; overflow-y: auto; z-index: 10;
+            box-shadow: 0 16px 32px rgba(0,0,0,0.5); width: 320px; max-height: 260px; overflow-y: auto; z-index: 10;
         }
 
         #crafting-panel::-webkit-scrollbar { width: 4px; }
@@ -81,27 +81,41 @@
             border-radius: 8px; color: #f3f4f6; font-family: inherit; font-size: 12px; font-weight: 700;
             cursor: pointer; transition: all 0.2s ease;
         }
-        .craft-btn:hover {
-            background: rgba(255, 255, 255, 0.12); border-color: rgba(255, 255, 255, 0.25);
-            transform: translateY(-1px);
-        }
+        .craft-btn:hover { background: rgba(255, 255, 255, 0.12); border-color: rgba(255, 255, 255, 0.25); transform: translateY(-1px); }
         .craft-reqs { font-size: 10px; color: #9ca3af; font-weight: 500; }
 
         /* Controls & Save Overlay */
-        #top-right-bar {
-            position: absolute; top: 20px; right: 20px; display: flex; gap: 10px; align-items: center; z-index: 10;
-        }
+        #top-right-bar { position: absolute; top: 20px; right: 20px; display: flex; gap: 10px; align-items: center; z-index: 10; }
         .ui-btn {
-            background: rgba(13, 17, 23, 0.8); border: 1px solid rgba(255, 255, 255, 0.15);
+            background: rgba(13, 17, 23, 0.85); border: 1px solid rgba(255, 255, 255, 0.15);
             padding: 8px 14px; border-radius: 99px; backdrop-filter: blur(12px);
             font-size: 11px; font-weight: 700; color: #f3f4f6; cursor: pointer; transition: all 0.2s;
         }
-        .ui-btn:hover { background: rgba(239, 68, 68, 0.2); border-color: #ef4444; }
+        .ui-btn:hover { background: rgba(59, 130, 246, 0.25); border-color: #3b82f6; }
+        .ui-btn.danger:hover { background: rgba(239, 68, 68, 0.25); border-color: #ef4444; }
 
         #save-status {
             font-size: 10px; font-weight: 700; color: #4ade80; text-transform: uppercase; letter-spacing: 1px;
             background: rgba(13, 17, 23, 0.8); padding: 6px 12px; border-radius: 99px; border: 1px solid rgba(74, 222, 128, 0.2);
         }
+
+        /* Enemy Customizer Modal */
+        #customizer-modal {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(13, 17, 23, 0.95); border: 1px solid rgba(255, 255, 255, 0.18);
+            padding: 20px; border-radius: 20px; backdrop-filter: blur(20px);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.8); width: 380px; z-index: 100; display: none;
+        }
+        #customizer-modal.show { display: block; }
+        .modal-title { font-size: 16px; font-weight: 800; color: #f3f4f6; margin-bottom: 14px; display: flex; justify-content: space-between; }
+        .enemy-upload-row {
+            display: flex; align-items: center; justify-content: space-between;
+            background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+            padding: 10px; border-radius: 12px; margin-bottom: 8px;
+        }
+        .enemy-info-label { font-size: 12px; font-weight: 700; }
+        .enemy-info-label small { display: block; color: #9ca3af; font-size: 10px; font-weight: 500; }
+        .file-input-btn { font-size: 11px; font-family: inherit; color: #f3f4f6; }
     </style>
 </head>
 <body>
@@ -112,7 +126,8 @@
 
 <div id="top-right-bar">
     <div id="save-status">💾 Auto-Saved</div>
-    <button class="ui-btn" onclick="resetSaveData()">Reset Save</button>
+    <button class="ui-btn" onclick="toggleCustomizer()">👹 Custom Faces</button>
+    <button class="ui-btn danger" onclick="resetSaveData()">Reset Save</button>
 </div>
 
 <div id="stats-hud">
@@ -151,9 +166,15 @@
     <button class="craft-btn" onclick="craftItem('heal')">
         <span>🧪 Health Salve</span><span class="craft-reqs">5W 5S</span>
     </button>
-    <button class="craft-btn" onclick="craftItem('speed')">
-        <span>⚡ Speed Elixir</span><span class="craft-reqs">12W 8O</span>
-    </button>
+</div>
+
+<!-- Enemy Customizer Modal -->
+<div id="customizer-modal">
+    <div class="modal-title">
+        <span>Custom Enemy Faces</span>
+        <span style="cursor:pointer;" onclick="toggleCustomizer()">✖</span>
+    </div>
+    <div id="enemy-upload-list"></div>
 </div>
 
 <script>
@@ -166,6 +187,53 @@ window.addEventListener('resize', resizeCanvas);
 
 const WORLD_SIZE = 3800;
 const HALF_WORLD = WORLD_SIZE / 2;
+
+// ==========================================
+// EASILY CUSTOMIZABLE ENEMY TYPES & STATS
+// ==========================================
+const ENEMY_TYPES = {
+    goblin: {
+        name: "Goblin Scout",
+        trait: "Fast & Small",
+        hp: 40,
+        speed: 3.4,
+        radius: 14,
+        damage: 0.2,
+        color: "#22c55e",
+        img: null
+    },
+    brute: {
+        name: "Orc Brute",
+        trait: "Tanky & Strong",
+        hp: 140,
+        speed: 1.5,
+        radius: 26,
+        damage: 0.65,
+        color: "#b91c1c",
+        img: null
+    },
+    phantom: {
+        name: "Phantom Mage",
+        trait: "Teleports",
+        hp: 70,
+        speed: 2.3,
+        radius: 18,
+        damage: 0.35,
+        color: "#a855f7",
+        teleportTimer: 0,
+        img: null
+    },
+    goliath: {
+        name: "Goliath Boss",
+        trait: "Massive Boss",
+        hp: 300,
+        speed: 1.1,
+        radius: 36,
+        damage: 1.1,
+        color: "#f97316",
+        img: null
+    }
+};
 
 const WEAPONS = {
     stick:  { id: 'stick', name: 'Wooden Stick', damage: 18, range: 60, rarity: 'Common', color: '#a3a3a3' },
@@ -182,7 +250,7 @@ const BIOMES = {
     BOTTOM_RIGHT: { name: 'ABYSSAL WASTES', bg: '#2f1238', accent: '#210c28', icon: '🔮' }
 };
 
-// INITIAL PLAYER STATE
+// PLAYER STATE
 let player = {
     x: HALF_WORLD, y: HALF_WORLD,
     radius: 18, speed: 4.5, hp: 100, maxHp: 100,
@@ -191,7 +259,7 @@ let player = {
     currentBiome: '', facingAngle: 0, isAttacking: false, attackProgress: 0
 };
 
-// LOAD SAVE DATA FROM LOCALSTORAGE
+// LOAD SAVE DATA
 function loadGameData() {
     const saved = localStorage.getItem('SURVIVAL_REALM_SAVE');
     if (saved) {
@@ -200,52 +268,56 @@ function loadGameData() {
             player.wood = data.wood || 0;
             player.stone = data.stone || 0;
             player.ore = data.ore || 0;
-            player.wallsLeft = data.wallsLeft || 0;
             player.hp = data.hp || 100;
             player.x = data.x || HALF_WORLD;
             player.y = data.y || HALF_WORLD;
             if (data.weaponKey && WEAPONS[data.weaponKey]) {
-                player.weaponKey = data.weaponKey;
-                player.weapon = WEAPONS[data.weaponKey];
+                player.weaponKey = data.weaponKey; player.weapon = WEAPONS[data.weaponKey];
             }
-        } catch(e) { console.error("Save load error:", e); }
+            if (data.enemyFaces) {
+                Object.keys(data.enemyFaces).forEach(key => {
+                    if (ENEMY_TYPES[key]) {
+                        const image = new Image();
+                        image.src = data.enemyFaces[key];
+                        ENEMY_TYPES[key].img = image;
+                    }
+                });
+            }
+        } catch(e) { console.error(e); }
     }
 }
 
 function saveGameData() {
+    const faces = {};
+    Object.keys(ENEMY_TYPES).forEach(key => {
+        if (ENEMY_TYPES[key].img) faces[key] = ENEMY_TYPES[key].img.src;
+    });
+
     const data = {
-        wood: player.wood,
-        stone: player.stone,
-        ore: player.ore,
-        wallsLeft: player.wallsLeft,
-        hp: player.hp,
-        x: player.x,
-        y: player.y,
-        weaponKey: player.weaponKey
+        wood: player.wood, stone: player.stone, ore: player.ore,
+        hp: player.hp, x: player.x, y: player.y,
+        weaponKey: player.weaponKey, enemyFaces: faces
     };
     localStorage.setItem('SURVIVAL_REALM_SAVE', JSON.stringify(data));
     
-    // UI Flash
     const saveElem = document.getElementById('save-status');
-    saveElem.style.borderColor = '#4ade80';
     saveElem.innerText = '💾 Saved!';
     setTimeout(() => { saveElem.innerText = '💾 Auto-Saved'; }, 1000);
 }
 
 function resetSaveData() {
-    if (confirm("Reset all inventory, items, and progress?")) {
+    if (confirm("Reset all inventory and face customizers?")) {
         localStorage.removeItem('SURVIVAL_REALM_SAVE');
         location.reload();
     }
 }
 
 loadGameData();
-setInterval(saveGameData, 5000); // Auto-save every 5s
+setInterval(saveGameData, 5000);
 
 // INPUTS
 const keys = {};
 let mouseX = canvas.width / 2, mouseY = canvas.height / 2;
-
 window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
 window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
 window.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
@@ -269,28 +341,28 @@ for (let i = 0; i < 240; i++) {
     });
 }
 
-// SPAWN INITIAL ENEMIES
-for (let i = 0; i < 45; i++) {
+// SPAWN DIFFERENT ENEMY TYPES
+const typeKeys = Object.keys(ENEMY_TYPES);
+for (let i = 0; i < 50; i++) {
     let ex = Math.random() * WORLD_SIZE;
     let ey = Math.random() * WORLD_SIZE;
     if (Math.hypot(ex - player.x, ey - player.y) > 450) {
-        enemies.push({ x: ex, y: ey, hp: 60, maxHp: 60, radius: 18, speed: 2.2, phase: Math.random() * 10 });
+        const randTypeKey = typeKeys[Math.floor(Math.random() * typeKeys.length)];
+        const baseStats = ENEMY_TYPES[randTypeKey];
+        enemies.push({
+            typeKey: randTypeKey,
+            x: ex, y: ey,
+            hp: baseStats.hp, maxHp: baseStats.hp,
+            radius: baseStats.radius, speed: baseStats.speed,
+            damage: baseStats.damage, trait: baseStats.trait,
+            teleportTimer: 0
+        });
     }
 }
 
-// CLICK ACTION (Mine/Attack/Build Wall)
-canvas.addEventListener('pointerdown', (e) => {
+// ATTACK & MINING
+canvas.addEventListener('pointerdown', () => {
     if (player.hp <= 0) return;
-
-    // Build Wall if active item
-    if (e.button === 2 || (keys['shift'] && player.wallsLeft > 0)) {
-        const cameraX = player.x - canvas.width / 2;
-        const cameraY = player.y - canvas.height / 2;
-        placedWalls.push({ x: mouseX + cameraX, y: mouseY + cameraY, hp: 120 });
-        player.wallsLeft--;
-        saveGameData();
-        return;
-    }
 
     player.isAttacking = true;
     player.attackProgress = 0;
@@ -299,7 +371,7 @@ canvas.addEventListener('pointerdown', (e) => {
     const swingY = player.y + Math.sin(player.facingAngle) * player.weapon.range * 0.6;
     createParticles(swingX, swingY, player.weapon.color, 10);
 
-    // Harvest
+    // Harvest Resources
     resources.forEach((res, index) => {
         if (Math.hypot(res.x - player.x, res.y - player.y) <= player.weapon.range + 20) {
             res.hp -= 1;
@@ -318,7 +390,7 @@ canvas.addEventListener('pointerdown', (e) => {
         }
     });
 
-    // Attack Enemies
+    // Hit Enemies
     enemies.forEach((enemy, index) => {
         if (Math.hypot(enemy.x - player.x, enemy.y - player.y) <= player.weapon.range + enemy.radius) {
             let isCrit = Math.random() < 0.25;
@@ -326,8 +398,8 @@ canvas.addEventListener('pointerdown', (e) => {
             
             enemy.hp -= dmg;
             const angle = Math.atan2(enemy.y - player.y, enemy.x - player.x);
-            enemy.x += Math.cos(angle) * 45;
-            enemy.y += Math.sin(angle) * 45;
+            enemy.x += Math.cos(angle) * 35;
+            enemy.y += Math.sin(angle) * 35;
 
             createParticles(enemy.x, enemy.y, '#f87171', 10);
             spawnFloatingText(enemy.x, enemy.y, isCrit ? `CRIT -${dmg}` : `-${dmg}`, isCrit ? "#facc15" : "#f87171");
@@ -339,8 +411,6 @@ canvas.addEventListener('pointerdown', (e) => {
         }
     });
 });
-
-window.addEventListener('contextmenu', e => e.preventDefault());
 
 function createParticles(x, y, color, count) {
     for (let i = 0; i < count; i++) {
@@ -390,16 +460,26 @@ function update() {
         showToast(biome.icon, "ENTERED: " + biome.name);
     }
 
-    // Particles
     particles.forEach((p, i) => {
         p.x += p.vx; p.y += p.vy; p.alpha -= 0.04;
         if (p.alpha <= 0) particles.splice(i, 1);
     });
 
-    // Enemy AI
+    // Enemy AI & Traits
     enemies.forEach(enemy => {
-        enemy.phase += 0.05;
         const dist = Math.hypot(player.x - enemy.x, player.y - enemy.y);
+        
+        // Phantom Teleport Trait Ability
+        if (enemy.typeKey === 'phantom' && dist < 350) {
+            enemy.teleportTimer += 1;
+            if (enemy.teleportTimer > 180) { // Every ~3 seconds
+                enemy.x = player.x + (Math.random() - 0.5) * 160;
+                enemy.y = player.y + (Math.random() - 0.5) * 160;
+                createParticles(enemy.x, enemy.y, '#a855f7', 14);
+                enemy.teleportTimer = 0;
+            }
+        }
+
         if (dist < 480) {
             const angle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
             enemy.x += Math.cos(angle) * enemy.speed;
@@ -407,7 +487,7 @@ function update() {
         }
 
         if (dist < player.radius + enemy.radius) {
-            player.hp -= 0.35;
+            player.hp -= enemy.damage;
             updateHUD();
             if (player.hp <= 0) showToast("☠️", "YOU PERISHED!");
         }
@@ -425,13 +505,6 @@ function draw() {
     drawBiomeSquare(0, HALF_WORLD, HALF_WORLD, HALF_WORLD, BIOMES.BOTTOM_LEFT, cameraX, cameraY);
     drawBiomeSquare(HALF_WORLD, HALF_WORLD, HALF_WORLD, HALF_WORLD, BIOMES.BOTTOM_RIGHT, cameraX, cameraY);
 
-    // Placed Walls
-    placedWalls.forEach(w => {
-        ctx.fillStyle = "#78350f";
-        ctx.fillRect(w.x - cameraX - 16, w.y - cameraY - 16, 32, 32);
-        ctx.strokeStyle = "#451a03"; ctx.strokeRect(w.x - cameraX - 16, w.y - cameraY - 16, 32, 32);
-    });
-
     // Resources
     resources.forEach(res => {
         const rx = res.x - cameraX; const ry = res.y - cameraY;
@@ -446,19 +519,42 @@ function draw() {
         }
     });
 
-    // Enemies
+    // Draw Enemies (With Custom Face Rendering)
     enemies.forEach(e => {
         const ex = e.x - cameraX, ey = e.y - cameraY;
-        ctx.fillStyle = "#dc2626"; ctx.beginPath(); ctx.arc(ex, ey, e.radius, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = "#fef08a"; ctx.beginPath(); ctx.arc(ex - 4, ey - 3, 3, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(ex + 4, ey - 3, 3, 0, Math.PI * 2); ctx.fill();
+        const config = ENEMY_TYPES[e.typeKey];
+
+        if (config && config.img) {
+            // Render Custom Uploaded Image Face
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(ex, ey, e.radius, 0, Math.PI * 2);
+            ctx.clip();
+            ctx.drawImage(config.img, ex - e.radius, ey - e.radius, e.radius * 2, e.radius * 2);
+            ctx.restore();
+            ctx.strokeStyle = config.color; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.arc(ex, ey, e.radius, 0, Math.PI * 2); ctx.stroke();
+        } else {
+            // Default Procedural Enemy Face
+            ctx.fillStyle = config ? config.color : "#dc2626";
+            ctx.beginPath(); ctx.arc(ex, ey, e.radius, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = "#fef08a";
+            ctx.beginPath(); ctx.arc(ex - e.radius * 0.25, ey - e.radius * 0.2, e.radius * 0.2, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(ex + e.radius * 0.25, ey - e.radius * 0.2, e.radius * 0.2, 0, Math.PI * 2); ctx.fill();
+        }
+
+        // Enemy Health Bar
+        if (e.hp < e.maxHp) {
+            ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(ex - 16, ey - e.radius - 10, 32, 4);
+            ctx.fillStyle = "#ef4444"; ctx.fillRect(ex - 16, ey - e.radius - 10, (e.hp / e.maxHp) * 32, 4);
+        }
     });
 
-    // Player
+    // Player Rendering
     const px = canvas.width / 2, py = canvas.height / 2;
     ctx.fillStyle = "#2563eb"; ctx.beginPath(); ctx.arc(px, py, player.radius, 0, Math.PI * 2); ctx.fill();
 
-    // Weapon Swing
+    // Weapon Swing Arc
     ctx.save(); ctx.translate(px, py);
     let swingAngle = player.facingAngle;
     if (player.isAttacking) swingAngle += Math.sin(player.attackProgress * Math.PI) * 1.5 - 0.75;
@@ -466,7 +562,7 @@ function draw() {
     ctx.fillStyle = player.weapon.color; ctx.fillRect(10, -3, player.weapon.range * 0.55, 6);
     ctx.restore();
 
-    // Particles & Floating Text
+    // Particles & Text
     particles.forEach(p => {
         ctx.fillStyle = p.color; ctx.globalAlpha = p.alpha;
         ctx.beginPath(); ctx.arc(p.x - cameraX, p.y - cameraY, p.radius, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1.0;
@@ -506,6 +602,46 @@ function showToast(icon, msg) {
     setTimeout(() => toast.classList.remove('show'), 2200);
 }
 
+// ENEMY CUSTOMIZER UI
+function toggleCustomizer() {
+    const modal = document.getElementById('customizer-modal');
+    modal.classList.toggle('show');
+}
+
+function renderCustomizerList() {
+    const container = document.getElementById('enemy-upload-list');
+    container.innerHTML = '';
+    
+    Object.keys(ENEMY_TYPES).forEach(key => {
+        const enemy = ENEMY_TYPES[key];
+        const row = document.createElement('div');
+        row.className = 'enemy-upload-row';
+        row.innerHTML = `
+            <div class="enemy-info-label">
+                ${enemy.name}
+                <small>Trait: ${enemy.trait} | HP: ${enemy.hp}</small>
+            </div>
+            <input type="file" accept="image/*" class="file-input-btn" onchange="uploadEnemyFace(event, '${key}')">
+        `;
+        container.appendChild(row);
+    });
+}
+
+function uploadEnemyFace(event, enemyKey) {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const image = new Image();
+            image.src = e.target.result;
+            ENEMY_TYPES[enemyKey].img = image;
+            saveGameData();
+            showToast("👹", `Face updated for ${ENEMY_TYPES[enemyKey].name}!`);
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
 function craftItem(type) {
     if (type === 'spear' && player.wood >= 10 && player.stone >= 10) {
         player.wood -= 10; player.stone -= 10; player.weaponKey = 'spear'; player.weapon = WEAPONS.spear;
@@ -519,15 +655,9 @@ function craftItem(type) {
     } else if (type === 'scythe' && player.wood >= 40 && player.stone >= 40 && player.ore >= 30) {
         player.wood -= 40; player.stone -= 40; player.ore -= 30; player.weaponKey = 'scythe'; player.weapon = WEAPONS.scythe;
         showToast("🔮", "CRAFTED: Void Scythe!");
-    } else if (type === 'wall' && player.wood >= 10) {
-        player.wood -= 10; player.wallsLeft += 3;
-        showToast("🪵", "CRAFTED: 3x Wood Walls! (Hold Shift + Click to place)");
     } else if (type === 'heal' && player.wood >= 5 && player.stone >= 5) {
         player.wood -= 5; player.stone -= 5; player.hp = Math.min(100, player.hp + 45);
         showToast("🧪", "RECOVERED +45 HP!");
-    } else if (type === 'speed' && player.wood >= 12 && player.ore >= 8) {
-        player.wood -= 12; player.ore -= 8; player.speed += 1.2;
-        showToast("⚡", "SPEED INCREASED!");
     } else {
         showToast("⚠️", "NOT ENOUGH MATERIALS!");
     }
@@ -535,6 +665,7 @@ function craftItem(type) {
     saveGameData();
 }
 
+renderCustomizerList();
 updateHUD();
 loop();
 </script>
