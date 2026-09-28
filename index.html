@@ -129,7 +129,7 @@
             <span id="hp-text" class="text-gray-200">100 / 100</span>
         </div>
         <div class="relative h-4 w-full overflow-hidden rounded-full border border-white/10 bg-black/50 p-0.5">
-            <div id="hp-bar" class="h-full w-full rounded-full bg-gradient-to-r from-rose-600 via-rose-500 to-amber-500 transition-all duration-300"></div>
+            <div id="hp-bar" class="h-full w-full rounded-full bg-gradient-to-r from-rose-600 via-rose-500 to-amber-500 transition-all duration-150"></div>
         </div>
     </div>
 
@@ -310,7 +310,7 @@ let dimEntities = {
 let draggedItem = null;
 let draggedSource = null;
 
-// MOB & RESOURCE DESIGN DEFINITIONS (Circles with Faces and Names)
+// MOB & RESOURCE DESIGN DEFINITIONS
 const RESOURCE_TYPES = {
     tree:  { name: 'Ancient Oak', emoji: '🌳', color: '#15803d', borderColor: '#22c55e' },
     rock:  { name: 'Granite Ore', emoji: '🪨', color: '#475569', borderColor: '#94a3b8' },
@@ -445,7 +445,7 @@ function generateDimension(dimKey) {
             maxHp: dimKey === 'overworld' ? 60 : dimKey === 'nether' ? 120 : 220,
             speed: dimKey === 'overworld' ? 2.2 : 2.8,
             damage: dimKey === 'overworld' ? 8 : 16,
-            radius: 20,
+            radius: 20, // HITBOX RADIUS REMAINS EXACTLY 20
             animOffset: Math.random() * 100,
             faceImage: getRandomEnemyImage()
         });
@@ -504,7 +504,7 @@ setInterval(() => {
                 maxHp: dim === 'overworld' ? 60 : dim === 'nether' ? 120 : 220,
                 speed: dim === 'overworld' ? 2.2 : 2.8,
                 damage: dim === 'overworld' ? 8 : 16,
-                radius: 20,
+                radius: 20, // HITBOX RADIUS REMAINS EXACTLY 20
                 animOffset: Math.random() * 100,
                 faceImage: getRandomEnemyImage()
             });
@@ -625,24 +625,23 @@ function dropItem(e, targetType, targetIndex) {
     saveData();
 }
 
-// UI RENDERING
+// OPTIMIZED FAST UI UPDATES (Eliminates lag & DOM rebuild trash)
 function updateHUD() {
-    document.getElementById('wood-val').innerText = player.wood;
-    document.getElementById('stone-val').innerText = player.stone;
-    document.getElementById('ore-val').innerText = player.ore;
-    document.getElementById('shard-val').innerText = `${player.shards[currentDim]}/5`;
-    document.getElementById('weapon-val').innerText = player.weapon ? player.weapon.name : 'Wooden Stick';
+    document.getElementById('wood-val').textContent = player.wood;
+    document.getElementById('stone-val').textContent = player.stone;
+    document.getElementById('ore-val').textContent = player.ore;
+    document.getElementById('shard-val').textContent = `${player.shards[currentDim]}/5`;
+    document.getElementById('weapon-val').textContent = player.weapon ? player.weapon.name : 'Wooden Stick';
 
     if (player.armor) {
-        document.getElementById('armor-val').innerText = player.armor.name;
-        document.getElementById('armor-buff-val').innerText = `Buffs: ${player.armor.desc}`;
+        document.getElementById('armor-val').textContent = player.armor.name;
+        document.getElementById('armor-buff-val').textContent = `Buffs: ${player.armor.desc}`;
     } else {
-        document.getElementById('armor-val').innerText = 'None';
-        document.getElementById('armor-buff-val').innerText = 'Buffs: No Active Protection';
+        document.getElementById('armor-val').textContent = 'None';
+        document.getElementById('armor-buff-val').textContent = 'Buffs: No Active Protection';
     }
 
-    document.getElementById('hp-text').innerText = `${Math.ceil(player.hp)} / ${player.maxHp}`;
-    document.getElementById('hp-bar').style.width = `${Math.max(0, (player.hp / player.maxHp) * 100)}%`;
+    updateHealthBarOnly();
 
     document.getElementById('weapon-hotbar').innerHTML = player.weaponHotbar.map((item, i) => `
         <div onclick="selectWeaponSlot(${i})" ondragover="allowDrop(event)" ondrop="dropItem(event, 'weapon', ${i})" class="hotbar-slot ${i === activeWeaponSlot ? 'active' : ''}">
@@ -660,10 +659,16 @@ function updateHUD() {
         </div>
     `).join('');
 
-    document.getElementById('armor-slot-icon').innerText = player.armor ? player.armor.icon : '🛡️';
+    document.getElementById('armor-slot-icon').textContent = player.armor ? player.armor.icon : '🛡️';
 
     renderCraftingUI();
     renderInventoryUI();
+}
+
+// Isolated ultra-fast health bar update for frame-by-frame updates
+function updateHealthBarOnly() {
+    document.getElementById('hp-text').textContent = `${Math.ceil(player.hp)} / ${player.maxHp}`;
+    document.getElementById('hp-bar').style.width = `${Math.max(0, (player.hp / player.maxHp) * 100)}%`;
 }
 
 function renderCraftingUI() {
@@ -745,7 +750,7 @@ window.addEventListener('mousemove', e => { mousePos = { x: e.clientX, y: e.clie
 window.addEventListener('mousedown', e => {
     if (e.button === 0 && !player.isAttacking) {
         player.isAttacking = true;
-        player.attackAngle = -Math.PI / 3; // Starts swing arc
+        player.attackAngle = -Math.PI / 3;
         performAttack();
     }
 });
@@ -763,7 +768,6 @@ function performAttack() {
             enemy.hp -= currentWeapon.damage;
             if (enemy.hp <= 0) {
                 currentEnemies.splice(i, 1);
-                // Drop resource on kill
                 player.wood += Math.floor(Math.random() * 3) + 1;
                 player.stone += Math.floor(Math.random() * 2);
                 updateHUD();
@@ -827,24 +831,30 @@ function update() {
 
     // Update Enemies
     const currentEnemies = dimEntities[currentDim].enemies;
+    let tookDamage = false;
+
     currentEnemies.forEach(enemy => {
         const angle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
         enemy.x += Math.cos(angle) * enemy.speed;
         enemy.y += Math.sin(angle) * enemy.speed;
 
-        // Collision with player
+        // Collision with player (uses exact same original hitbox radius)
         const dist = Math.hypot(player.x - enemy.x, player.y - enemy.y);
         if (dist < player.radius + enemy.radius) {
-            player.hp -= enemy.damage / 60; // DPS scaled frame by frame
+            player.hp -= enemy.damage / 60;
+            tookDamage = true;
             if (player.hp <= 0) {
                 player.hp = player.maxHp;
                 player.x = HALF_WORLD;
                 player.y = HALF_WORLD;
                 showToast("☠️ You Died!", "Respawned at world center.");
             }
-            updateHUD();
         }
     });
+
+    if (tookDamage) {
+        updateHealthBarOnly();
+    }
 }
 
 function render() {
@@ -857,7 +867,7 @@ function render() {
     ctx.save();
     ctx.translate(camX, camY);
 
-    // Draw Grid / Background
+    // Render Grid / Background
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
     ctx.lineWidth = 1;
     const gridSize = 100;
@@ -866,18 +876,16 @@ function render() {
     const startY = Math.floor((player.y - canvas.height / 2) / gridSize) * gridSize;
     const endY = startY + canvas.height + gridSize * 2;
 
+    ctx.beginPath();
     for (let x = startX; x < endX; x += gridSize) {
-        ctx.beginPath();
         ctx.moveTo(x, startY);
         ctx.lineTo(x, endY);
-        ctx.stroke();
     }
     for (let y = startY; y < endY; y += gridSize) {
-        ctx.beginPath();
         ctx.moveTo(startX, y);
         ctx.lineTo(endX, y);
-        ctx.stroke();
     }
+    ctx.stroke();
 
     // Render Resources
     const currentResources = dimEntities[currentDim].resources;
@@ -912,38 +920,41 @@ function render() {
         ctx.restore();
     });
 
-    // Render Simplified Enemies (Circles with Face Images)
+    // Render Enemies (Visually scaled UP while keeping hitboxes identical)
     const currentEnemies = dimEntities[currentDim].enemies;
     const mobDef = MOB_TYPES[currentDim];
+    
     currentEnemies.forEach(enemy => {
         ctx.save();
         ctx.translate(enemy.x, enemy.y);
 
+        // Visual radius enlarged (1.6x larger visually, hitbox stays original 20)
+        const visualRadius = enemy.radius * 1.6;
+
         // Outer Glow / Border Ring
         ctx.beginPath();
-        ctx.arc(0, 0, enemy.radius + 2, 0, Math.PI * 2);
+        ctx.arc(0, 0, visualRadius + 2, 0, Math.PI * 2);
         ctx.fillStyle = mobDef.borderColor;
         ctx.fill();
 
         // Circular Face Image Clipping
         ctx.beginPath();
-        ctx.arc(0, 0, enemy.radius, 0, Math.PI * 2);
+        ctx.arc(0, 0, visualRadius, 0, Math.PI * 2);
         ctx.clip();
 
         if (enemy.faceImage && enemy.faceImage.complete && enemy.faceImage.naturalWidth !== 0) {
             ctx.drawImage(
                 enemy.faceImage,
-                -enemy.radius,
-                -enemy.radius,
-                enemy.radius * 2,
-                enemy.radius * 2
+                -visualRadius,
+                -visualRadius,
+                visualRadius * 2,
+                visualRadius * 2
             );
         } else {
-            // Fallback avatar color & emoji if image is missing/loading
             ctx.fillStyle = mobDef.color;
-            ctx.fillRect(-enemy.radius, -enemy.radius, enemy.radius * 2, enemy.radius * 2);
+            ctx.fillRect(-visualRadius, -visualRadius, visualRadius * 2, visualRadius * 2);
 
-            ctx.font = '16px sans-serif';
+            ctx.font = '22px sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText(mobDef.emoji, 0, 0);
@@ -951,14 +962,15 @@ function render() {
 
         ctx.restore();
 
-        // Enemy Health Bar (drawn unclipped)
+        // Enemy Health Bar
         ctx.save();
         ctx.translate(enemy.x, enemy.y);
         if (enemy.hp < enemy.maxHp) {
+            const visualRadius = enemy.radius * 1.6;
             ctx.fillStyle = 'rgba(0,0,0,0.6)';
-            ctx.fillRect(-20, -enemy.radius - 12, 40, 5);
+            ctx.fillRect(-20, -visualRadius - 12, 40, 5);
             ctx.fillStyle = '#ef4444';
-            ctx.fillRect(-20, -enemy.radius - 12, (enemy.hp / enemy.maxHp) * 40, 5);
+            ctx.fillRect(-20, -visualRadius - 12, (enemy.hp / enemy.maxHp) * 40, 5);
         }
         ctx.restore();
     });
