@@ -40,7 +40,7 @@
             position: absolute; top: 20px; left: 20px;
             background: rgba(13, 17, 23, 0.82); border: 1px solid rgba(255, 255, 255, 0.12);
             padding: 18px; border-radius: 20px; backdrop-filter: blur(20px);
-            box-shadow: 0 16px 36px rgba(0,0,0,0.6); width: 310px; pointer-events: none; z-index: 10;
+            box-shadow: 0 16px 36px rgba(0,0,0,0.6); width: 320px; pointer-events: none; z-index: 10;
         }
         
         .hud-header { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: #9ca3af; margin-bottom: 8px; display: flex; justify-content: space-between; }
@@ -68,7 +68,7 @@
         .obj-title { font-size: 10px; font-weight: 900; color: #c084fc; text-transform: uppercase; letter-spacing: 1.2px; }
         .obj-desc { font-size: 12px; font-weight: 700; color: #f3f4f6; margin-top: 3px; line-height: 1.3; }
 
-        .resource-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 12px; }
+        .resource-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 12px; }
         .res-card {
             background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08);
             padding: 8px 4px; border-radius: 10px; text-align: center; font-size: 13px; font-weight: 800;
@@ -94,8 +94,9 @@
             font-size: 12px; font-weight: 800; cursor: pointer; transition: all 0.25s ease;
             display: flex; align-items: center; gap: 6px;
         }
-        .dim-btn:hover { background: rgba(255, 255, 255, 0.15); color: #fff; transform: translateY(-2px); }
+        .dim-btn:hover:not(.locked) { background: rgba(255, 255, 255, 0.15); color: #fff; transform: translateY(-2px); }
         .dim-btn.active { background: #3b82f6; border-color: #60a5fa; color: #fff; box-shadow: 0 0 15px rgba(59, 130, 246, 0.5); }
+        .dim-btn.locked { opacity: 0.4; cursor: not-allowed; border-color: rgba(239, 68, 68, 0.4); }
 
         /* Glassmorphism Crafting Panel */
         #crafting-panel {
@@ -153,13 +154,14 @@
 
     <div class="main-objective-box">
         <div class="obj-title">OVERALL QUEST</div>
-        <div id="quest-desc" class="obj-desc">Defeat bosses across dimensions to unlock Aetherion Goliath!</div>
+        <div id="quest-desc" class="obj-desc">Find 5 Portal Shards in Overworld chests to unlock Nether!</div>
     </div>
     
     <div class="resource-grid">
         <div class="res-card">🪵 <span id="wood-val">0</span><small>Wood</small></div>
         <div class="res-card">🪨 <span id="stone-val">0</span><small>Stone</small></div>
         <div class="res-card">💎 <span id="ore-val">0</span><small>Ore</small></div>
+        <div class="res-card">🔮 <span id="shard-val">0/5</span><small>Shards</small></div>
     </div>
 
     <div class="weapon-card">
@@ -170,8 +172,8 @@
 
 <div id="dimension-bar">
     <button class="dim-btn active" id="btn-overworld" onclick="switchDimension('overworld')">🌿 Overworld</button>
-    <button class="dim-btn" id="btn-nether" onclick="switchDimension('nether')">🔥 Nether</button>
-    <button class="dim-btn" id="btn-void" onclick="switchDimension('void')">🔮 The Void</button>
+    <button class="dim-btn locked" id="btn-nether" onclick="switchDimension('nether')">🔒 Nether (5 Shards)</button>
+    <button class="dim-btn locked" id="btn-void" onclick="switchDimension('void')">🔒 The Void (5 Shards)</button>
 </div>
 
 <div id="crafting-panel">
@@ -219,44 +221,16 @@ const WEAPONS = {
     scythe: { id: 'scythe', name: 'Void Scythe', damage: 190, range: 125, rarity: 'Mythic', color: '#c084fc' }
 };
 
-// MOBS DATA WITH CUSTOM IMAGE SPRITES
-// Insert your image paths/URLs in the spriteSrc fields below
+// MOBS DATA MATCHING YOUR FILE DIRECTORY
+// Render ONLY Name and Sprite on Screen
 const MOBS = {
-    goblin: { 
-        name: 'Goblin Scout', 
-        spriteSrc: 'goblin.png', 
-        hp: 100, speed: 2.8, radius: 22, damage: 0.2, dim: 'overworld' 
-    },
-    scout: { 
-        name: 'Wild Hunter', 
-        spriteSrc: 'scout.png', 
-        hp: 140, speed: 2.4, radius: 24, damage: 0.3, dim: 'overworld' 
-    },
-    brute: { 
-        name: 'Orc Brute', 
-        spriteSrc: 'brute.png', 
-        hp: 260, speed: 1.6, radius: 30, damage: 0.6, dim: 'nether' 
-    },
-    fire_fiend: { 
-        name: 'Fire Fiend', 
-        spriteSrc: 'fire_fiend.png', 
-        hp: 200, speed: 2.6, radius: 26, damage: 0.45, dim: 'nether' 
-    },
-    phantom: { 
-        name: 'Phantom Mage', 
-        spriteSrc: 'phantom.png', 
-        hp: 180, speed: 2.2, radius: 24, damage: 0.4, dim: 'void' 
-    },
-    void_stalker: { 
-        name: 'Void Stalker', 
-        spriteSrc: 'void_stalker.png', 
-        hp: 320, speed: 3.0, radius: 28, damage: 0.7, dim: 'void' 
-    },
-    final_boss: { 
-        name: 'Aetherion Goliath', 
-        spriteSrc: 'goliath_boss.png', 
-        hp: 1200, speed: 1.4, radius: 48, damage: 1.2, dim: 'void' 
-    }
+    gerard: { name: 'Gerard', spriteSrc: 'images/Gerard.JPEG', hp: 100, speed: 2.8, radius: 24, damage: 0.25, dim: 'overworld' },
+    jason: { name: 'Jason', spriteSrc: 'images/Jason.JPEG', hp: 130, speed: 2.5, radius: 24, damage: 0.35, dim: 'overworld' },
+    liuji: { name: 'Liu Ji', spriteSrc: 'images/Liu Ji.JPEG', hp: 220, speed: 1.8, radius: 28, damage: 0.55, dim: 'nether' },
+    matthew: { name: 'Matthew', spriteSrc: 'images/Matthew.JPEG', hp: 200, speed: 2.7, radius: 26, damage: 0.45, dim: 'nether' },
+    travia: { name: 'Travia', spriteSrc: 'images/Travia.JPEG', hp: 280, speed: 2.2, radius: 26, damage: 0.6, dim: 'void' },
+    xayven: { name: 'Xayven', spriteSrc: 'images/Xayven.JPEG', hp: 350, speed: 3.0, radius: 30, damage: 0.75, dim: 'void' },
+    xuchen: { name: 'Xuchen', spriteSrc: 'images/Xuchen.JPEG', hp: 1250, speed: 1.5, radius: 46, damage: 1.2, dim: 'void' }
 };
 
 // Preload Sprite Images
@@ -267,7 +241,7 @@ Object.keys(MOBS).forEach(key => {
     loadedSprites[key] = img;
 });
 
-// DIMENSIONS CONFIGURATION
+// DIMENSIONS CONFIG
 const DIMENSIONS = {
     overworld: {
         name: 'OVERWORLD',
@@ -277,7 +251,9 @@ const DIMENSIONS = {
             { name: 'Snow', bg: '#3a5a68' },
             { name: 'Forest', bg: '#14251a' }
         ],
-        mobs: ['goblin', 'scout']
+        mobs: ['gerard', 'jason'],
+        requiredShards: 0,
+        nextDim: 'nether'
     },
     nether: {
         name: 'NETHER',
@@ -287,7 +263,9 @@ const DIMENSIONS = {
             { name: 'Basalt Delta', bg: '#1c1917' },
             { name: 'Lava Ridges', bg: '#7f1d1d' }
         ],
-        mobs: ['brute', 'fire_fiend']
+        mobs: ['liuji', 'matthew'],
+        requiredShards: 5,
+        nextDim: 'void'
     },
     void: {
         name: 'THE VOID',
@@ -297,15 +275,19 @@ const DIMENSIONS = {
             { name: 'Ender Wastes', bg: '#1e1b4b' },
             { name: 'Starfall Ruins', bg: '#312e81' }
         ],
-        mobs: ['phantom', 'void_stalker']
+        mobs: ['travia', 'xayven'],
+        requiredShards: 5,
+        nextDim: null
     }
 };
 
-// GAME STATE
+// GAME STATE WITH DATA PERSISTENCE
 let currentDim = 'overworld';
 let player = {
     x: HALF_WORLD, y: HALF_WORLD, radius: 18, speed: 5.2,
     hp: 100, maxHp: 100, wood: 0, stone: 0, ore: 0,
+    shards: { overworld: 0, nether: 0, void: 0 },
+    unlockedDims: { overworld: true, nether: false, void: false },
     weaponKey: 'stick', weapon: WEAPONS.stick, facingAngle: 0,
     isAttacking: false, attackProgress: 0, currentBiome: ''
 };
@@ -320,7 +302,43 @@ let particles = [];
 let floatingTexts = [];
 let gameTime = 0;
 
-setInterval(() => { gameTime++; updateTimeDisplay(); }, 1000);
+// LOAD PERSISTED DATA
+function loadSavedData() {
+    const saved = localStorage.getItem('rpg_save_data');
+    if (saved) {
+        try {
+            const data = JSON.parse(saved);
+            player.wood = data.wood || 0;
+            player.stone = data.stone || 0;
+            player.ore = data.ore || 0;
+            player.shards = data.shards || { overworld: 0, nether: 0, void: 0 };
+            player.unlockedDims = data.unlockedDims || { overworld: true, nether: false, void: false };
+            if (data.weaponKey && WEAPONS[data.weaponKey]) {
+                player.weaponKey = data.weaponKey;
+                player.weapon = WEAPONS[data.weaponKey];
+            }
+            gameTime = data.gameTime || 0;
+        } catch (e) {
+            console.error("Could not load save data", e);
+        }
+    }
+}
+
+function saveData() {
+    const data = {
+        wood: player.wood,
+        stone: player.stone,
+        ore: player.ore,
+        shards: player.shards,
+        unlockedDims: player.unlockedDims,
+        weaponKey: player.weaponKey,
+        gameTime: gameTime
+    };
+    localStorage.setItem('rpg_save_data', JSON.stringify(data));
+}
+
+loadSavedData();
+setInterval(() => { gameTime++; updateTimeDisplay(); saveData(); }, 1000);
 
 function updateTimeDisplay() {
     const mins = Math.floor(gameTime / 60).toString().padStart(2, '0');
@@ -328,7 +346,7 @@ function updateTimeDisplay() {
     document.getElementById('time-val').innerText = `${mins}:${secs}`;
 }
 
-// GENERATE DIMENSIONAL WORLD DATA
+// GENERATE WORLD & STRUCTURES
 function initWorldData() {
     Object.keys(DIMENSIONS).forEach(dim => {
         // Resources
@@ -343,17 +361,22 @@ function initWorldData() {
             });
         }
 
-        // Structures with Loot Chests
+        // Structures with Loot Chests (Guaranteed Portal Shards)
+        let shardsInStructures = 5;
         for (let i = 0; i < 25; i++) {
+            const hasShard = shardsInStructures > 0 && Math.random() < 0.3;
+            if (hasShard) shardsInStructures--;
+            
             dimEntities[dim].structures.push({
                 x: Math.random() * (WORLD_SIZE - 600) + 300,
                 y: Math.random() * (WORLD_SIZE - 600) + 300,
                 width: 140, height: 140,
-                hasChest: true, chestOpened: false
+                hasChest: true, chestOpened: false,
+                containsShard: hasShard
             });
         }
 
-        // Mobs Specific to Dimensions (Showing ONLY Name and Image Sprite)
+        // Mobs Specific to Dimensions
         const mobKeys = DIMENSIONS[dim].mobs;
         for (let i = 0; i < 70; i++) {
             const mKey = mobKeys[Math.floor(Math.random() * mobKeys.length)];
@@ -366,12 +389,12 @@ function initWorldData() {
         }
     });
 
-    // Final Boss Spawn
+    // Final Boss Xuchen Spawn
     dimEntities['void'].enemies.push({
-        key: 'final_boss', x: HALF_WORLD, y: HALF_WORLD - 200,
-        hp: MOBS.final_boss.hp, maxHp: MOBS.final_boss.hp, radius: MOBS.final_boss.radius,
-        speed: MOBS.final_boss.speed, damage: MOBS.final_boss.damage,
-        name: MOBS.final_boss.name, hitFlash: 0, isBoss: true
+        key: 'xuchen', x: HALF_WORLD, y: HALF_WORLD - 200,
+        hp: MOBS.xuchen.hp, maxHp: MOBS.xuchen.hp, radius: MOBS.xuchen.radius,
+        speed: MOBS.xuchen.speed, damage: MOBS.xuchen.damage,
+        name: MOBS.xuchen.name, hitFlash: 0, isBoss: true
     });
 }
 
@@ -384,16 +407,21 @@ window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
 window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
 window.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
 
-// DIMENSION SWITCHING
+// DIMENSION TELEPORTATION & SHARD UNLOCK CHECK
 function switchDimension(dimName) {
+    if (!player.unlockedDims[dimName]) {
+        showToast("🔒", `LOCKED! COLLECT 5 SHARDS FIRST!`);
+        return;
+    }
     if (currentDim === dimName) return;
     currentDim = dimName;
     document.querySelectorAll('.dim-btn').forEach(btn => btn.classList.remove('active'));
     document.getElementById(`btn-${dimName}`).classList.add('active');
     showToast("🌀", `TELEPORTED TO ${DIMENSIONS[dimName].name}`);
+    updateHUD();
 }
 
-// ATTACK HANDLING
+// ATTACK & INTERACTION
 canvas.addEventListener('pointerdown', () => {
     if (player.hp <= 0) return;
 
@@ -420,24 +448,41 @@ canvas.addEventListener('pointerdown', () => {
                 if (res.type === 'ore') player.ore += Math.floor(Math.random() * 3) + 1;
                 currentData.resources.splice(index, 1);
                 updateHUD();
+                saveData();
             }
         }
     });
 
-    // Open Chests
+    // Open Structures & Retrieve Portal Shards
     currentData.structures.forEach(struct => {
         if (struct.hasChest && !struct.chestOpened) {
             if (Math.hypot(struct.x - player.x, struct.y - player.y) <= player.weapon.range + 30) {
                 struct.chestOpened = true;
                 player.wood += 20; player.stone += 20; player.ore += 15;
-                showToast("🎁", "CHEST OPENED: +20W +20S +15O!");
+
+                let extraMsg = "";
+                if (struct.containsShard && player.shards[currentDim] < 5) {
+                    player.shards[currentDim]++;
+                    extraMsg = ` + 🔮 PORTAL SHARD (${player.shards[currentDim]}/5)!`;
+
+                    if (player.shards[currentDim] >= 5) {
+                        const nextDim = DIMENSIONS[currentDim].nextDim;
+                        if (nextDim) {
+                            player.unlockedDims[nextDim] = true;
+                            showToast("🌟", `${DIMENSIONS[nextDim].name} DIMENSION UNLOCKED!`);
+                        }
+                    }
+                }
+
+                showToast("🎁", `CHEST OPENED: +20W +20S +15O${extraMsg}`);
                 createParticles(struct.x, struct.y, "#facc15", 25);
                 updateHUD();
+                saveData();
             }
         }
     });
 
-    // Damage Enemies
+    // Damage Mobs
     currentData.enemies.forEach((enemy, index) => {
         if (Math.hypot(enemy.x - player.x, enemy.y - player.y) <= player.weapon.range + enemy.radius) {
             let isCrit = Math.random() < 0.25;
@@ -455,10 +500,11 @@ canvas.addEventListener('pointerdown', () => {
             if (enemy.hp <= 0) {
                 createParticles(enemy.x, enemy.y, '#ef4444', 20);
                 if (enemy.isBoss) {
-                    showToast("🏆", `${enemy.name.toUpperCase()} DEFEATED! YOU WIN!`);
+                    showToast("🏆", `${enemy.name.toUpperCase()} DEFEATED! YOU WIN THE GAME!`);
                 }
                 currentData.enemies.splice(index, 1);
                 updateHUD();
+                saveData();
             }
         }
     });
@@ -514,7 +560,7 @@ function update() {
         if (player.attackProgress >= 1) { player.isAttacking = false; player.attackProgress = 0; }
     }
 
-    // Biome Updates
+    // Biome Check
     const dimConfig = DIMENSIONS[currentDim];
     let biomeIdx = 0;
     if (player.x >= HALF_WORLD && player.y < HALF_WORLD) biomeIdx = 1;
@@ -532,7 +578,7 @@ function update() {
         if (p.alpha <= 0) particles.splice(i, 1);
     });
 
-    // Enemy Movement & Attack
+    // Enemy AI Movement
     const currentData = dimEntities[currentDim];
     currentData.enemies.forEach(enemy => {
         if (enemy.hitFlash > 0) enemy.hitFlash--;
@@ -581,7 +627,7 @@ function draw() {
         ctx.strokeRect(sx - struct.width / 2, sy - struct.height / 2, struct.width, struct.height);
 
         if (struct.hasChest) {
-            ctx.fillStyle = struct.chestOpened ? "#64748b" : "#fbbf24";
+            ctx.fillStyle = struct.chestOpened ? "#64748b" : struct.containsShard ? "#c084fc" : "#fbbf24";
             ctx.fillRect(sx - 12, sy - 12, 24, 24);
         }
     });
@@ -602,7 +648,7 @@ function draw() {
         ctx.restore();
     });
 
-    // RENDER ENEMIES WITH CUSTOM IMAGE SPRITES & ONLY DISPLAY THEIR NAME
+    // RENDER ENEMIES WITH CUSTOM IMAGE SPRITE & ONLY DISPLAY THEIR NAME
     currentData.enemies.forEach(e => {
         const ex = e.x - cameraX, ey = e.y - cameraY;
         const sprite = loadedSprites[e.key];
@@ -614,7 +660,7 @@ function draw() {
         if (sprite && sprite.complete && sprite.naturalWidth !== 0) {
             ctx.drawImage(sprite, ex - e.radius, ey - e.radius, e.radius * 2, e.radius * 2);
         } else {
-            // Fallback Circle if image path is not loaded yet
+            // Fallback Circle
             ctx.fillStyle = "#a855f7";
             ctx.beginPath(); ctx.arc(ex, ey, e.radius, 0, Math.PI * 2); ctx.fill();
         }
@@ -626,7 +672,7 @@ function draw() {
         ctx.textAlign = "center";
         ctx.fillText(e.name, ex, ey - e.radius - 18);
 
-        // Health Bar Above Sprite
+        // Overhead Health Bar
         const barW = 38, barH = 4;
         ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillRect(ex - barW / 2, ey - e.radius - 12, barW, barH);
         const hpPct = Math.max(0, e.hp / e.maxHp);
@@ -694,14 +740,37 @@ function updateHUD() {
     document.getElementById('wood-val').innerText = player.wood;
     document.getElementById('stone-val').innerText = player.stone;
     document.getElementById('ore-val').innerText = player.ore;
+    document.getElementById('shard-val').innerText = `${player.shards[currentDim]}/5`;
     
+    // Quest Description Dynamic Update
+    const qDesc = document.getElementById('quest-desc');
+    if (currentDim === 'overworld') {
+        qDesc.innerText = player.unlockedDims.nether ? "Nether Unlocked! Teleport to Nether." : `Find 5 Portal Shards in Overworld chests (${player.shards.overworld}/5)!`;
+    } else if (currentDim === 'nether') {
+        qDesc.innerText = player.unlockedDims.void ? "The Void Unlocked! Teleport to The Void." : `Find 5 Portal Shards in Nether chests (${player.shards.nether}/5)!`;
+    } else {
+        qDesc.innerText = "Defeat the final boss Xuchen in The Void to complete the game!";
+    }
+
+    // Update Teleport Lock States
+    const btnNether = document.getElementById('btn-nether');
+    if (player.unlockedDims.nether) {
+        btnNether.classList.remove('locked');
+        btnNether.innerText = "🔥 Nether";
+    }
+
+    const btnVoid = document.getElementById('btn-void');
+    if (player.unlockedDims.void) {
+        btnVoid.classList.remove('locked');
+        btnVoid.innerText = "🔮 The Void";
+    }
+
     let wElem = document.getElementById('weapon-val');
     wElem.innerText = player.weapon.name;
     wElem.className = `rarity-${player.weapon.rarity}`;
 }
 
 function showToast(icon, msg) {
-    const container = document.getElementById('toast-container');
     const toast = document.getElementById('toast-msg');
     toast.children[0].innerText = icon;
     toast.children[1].innerText = msg;
@@ -729,6 +798,7 @@ function craftItem(type) {
         showToast("⚠️", "NOT ENOUGH MATERIALS!");
     }
     updateHUD();
+    saveData();
 }
 
 updateHUD();
