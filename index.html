@@ -249,14 +249,15 @@ const WEAPONS = {
     scythe: { id: 'scythe', name: 'Void Scythe', damage: 190, range: 130, rarity: 'Mythic', color: '#c084fc' }
 };
 
+// MATCHED EXACTLY TO LOWERCASE GITHUB REPO FILE NAMES
 const MOBS_CONFIG = {
-    gerard:  { name: 'Gerard', spriteSrc: 'images/Gerard.JPEG', hp: 100, speed: 2.8, radius: 24, damage: 0.25, fallbackColor: '#ef4444' },
-    jason:   { name: 'Jason', spriteSrc: 'images/Jason.JPEG', hp: 130, speed: 2.5, radius: 24, damage: 0.35, fallbackColor: '#f97316' },
-    liuji:   { name: 'Liu Ji', spriteSrc: 'images/Liu%20Ji.JPEG', hp: 220, speed: 1.8, radius: 28, damage: 0.55, fallbackColor: '#dc2626' },
-    matthew: { name: 'Matthew', spriteSrc: 'images/Matthew.JPEG', hp: 200, speed: 2.7, radius: 26, damage: 0.45, fallbackColor: '#b91c1c' },
-    travia:  { name: 'Travia', spriteSrc: 'images/Travia.JPEG', hp: 280, speed: 2.2, radius: 26, damage: 0.60, fallbackColor: '#9333ea' },
-    xayven:  { name: 'Xayven', spriteSrc: 'images/Xayven.JPEG', hp: 350, speed: 3.0, radius: 30, damage: 0.75, fallbackColor: '#7e22ce' },
-    xuchen:  { name: 'Xuchen', spriteSrc: 'images/Xuchen.JPEG', hp: 1250, speed: 1.5, radius: 46, damage: 1.20, fallbackColor: '#a855f7', isBoss: true }
+    gerard:  { name: 'Gerard', spriteSrc: 'images/gerard.jpeg', hp: 100, speed: 2.8, radius: 24, damage: 0.25, fallbackColor: '#ef4444' },
+    jason:   { name: 'Jason', spriteSrc: 'images/jason.jpeg', hp: 130, speed: 2.5, radius: 24, damage: 0.35, fallbackColor: '#f97316' },
+    liuji:   { name: 'Liu Ji', spriteSrc: 'images/liu-ji.jpeg', hp: 220, speed: 1.8, radius: 28, damage: 0.55, fallbackColor: '#dc2626' },
+    matthew: { name: 'Matthew', spriteSrc: 'images/matthew.jpeg', hp: 200, speed: 2.7, radius: 26, damage: 0.45, fallbackColor: '#b91c1c' },
+    travia:  { name: 'Travia', spriteSrc: 'images/travia.jpeg', hp: 280, speed: 2.2, radius: 26, damage: 0.60, fallbackColor: '#9333ea' },
+    xayven:  { name: 'Xayven', spriteSrc: 'images/xayven.jpeg', hp: 350, speed: 3.0, radius: 30, damage: 0.75, fallbackColor: '#7e22ce' },
+    xuchen:  { name: 'Xuchen', spriteSrc: 'images/xuchen.jpeg', hp: 1250, speed: 1.5, radius: 46, damage: 1.20, fallbackColor: '#a855f7', isBoss: true }
 };
 
 const loadedSprites = {};
@@ -273,30 +274,30 @@ const DIMENSIONS = {
     overworld: {
         id: 'overworld', name: 'OVERWORLD',
         biomes: [
-            { name: 'Verdant Plains', bg: '#0b291a', grid: '#133e28', decor: '#1e5336' },
-            { name: 'Sunburnt Dunes', bg: '#2b1d0c', grid: '#3d2b14', decor: '#4f391c' },
-            { name: 'Frostbite Tundra', bg: '#0f2332', grid: '#173347', decor: '#214660' },
-            { name: 'Shadowwood Forest', bg: '#0f1d16', grid: '#182f24', decor: '#224233' }
+            { name: 'Verdant Plains', bg: '#0b291a', grid: '#133e28' },
+            { name: 'Sunburnt Dunes', bg: '#2b1d0c', grid: '#3d2b14' },
+            { name: 'Frostbite Tundra', bg: '#0f2332', grid: '#173347' },
+            { name: 'Shadowwood Forest', bg: '#0f1d16', grid: '#182f24' }
         ],
         mobs: ['gerard', 'jason'], requiredShards: 0, nextDim: 'nether'
     },
     nether: {
         id: 'nether', name: 'NETHER',
         biomes: [
-            { name: 'Crimson Wastes', bg: '#2b0707', grid: '#400c0c', decor: '#571212' },
-            { name: 'Ash Valley', bg: '#17171a', grid: '#242429', decor: '#33333b' },
-            { name: 'Basalt Delta', bg: '#1c1510', grid: '#2b211a', decor: '#3d2e24' },
-            { name: 'Lava Ridges', bg: '#360a02', grid: '#4d1004', decor: '#661707' }
+            { name: 'Crimson Wastes', bg: '#2b0707', grid: '#400c0c' },
+            { name: 'Ash Valley', bg: '#17171a', grid: '#242429' },
+            { name: 'Basalt Delta', bg: '#1c1510', grid: '#2b211a' },
+            { name: 'Lava Ridges', bg: '#360a02', grid: '#4d1004' }
         ],
         mobs: ['liuji', 'matthew'], requiredShards: 5, nextDim: 'void'
     },
     void: {
         id: 'void', name: 'THE VOID',
         biomes: [
-            { name: 'Astral Abyss', bg: '#15092b', grid: '#231142', decor: '#32195e' },
-            { name: 'Nebula Ridges', bg: '#1f0933', grid: '#30104e', decor: '#43176d' },
-            { name: 'Ender Wastes', bg: '#0b0821', grid: '#141036', decor: '#1e184e' },
-            { name: 'Starfall Ruins', bg: '#100c2e', grid: '#1a1447', decor: '#261f63' }
+            { name: 'Astral Abyss', bg: '#15092b', grid: '#231142' },
+            { name: 'Nebula Ridges', bg: '#1f0933', grid: '#30104e' },
+            { name: 'Ender Wastes', bg: '#0b0821', grid: '#141036' },
+            { name: 'Starfall Ruins', bg: '#100c2e', grid: '#1a1447' }
         ],
         mobs: ['travia', 'xayven'], requiredShards: 5, nextDim: null
     }
@@ -410,8 +411,7 @@ function initWorld() {
                 type: type,
                 hp: type === 'ore' ? 4 : type === 'stone' ? 3 : 2,
                 maxHp: type === 'ore' ? 4 : type === 'stone' ? 3 : 2,
-                scale: 1,
-                rotation: Math.random() * Math.PI * 2
+                scale: 1
             });
         }
 
@@ -655,34 +655,38 @@ function update() {
     });
 }
 
-// --- GRAPHICS RENDERING HELPERS ---
+// FIXED: WORLD-ANCHORED BIOME TILING
 function drawBiomeSquare(x, y, w, h, biome, camX, camY) {
     const rx = x - camX, ry = y - camY;
     if (rx + w < 0 || rx > canvas.width || ry + h < 0 || ry > canvas.height) return;
     
-    // Biome Ground Base
+    // Solid Biome Base
     ctx.fillStyle = biome.bg;
     ctx.fillRect(rx, ry, w, h);
 
-    // Grid Texture Pattern
+    // Grid lines tied to WORLD coordinates (not screen coordinates)
     ctx.strokeStyle = biome.grid;
-    ctx.lineWidth = 1;
-    const step = 100;
-    const startX = Math.floor(Math.max(rx, 0) / step) * step;
-    const endX = Math.min(rx + w, canvas.width);
-    const startY = Math.floor(Math.max(ry, 0) / step) * step;
-    const endY = Math.min(ry + h, canvas.height);
+    ctx.lineWidth = 1.5;
+    const step = 120;
 
-    for (let gx = startX; gx < endX; gx += step) {
+    const startX = Math.floor(Math.max(x, camX) / step) * step;
+    const endX = Math.min(x + w, camX + canvas.width);
+    const startY = Math.floor(Math.max(y, camY) / step) * step;
+    const endY = Math.min(y + h, camY + canvas.height);
+
+    for (let worldX = startX; worldX <= endX; worldX += step) {
+        const screenX = worldX - camX;
         ctx.beginPath();
-        ctx.moveTo(gx, Math.max(ry, 0));
-        ctx.lineTo(gx, endY);
+        ctx.moveTo(screenX, Math.max(ry, 0));
+        ctx.lineTo(screenX, Math.min(ry + h, canvas.height));
         ctx.stroke();
     }
-    for (let gy = startY; gy < endY; gy += step) {
+
+    for (let worldY = startY; worldY <= endY; worldY += step) {
+        const screenY = worldY - camY;
         ctx.beginPath();
-        ctx.moveTo(Math.max(rx, 0), gy);
-        ctx.lineTo(endX, gy);
+        ctx.moveTo(Math.max(rx, 0), screenY);
+        ctx.lineTo(Math.min(rx + w, canvas.width), screenY);
         ctx.stroke();
     }
 }
@@ -693,7 +697,7 @@ function drawResource(res, rx, ry) {
     ctx.scale(res.scale, res.scale);
 
     if (res.type === 'tree') {
-        // Tree Shadow
+        // Shadow
         ctx.fillStyle = 'rgba(0,0,0,0.25)';
         ctx.beginPath();
         ctx.ellipse(0, 18, 22, 10, 0, 0, Math.PI * 2);
@@ -703,69 +707,43 @@ function drawResource(res, rx, ry) {
         ctx.fillStyle = '#78350f';
         ctx.fillRect(-5, -5, 10, 22);
 
-        // Leaves Foliage (Multi-layered pine tree)
+        // Pine Foliage
         ctx.fillStyle = '#047857';
-        ctx.beginPath();
-        ctx.arc(0, -12, 22, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.beginPath(); ctx.arc(0, -12, 22, 0, Math.PI * 2); ctx.fill();
 
         ctx.fillStyle = '#10b981';
-        ctx.beginPath();
-        ctx.arc(-6, -18, 14, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.beginPath(); ctx.arc(-6, -18, 14, 0, Math.PI * 2); ctx.fill();
 
         ctx.fillStyle = '#34d399';
-        ctx.beginPath();
-        ctx.arc(4, -22, 10, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.beginPath(); ctx.arc(4, -22, 10, 0, Math.PI * 2); ctx.fill();
     } else if (res.type === 'stone') {
-        // Rock Base & Shadow
         ctx.fillStyle = 'rgba(0,0,0,0.3)';
         ctx.beginPath();
         ctx.ellipse(0, 10, 18, 8, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        // Bouldered Stone Shape
         ctx.fillStyle = '#64748b';
         ctx.beginPath();
-        ctx.moveTo(-16, 8);
-        ctx.lineTo(-20, -6);
-        ctx.lineTo(-6, -18);
-        ctx.lineTo(14, -14);
-        ctx.lineTo(20, 4);
-        ctx.lineTo(8, 14);
-        ctx.closePath();
-        ctx.fill();
+        ctx.moveTo(-16, 8); ctx.lineTo(-20, -6); ctx.lineTo(-6, -18);
+        ctx.lineTo(14, -14); ctx.lineTo(20, 4); ctx.lineTo(8, 14);
+        ctx.closePath(); ctx.fill();
 
-        // Stone Highlight Facet
         ctx.fillStyle = '#94a3b8';
         ctx.beginPath();
-        ctx.moveTo(-6, -18);
-        ctx.lineTo(14, -14);
-        ctx.lineTo(2, -2);
-        ctx.lineTo(-12, -4);
-        ctx.closePath();
-        ctx.fill();
+        ctx.moveTo(-6, -18); ctx.lineTo(14, -14); ctx.lineTo(2, -2); ctx.lineTo(-12, -4);
+        ctx.closePath(); ctx.fill();
     } else if (res.type === 'ore') {
-        // Glowing Ore Node
         ctx.fillStyle = 'rgba(0,0,0,0.35)';
         ctx.beginPath();
         ctx.ellipse(0, 10, 20, 8, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        // Dark Ore Base Rock
         ctx.fillStyle = '#334155';
         ctx.beginPath();
-        ctx.moveTo(-18, 6);
-        ctx.lineTo(-14, -14);
-        ctx.lineTo(10, -18);
-        ctx.lineTo(18, -2);
-        ctx.lineTo(12, 12);
-        ctx.lineTo(-10, 14);
-        ctx.closePath();
-        ctx.fill();
+        ctx.moveTo(-18, 6); ctx.lineTo(-14, -14); ctx.lineTo(10, -18);
+        ctx.lineTo(18, -2); ctx.lineTo(12, 12); ctx.lineTo(-10, 14);
+        ctx.closePath(); ctx.fill();
 
-        // Glowing Crystals
         ctx.fillStyle = '#06b6d4';
         ctx.shadowColor = '#38bdf8';
         ctx.shadowBlur = 10;
@@ -786,16 +764,13 @@ function drawStructure(struct, cameraX, cameraY) {
     const sx = struct.x - cameraX, sy = struct.y - cameraY;
     if (sx < -150 || sx > canvas.width + 150 || sy < -150 || sy > canvas.height + 150) return;
 
-    // Ancient Ruin Floor
     ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
     ctx.fillRect(sx - struct.width / 2, sy - struct.height / 2, struct.width, struct.height);
     
-    // Border Pillars
     ctx.strokeStyle = struct.containsShard && !struct.chestOpened ? '#c084fc' : '#475569';
     ctx.lineWidth = 3;
     ctx.strokeRect(sx - struct.width / 2, sy - struct.height / 2, struct.width, struct.height);
 
-    // Chest Object
     if (struct.hasChest) {
         ctx.fillStyle = 'rgba(0,0,0,0.4)';
         ctx.fillRect(sx - 14, sy - 10, 28, 24);
@@ -809,7 +784,6 @@ function drawStructure(struct, cameraX, cameraY) {
             ctx.fillStyle = struct.containsShard ? '#9333ea' : '#d97706';
             ctx.fillRect(sx - 12, sy - 12, 24, 20);
 
-            // Lock / Latch
             ctx.fillStyle = struct.containsShard ? '#e9d5ff' : '#fef08a';
             ctx.fillRect(sx - 3, sy - 4, 6, 8);
         }
@@ -823,7 +797,7 @@ function draw() {
 
     const dimConfig = DIMENSIONS[currentDim];
 
-    // Render Biomes Backgrounds
+    // Render Biome Terrain & World-Grounded Grid
     drawBiomeSquare(0, 0, HALF_WORLD, HALF_WORLD, dimConfig.biomes[0], cameraX, cameraY);
     drawBiomeSquare(HALF_WORLD, 0, HALF_WORLD, HALF_WORLD, dimConfig.biomes[1], cameraX, cameraY);
     drawBiomeSquare(0, HALF_WORLD, HALF_WORLD, HALF_WORLD, dimConfig.biomes[2], cameraX, cameraY);
@@ -831,7 +805,7 @@ function draw() {
 
     const currentData = dimEntities[currentDim];
 
-    // Render Ruins & Structures
+    // Render Ruins
     currentData.structures.forEach(struct => drawStructure(struct, cameraX, cameraY));
 
     // Render Resources
@@ -842,14 +816,13 @@ function draw() {
         }
     });
 
-    // Render Enemies & Mobs
+    // Render Enemies
     currentData.enemies.forEach(enemy => {
         const ex = enemy.x - cameraX, ey = enemy.y - cameraY;
         if (ex < -50 || ex > canvas.width + 50 || ey < -50 || ey > canvas.height + 50) return;
 
         const sprite = loadedSprites[enemy.key];
 
-        // Enemy Shadow
         ctx.fillStyle = 'rgba(0,0,0,0.35)';
         ctx.beginPath();
         ctx.ellipse(ex, ey + enemy.radius * 0.8, enemy.radius * 0.9, enemy.radius * 0.4, 0, 0, Math.PI * 2);
@@ -869,14 +842,13 @@ function draw() {
             ctx.arc(ex, ey, enemy.radius, 0, Math.PI * 2);
             ctx.stroke();
         } else {
-            // Fallback Circle
             ctx.fillStyle = enemy.hitFlash > 0 ? '#ffffff' : MOBS_CONFIG[enemy.key].fallbackColor;
             ctx.beginPath();
             ctx.arc(ex, ey, enemy.radius, 0, Math.PI * 2);
             ctx.fill();
         }
 
-        // ENEMY NAME TAG & HP BAR
+        // Enemy Name
         ctx.font = 'bold 11px "Plus Jakarta Sans", sans-serif';
         ctx.textAlign = 'center';
         ctx.fillStyle = '#f3f4f6';
@@ -893,7 +865,7 @@ function draw() {
         ctx.fillRect(ex - barWidth / 2, ey - enemy.radius - 9, (Math.max(0, enemy.hp) / enemy.maxHp) * barWidth, 5);
     });
 
-    // Render Particles
+    // Particles
     particles.forEach(p => {
         ctx.fillStyle = p.color;
         ctx.globalAlpha = p.alpha;
@@ -903,12 +875,11 @@ function draw() {
         ctx.globalAlpha = 1.0;
     });
 
-    // Render Player
+    // Player
     const px = canvas.width / 2, py = canvas.height / 2;
     ctx.save();
     ctx.translate(px, py);
 
-    // Player Shadow
     ctx.fillStyle = 'rgba(0,0,0,0.35)';
     ctx.beginPath();
     ctx.ellipse(0, 14, player.radius * 0.9, player.radius * 0.4, 0, 0, Math.PI * 2);
@@ -916,7 +887,6 @@ function draw() {
 
     ctx.rotate(player.facingAngle);
 
-    // Weapon Swing
     ctx.strokeStyle = player.weapon.color;
     ctx.lineWidth = 6;
     ctx.lineCap = 'round';
@@ -925,7 +895,6 @@ function draw() {
     ctx.lineTo(player.weapon.range, 0);
     ctx.stroke();
 
-    // Player Avatar Circle
     ctx.fillStyle = '#6366f1';
     ctx.beginPath();
     ctx.arc(0, 0, player.radius, 0, Math.PI * 2);
@@ -935,7 +904,6 @@ function draw() {
     ctx.lineWidth = 3;
     ctx.stroke();
 
-    // Eye Indicators
     ctx.fillStyle = '#ffffff';
     ctx.beginPath();
     ctx.arc(6, -5, 3.5, 0, Math.PI * 2);
