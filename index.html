@@ -3,277 +3,331 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dimensional Survival RPG</title>
+    <title>Survival Realm: Multi-Dimensional Quest</title>
+    
+    <!-- Google Fonts & Tailwind CSS CDN -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800;900&display=swap');
+        :root {
+            --font-sans: 'Plus Jakarta Sans', sans-serif;
+            --font-display: 'Space Grotesk', sans-serif;
+        }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-        body { background: #05070a; color: #f3f4f6; font-family: 'Plus Jakarta Sans', sans-serif; overflow: hidden; }
-        
-        #gameCanvas { display: block; width: 100vw; height: 100vh; background: #05070a; cursor: crosshair; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
 
-        /* Damage Vignette */
+        body {
+            background-color: #030712;
+            color: #f9fafb;
+            font-family: var(--font-sans);
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #gameCanvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            background: #030712;
+            cursor: crosshair;
+        }
+
+        /* Glassmorphism Cards */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .glass-panel-glow {
+            box-shadow: 0 0 30px rgba(99, 102, 241, 0.2), 0 20px 50px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+
+        /* Damage Screen Vignette Flash */
         #damage-flash {
-            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: radial-gradient(circle, rgba(239, 68, 68, 0) 40%, rgba(239, 68, 68, 0.7) 100%);
-            pointer-events: none; opacity: 0; transition: opacity 0.15s ease-out; z-index: 5;
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle, rgba(239, 68, 68, 0) 30%, rgba(239, 68, 68, 0.65) 100%);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s ease-out;
+            z-index: 5;
         }
 
-        /* Dimension & Biome Toast */
-        #toast-container {
-            position: absolute; top: 25px; left: 50%; transform: translateX(-50%);
-            display: flex; flex-direction: column; align-items: center; gap: 8px; z-index: 20; pointer-events: none;
+        /* Custom Scrollbar for Crafting */
+        ::-webkit-scrollbar {
+            width: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 99px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.5);
+            border-radius: 99px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(129, 140, 248, 0.8);
         }
 
-        .toast {
-            font-size: 14px; font-weight: 800; letter-spacing: 1.2px; color: #ffffff;
-            background: rgba(13, 17, 23, 0.85); border: 1px solid rgba(255, 255, 255, 0.18);
-            padding: 10px 24px; border-radius: 99px; backdrop-filter: blur(16px);
-            box-shadow: 0 15px 35px rgba(0,0,0,0.6); opacity: 0; transform: translateY(-15px) scale(0.95);
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            display: flex; align-items: center; gap: 10px;
-        }
-        .toast.show { opacity: 1; transform: translateY(0) scale(1); }
-
-        /* HUD Card */
-        #stats-hud {
-            position: absolute; top: 20px; left: 20px;
-            background: rgba(13, 17, 23, 0.82); border: 1px solid rgba(255, 255, 255, 0.12);
-            padding: 18px; border-radius: 20px; backdrop-filter: blur(20px);
-            box-shadow: 0 16px 36px rgba(0,0,0,0.6); width: 320px; pointer-events: none; z-index: 10;
-        }
-        
-        .hud-header { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: #9ca3af; margin-bottom: 8px; display: flex; justify-content: space-between; }
-        
-        .hp-bar-outer {
-            width: 100%; height: 18px; background: rgba(255, 255, 255, 0.08);
-            border-radius: 99px; overflow: hidden; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.08);
-            position: relative;
-        }
-        .hp-bar-inner {
-            height: 100%; width: 100%; background: linear-gradient(90deg, #ef4444, #f87171);
-            border-radius: 99px; transition: width 0.25s ease;
-        }
-        .hp-text {
-            position: absolute; width: 100%; top: 0; left: 0; height: 100%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 11px; font-weight: 800; color: #ffffff; text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+        /* Pulsing Shard Icon Animation */
+        @keyframes shardGlow {
+            0%, 100% { filter: drop-shadow(0 0 6px rgba(192, 132, 252, 0.8)); transform: scale(1); }
+            50% { filter: drop-shadow(0 0 14px rgba(192, 132, 252, 1)); transform: scale(1.08); }
         }
 
-        .main-objective-box {
-            background: linear-gradient(135deg, rgba(147, 51, 234, 0.18), rgba(59, 130, 246, 0.18));
-            border: 1px solid rgba(168, 85, 247, 0.35);
-            border-radius: 12px; padding: 10px 12px; margin-bottom: 12px;
-        }
-        .obj-title { font-size: 10px; font-weight: 900; color: #c084fc; text-transform: uppercase; letter-spacing: 1.2px; }
-        .obj-desc { font-size: 12px; font-weight: 700; color: #f3f4f6; margin-top: 3px; line-height: 1.3; }
-
-        .resource-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 12px; }
-        .res-card {
-            background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08);
-            padding: 8px 4px; border-radius: 10px; text-align: center; font-size: 13px; font-weight: 800;
-        }
-        .res-card small { display: block; font-size: 9px; color: #9ca3af; font-weight: 600; margin-top: 2px; }
-
-        .weapon-card {
-            display: flex; align-items: center; justify-content: space-between;
-            background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08);
-            padding: 8px 12px; border-radius: 10px; font-size: 12px; font-weight: 700;
+        .shard-pulse {
+            animation: shardGlow 2.5s infinite ease-in-out;
         }
 
-        /* Dimension Teleport Buttons */
-        #dimension-bar {
-            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-            display: flex; gap: 10px; background: rgba(13, 17, 23, 0.88); border: 1px solid rgba(255, 255, 255, 0.15);
-            padding: 8px; border-radius: 99px; backdrop-filter: blur(16px);
-            box-shadow: 0 16px 36px rgba(0,0,0,0.6); z-index: 15;
-        }
-        .dim-btn {
-            background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #d1d5db; padding: 10px 18px; border-radius: 99px; font-family: inherit;
-            font-size: 12px; font-weight: 800; cursor: pointer; transition: all 0.25s ease;
-            display: flex; align-items: center; gap: 6px;
-        }
-        .dim-btn:hover:not(.locked) { background: rgba(255, 255, 255, 0.15); color: #fff; transform: translateY(-2px); }
-        .dim-btn.active { background: #3b82f6; border-color: #60a5fa; color: #fff; box-shadow: 0 0 15px rgba(59, 130, 246, 0.5); }
-        .dim-btn.locked { opacity: 0.4; cursor: not-allowed; border-color: rgba(239, 68, 68, 0.4); }
-
-        /* Glassmorphism Crafting Panel */
-        #crafting-panel {
-            position: absolute; top: 20px; right: 20px;
-            background: rgba(13, 17, 23, 0.82); border: 1px solid rgba(255, 255, 255, 0.12);
-            padding: 16px; border-radius: 20px; backdrop-filter: blur(20px);
-            box-shadow: 0 16px 36px rgba(0,0,0,0.6); width: 300px; max-height: 380px; overflow-y: auto; z-index: 10;
+        /* Toast Animations */
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateY(-20px) scale(0.92); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
         }
 
-        .craft-btn {
-            display: flex; align-items: center; justify-content: space-between;
-            width: 100%; margin: 6px 0; padding: 10px 12px;
-            background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 12px; color: #f3f4f6; font-family: inherit; font-size: 12px; font-weight: 700;
-            cursor: pointer; transition: all 0.2s ease;
+        .animate-toast {
+            animation: toastIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
-        .craft-btn:hover { background: rgba(255, 255, 255, 0.12); border-color: rgba(255, 255, 255, 0.25); transform: translateY(-2px); }
-        .craft-reqs { font-size: 10px; color: #9ca3af; font-weight: 600; }
-
-        /* Minimap */
-        #minimap-container {
-            position: absolute; bottom: 20px; right: 20px;
-            width: 170px; height: 170px; border-radius: 20px;
-            background: rgba(13, 17, 23, 0.88); border: 2px solid rgba(255, 255, 255, 0.18);
-            backdrop-filter: blur(14px); overflow: hidden; box-shadow: 0 16px 36px rgba(0,0,0,0.6);
-            z-index: 10; pointer-events: none;
-        }
-        #minimapCanvas { width: 100%; height: 100%; display: block; }
-
-        .rarity-Common { color: #d1d5db; }
-        .rarity-Uncommon { color: #4ade80; }
-        .rarity-Rare { color: #60a5fa; }
-        .rarity-Legendary { color: #fb923c; }
-        .rarity-Mythic { color: #c084fc; }
     </style>
 </head>
-<body>
+<body class="relative min-h-screen select-none overflow-hidden bg-gray-950 font-sans text-gray-100">
 
 <canvas id="gameCanvas"></canvas>
 <div id="damage-flash"></div>
 
-<div id="toast-container">
-    <div id="toast-msg" class="toast"><span>🌎</span><span>WELCOME TO OVERWORLD</span></div>
+<div id="toast-container" class="pointer-events-none absolute top-6 left-1/2 z-30 flex -translate-x-1/2 flex-col items-center gap-2"></div>
+
+<div id="stats-hud" class="glass-panel glass-panel-glow pointer-events-auto absolute top-5 left-5 z-20 w-80 rounded-2xl p-4 transition-all duration-300">
+    <!-- Header info -->
+    <div class="mb-3 flex items-center justify-between border-b border-white/10 pb-2">
+        <div class="flex items-center gap-2">
+            <span class="inline-block h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]"></span>
+            <span class="font-display text-xs font-bold tracking-widest text-gray-300 uppercase">SURVIVOR STATUS</span>
+        </div>
+        <div class="flex items-center gap-1.5 rounded-full bg-black/40 px-2.5 py-0.5 text-[11px] font-semibold text-gray-400 border border-white/5">
+            <span>⏱️</span>
+            <span id="time-val" class="font-mono text-gray-200">00:00</span>
+        </div>
+    </div>
+
+    <!-- Health Bar -->
+    <div class="relative mb-3.5">
+        <div class="mb-1 flex items-center justify-between text-xs font-bold">
+            <span class="text-rose-400">VITALITY</span>
+            <span id="hp-text" class="text-gray-200">100 / 100</span>
+        </div>
+        <div class="relative h-4 w-full overflow-hidden rounded-full border border-white/10 bg-black/50 p-0.5">
+            <div id="hp-bar" class="h-full w-full rounded-full bg-gradient-to-r from-rose-600 via-rose-500 to-amber-500 shadow-[0_0_12px_rgba(244,63,94,0.6)] transition-all duration-300"></div>
+        </div>
+    </div>
+
+    <!-- Active Main Quest Objective -->
+    <div class="mb-3.5 rounded-xl border border-indigo-500/30 bg-gradient-to-r from-indigo-950/50 via-purple-950/30 to-slate-900/50 p-3 shadow-inner">
+        <div class="flex items-center justify-between">
+            <span class="text-[10px] font-extrabold tracking-wider text-indigo-400 uppercase">MAIN OBJECTIVE</span>
+            <span id="objective-tag" class="rounded bg-indigo-500/20 px-1.5 py-0.5 text-[9px] font-bold text-indigo-300">DIMENSION 1</span>
+        </div>
+        <p id="quest-desc" class="mt-1 text-xs font-semibold leading-relaxed text-gray-200">
+            Search chest ruins to locate <span class="font-bold text-purple-300">5 Overworld Shards</span> to ignite the Nether Portal!
+        </p>
+    </div>
+
+    <!-- Resource Grid -->
+    <div class="mb-3 grid grid-cols-4 gap-1.5 text-center">
+        <div class="rounded-lg border border-white/5 bg-white/[0.03] p-1.5 transition-colors hover:bg-white/[0.08]">
+            <div class="text-base">🪵</div>
+            <div id="wood-val" class="font-display text-xs font-bold text-amber-200">0</div>
+            <div class="text-[9px] font-medium text-gray-400 uppercase">Wood</div>
+        </div>
+        <div class="rounded-lg border border-white/5 bg-white/[0.03] p-1.5 transition-colors hover:bg-white/[0.08]">
+            <div class="text-base">🪨</div>
+            <div id="stone-val" class="font-display text-xs font-bold text-slate-300">0</div>
+            <div class="text-[9px] font-medium text-gray-400 uppercase">Stone</div>
+        </div>
+        <div class="rounded-lg border border-white/5 bg-white/[0.03] p-1.5 transition-colors hover:bg-white/[0.08]">
+            <div class="text-base">💎</div>
+            <div id="ore-val" class="font-display text-xs font-bold text-cyan-300">0</div>
+            <div class="text-[9px] font-medium text-gray-400 uppercase">Ore</div>
+        </div>
+        <div class="shard-pulse rounded-lg border border-purple-500/30 bg-purple-950/40 p-1.5 shadow-[0_0_10px_rgba(168,85,247,0.2)]">
+            <div class="text-base">🔮</div>
+            <div id="shard-val" class="font-display text-xs font-bold text-purple-300">0/5</div>
+            <div class="text-[9px] font-medium text-purple-200 uppercase">Shards</div>
+        </div>
+    </div>
+
+    <!-- Equipped Weapon Display -->
+    <div class="flex items-center justify-between rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-xs">
+        <span class="text-gray-400">Weapon</span>
+        <span id="weapon-val" class="font-bold text-gray-200">Wooden Stick</span>
+    </div>
 </div>
 
-<div id="stats-hud">
-    <div class="hud-header">
-        <span>VITALS & QUEST</span>
-        <span id="time-val">00:00</span>
-    </div>
-    <div class="hp-bar-outer">
-        <div id="hp-bar" class="hp-bar-inner"></div>
-        <div id="hp-text" class="hp-text">100 / 100</div>
-    </div>
-
-    <div class="main-objective-box">
-        <div class="obj-title">OVERALL QUEST</div>
-        <div id="quest-desc" class="obj-desc">Find 5 Portal Shards in Overworld chests to unlock Nether!</div>
-    </div>
-    
-    <div class="resource-grid">
-        <div class="res-card">🪵 <span id="wood-val">0</span><small>Wood</small></div>
-        <div class="res-card">🪨 <span id="stone-val">0</span><small>Stone</small></div>
-        <div class="res-card">💎 <span id="ore-val">0</span><small>Ore</small></div>
-        <div class="res-card">🔮 <span id="shard-val">0/5</span><small>Shards</small></div>
-    </div>
-
-    <div class="weapon-card">
-        <span>Equipped</span>
-        <span id="weapon-val" class="rarity-Common">Wooden Stick</span>
-    </div>
-</div>
-
-<div id="dimension-bar">
-    <button class="dim-btn active" id="btn-overworld" onclick="switchDimension('overworld')">🌿 Overworld</button>
-    <button class="dim-btn locked" id="btn-nether" onclick="switchDimension('nether')">🔒 Nether (5 Shards)</button>
-    <button class="dim-btn locked" id="btn-void" onclick="switchDimension('void')">🔒 The Void (5 Shards)</button>
-</div>
-
-<div id="crafting-panel">
-    <div class="hud-header">Crafting Station</div>
-    <button class="craft-btn" onclick="craftItem('spear')">
-        <span>🗡️ Stone Spear</span><span class="craft-reqs">10W 10S</span>
+<div id="dimension-bar" class="glass-panel pointer-events-auto absolute bottom-5 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full p-2 shadow-2xl">
+    <button id="btn-overworld" onclick="switchDimension('overworld')" class="dim-btn flex items-center gap-2 rounded-full px-5 py-2.5 font-display text-xs font-bold transition-all duration-200 bg-indigo-600 text-white shadow-[0_0_15px_rgba(79,70,229,0.5)]">
+        <span>🌿</span> Overworld
     </button>
-    <button class="craft-btn" onclick="craftItem('hammer')">
-        <span>🔨 Ore Sledge</span><span class="craft-reqs">15W 20O</span>
+    <button id="btn-nether" onclick="switchDimension('nether')" class="dim-btn flex items-center gap-2 rounded-full px-5 py-2.5 font-display text-xs font-bold transition-all duration-200 bg-white/5 text-gray-400 border border-white/10 opacity-60 hover:opacity-100">
+        <span>🔒</span> Nether [5 Shards Required]
     </button>
-    <button class="craft-btn" onclick="craftItem('blade')">
-        <span>⚡ Plasma Sword</span><span class="craft-reqs">25W 25S 15O</span>
-    </button>
-    <button class="craft-btn" onclick="craftItem('scythe')">
-        <span>🔮 Void Scythe</span><span class="craft-reqs">40W 40S 30O</span>
-    </button>
-    <button class="craft-btn" onclick="craftItem('heal')">
-        <span>🧪 Health Salve</span><span class="craft-reqs">5W 5S</span>
+    <button id="btn-void" onclick="switchDimension('void')" class="dim-btn flex items-center gap-2 rounded-full px-5 py-2.5 font-display text-xs font-bold transition-all duration-200 bg-white/5 text-gray-400 border border-white/10 opacity-60 hover:opacity-100">
+        <span>🔒</span> The Void [5 Shards Required]
     </button>
 </div>
 
-<div id="minimap-container">
-    <canvas id="minimapCanvas" width="170" height="170"></canvas>
+<div id="crafting-panel" class="glass-panel pointer-events-auto absolute top-5 right-5 z-20 w-72 rounded-2xl p-4 shadow-2xl transition-all">
+    <div class="mb-3 flex items-center justify-between border-b border-white/10 pb-2">
+        <div class="flex items-center gap-2">
+            <span class="text-sm">⚒️</span>
+            <span class="font-display text-xs font-bold tracking-wider text-gray-200 uppercase">CRAFTING MATRIX</span>
+        </div>
+        <button onclick="resetGameData()" class="text-[10px] font-semibold text-rose-400 hover:text-rose-300 underline">Reset Save</button>
+    </div>
+
+    <div class="flex flex-col gap-2 max-h-80 overflow-y-auto pr-1">
+        <button id="craft-spear" onclick="craftItem('spear')" class="craft-btn flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] p-2.5 text-left transition-all hover:bg-white/[0.1] active:scale-95 disabled:opacity-40 disabled:pointer-events-none">
+            <div>
+                <div class="text-xs font-bold text-emerald-400">🗡️ Stone Spear</div>
+                <div class="text-[10px] text-gray-400">+40 Damage • Long Reach</div>
+            </div>
+            <div class="text-right text-[10px] font-mono font-semibold text-gray-300">10W • 10S</div>
+        </button>
+
+        <button id="craft-hammer" onclick="craftItem('hammer')" class="craft-btn flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] p-2.5 text-left transition-all hover:bg-white/[0.1] active:scale-95 disabled:opacity-40 disabled:pointer-events-none">
+            <div>
+                <div class="text-xs font-bold text-sky-400">🔨 Ore Sledge</div>
+                <div class="text-[10px] text-gray-400">+75 Damage • Heavy Hit</div>
+            </div>
+            <div class="text-right text-[10px] font-mono font-semibold text-gray-300">15W • 20O</div>
+        </button>
+
+        <button id="craft-blade" onclick="craftItem('blade')" class="craft-btn flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] p-2.5 text-left transition-all hover:bg-white/[0.1] active:scale-95 disabled:opacity-40 disabled:pointer-events-none">
+            <div>
+                <div class="text-xs font-bold text-amber-400">⚡ Plasma Sword</div>
+                <div class="text-[10px] text-gray-400">+120 Damage • Rapid Arc</div>
+            </div>
+            <div class="text-right text-[10px] font-mono font-semibold text-gray-300">25W • 25S • 15O</div>
+        </button>
+
+        <button id="craft-scythe" onclick="craftItem('scythe')" class="craft-btn flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] p-2.5 text-left transition-all hover:bg-white/[0.1] active:scale-95 disabled:opacity-40 disabled:pointer-events-none">
+            <div>
+                <div class="text-xs font-bold text-purple-400">🔮 Void Scythe</div>
+                <div class="text-[10px] text-gray-400">+190 Damage • Void Cleave</div>
+            </div>
+            <div class="text-right text-[10px] font-mono font-semibold text-gray-300">40W • 40S • 30O</div>
+        </button>
+
+        <button id="craft-heal" onclick="craftItem('heal')" class="craft-btn flex items-center justify-between rounded-xl border border-emerald-500/30 bg-emerald-950/20 p-2.5 text-left transition-all hover:bg-emerald-900/30 active:scale-95 disabled:opacity-40 disabled:pointer-events-none">
+            <div>
+                <div class="text-xs font-bold text-emerald-300">🧪 Health Salve</div>
+                <div class="text-[10px] text-emerald-400/80">Restore +45 HP</div>
+            </div>
+            <div class="text-right text-[10px] font-mono font-semibold text-emerald-200">5W • 5S</div>
+        </button>
+    </div>
+</div>
+
+<div id="minimap-container" class="glass-panel pointer-events-none absolute bottom-5 right-5 z-20 h-40 w-40 overflow-hidden rounded-2xl border-2 border-white/15 shadow-2xl">
+    <canvas id="minimapCanvas" width="160" height="160" class="block h-full w-full"></canvas>
 </div>
 
 <script>
+// --- CANVAS & SYSTEM SETUP ---
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const minimapCanvas = document.getElementById('minimapCanvas');
 const minimapCtx = minimapCanvas.getContext('2d');
 
-function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
 resizeCanvas();
 window.addEventListener('resize', resizeCanvas);
 
 const WORLD_SIZE = 8000;
 const HALF_WORLD = WORLD_SIZE / 2;
 
-// WEAPONS CONFIG
+// WEAPONS CONFIGURATION
 const WEAPONS = {
-    stick:  { id: 'stick', name: 'Wooden Stick', damage: 20, range: 60, rarity: 'Common', color: '#a3a3a3' },
-    spear:  { id: 'spear', name: 'Stone Spear', damage: 40, range: 85, rarity: 'Uncommon', color: '#4ade80' },
-    hammer: { id: 'hammer', name: 'Ore Sledge', damage: 75, range: 70, rarity: 'Rare', color: '#60a5fa' },
-    blade:  { id: 'blade', name: 'Plasma Sword', damage: 120, range: 105, rarity: 'Legendary', color: '#fb923c' },
-    scythe: { id: 'scythe', name: 'Void Scythe', damage: 190, range: 125, rarity: 'Mythic', color: '#c084fc' }
+    stick:  { id: 'stick', name: 'Wooden Stick', damage: 20, range: 65, rarity: 'Common', color: '#9ca3af' },
+    spear:  { id: 'spear', name: 'Stone Spear', damage: 40, range: 90, rarity: 'Uncommon', color: '#34d399' },
+    hammer: { id: 'hammer', name: 'Ore Sledge', damage: 75, range: 75, rarity: 'Rare', color: '#38bdf8' },
+    blade:  { id: 'blade', name: 'Plasma Sword', damage: 120, range: 110, rarity: 'Legendary', color: '#fbbf24' },
+    scythe: { id: 'scythe', name: 'Void Scythe', damage: 190, range: 130, rarity: 'Mythic', color: '#c084fc' }
 };
 
-// MOBS DATA MATCHING YOUR FILE DIRECTORY
-// Render ONLY Name and Sprite on Screen
-const MOBS = {
-    gerard: { name: 'Gerard', spriteSrc: 'images/Gerard.JPEG', hp: 100, speed: 2.8, radius: 24, damage: 0.25, dim: 'overworld' },
-    jason: { name: 'Jason', spriteSrc: 'images/Jason.JPEG', hp: 130, speed: 2.5, radius: 24, damage: 0.35, dim: 'overworld' },
-    liuji: { name: 'Liu Ji', spriteSrc: 'images/Liu Ji.JPEG', hp: 220, speed: 1.8, radius: 28, damage: 0.55, dim: 'nether' },
-    matthew: { name: 'Matthew', spriteSrc: 'images/Matthew.JPEG', hp: 200, speed: 2.7, radius: 26, damage: 0.45, dim: 'nether' },
-    travia: { name: 'Travia', spriteSrc: 'images/Travia.JPEG', hp: 280, speed: 2.2, radius: 26, damage: 0.6, dim: 'void' },
-    xayven: { name: 'Xayven', spriteSrc: 'images/Xayven.JPEG', hp: 350, speed: 3.0, radius: 30, damage: 0.75, dim: 'void' },
-    xuchen: { name: 'Xuchen', spriteSrc: 'images/Xuchen.JPEG', hp: 1250, speed: 1.5, radius: 46, damage: 1.2, dim: 'void' }
+// MOBS DATA WITH MAPPED SPRITE PATHS & FALLBACKS
+const MOBS_CONFIG = {
+    gerard:  { name: 'Gerard', spriteSrc: 'images/Gerard.JPEG', hp: 100, speed: 2.8, radius: 24, damage: 0.25, fallbackColor: '#ef4444' },
+    jason:   { name: 'Jason', spriteSrc: 'images/Jason.JPEG', hp: 130, speed: 2.5, radius: 24, damage: 0.35, fallbackColor: '#f97316' },
+    liuji:   { name: 'Liu Ji', spriteSrc: 'images/Liu Ji.JPEG', hp: 220, speed: 1.8, radius: 28, damage: 0.55, fallbackColor: '#dc2626' },
+    matthew: { name: 'Matthew', spriteSrc: 'images/Matthew.JPEG', hp: 200, speed: 2.7, radius: 26, damage: 0.45, fallbackColor: '#b91c1c' },
+    travia:  { name: 'Travia', spriteSrc: 'images/Travia.JPEG', hp: 280, speed: 2.2, radius: 26, damage: 0.60, fallbackColor: '#9333ea' },
+    xayven:  { name: 'Xayven', spriteSrc: 'images/Xayven.JPEG', hp: 350, speed: 3.0, radius: 30, damage: 0.75, fallbackColor: '#7e22ce' },
+    xuchen:  { name: 'Xuchen', spriteSrc: 'images/Xuchen.JPEG', hp: 1250, speed: 1.5, radius: 46, damage: 1.20, fallbackColor: '#a855f7', isBoss: true }
 };
 
-// Preload Sprite Images
+// Image Preloading Engine with Robust Canvas Fallback Flags
 const loadedSprites = {};
-Object.keys(MOBS).forEach(key => {
+Object.keys(MOBS_CONFIG).forEach(key => {
     const img = new Image();
-    img.src = MOBS[key].spriteSrc;
+    img.src = MOBS_CONFIG[key].spriteSrc;
+    img.isLoaded = false;
+    img.onload = () => { img.isLoaded = true; };
+    img.onerror = () => { img.isLoaded = false; };
     loadedSprites[key] = img;
 });
 
-// DIMENSIONS CONFIG
+// DIMENSION ENVIRONMENTS
 const DIMENSIONS = {
     overworld: {
+        id: 'overworld',
         name: 'OVERWORLD',
         biomes: [
-            { name: 'Plains', bg: '#1c3323' },
-            { name: 'Desert', bg: '#8c6d27' },
-            { name: 'Snow', bg: '#3a5a68' },
-            { name: 'Forest', bg: '#14251a' }
+            { name: 'Verdant Plains', bg: '#062016', accent: '#10b981' },
+            { name: 'Sunburnt Dunes', bg: '#2d1f05', accent: '#f59e0b' },
+            { name: 'Frostbite Tundra', bg: '#0c222e', accent: '#06b6d4' },
+            { name: 'Shadowwood Forest', bg: '#09180e', accent: '#059669' }
         ],
         mobs: ['gerard', 'jason'],
         requiredShards: 0,
         nextDim: 'nether'
     },
     nether: {
+        id: 'nether',
         name: 'NETHER',
         biomes: [
-            { name: 'Crimson Wastes', bg: '#450a0a' },
-            { name: 'Ash Valleys', bg: '#262626' },
-            { name: 'Basalt Delta', bg: '#1c1917' },
-            { name: 'Lava Ridges', bg: '#7f1d1d' }
+            { name: 'Crimson Wastes', bg: '#2b0404', accent: '#ef4444' },
+            { name: 'Ash Valley', bg: '#141416', accent: '#6b7280' },
+            { name: 'Basalt Delta', bg: '#17110e', accent: '#f97316' },
+            { name: 'Lava Ridges', bg: '#3b0707', accent: '#dc2626' }
         ],
         mobs: ['liuji', 'matthew'],
         requiredShards: 5,
         nextDim: 'void'
     },
     void: {
+        id: 'void',
         name: 'THE VOID',
         biomes: [
-            { name: 'Astral Plains', bg: '#2e1065' },
-            { name: 'Nebula Ridges', bg: '#4c1d95' },
-            { name: 'Ender Wastes', bg: '#1e1b4b' },
-            { name: 'Starfall Ruins', bg: '#312e81' }
+            { name: 'Astral Abyss', bg: '#17072b', accent: '#a855f7' },
+            { name: 'Nebula Ridges', bg: '#1e0a38', accent: '#c084fc' },
+            { name: 'Ender Wastes', bg: '#0c0721', accent: '#6366f1' },
+            { name: 'Starfall Ruins', bg: '#120d2e', accent: '#818cf8' }
         ],
         mobs: ['travia', 'xayven'],
         requiredShards: 5,
@@ -281,17 +335,29 @@ const DIMENSIONS = {
     }
 };
 
-// GAME STATE WITH DATA PERSISTENCE
+// PLAYER STATE
 let currentDim = 'overworld';
 let player = {
-    x: HALF_WORLD, y: HALF_WORLD, radius: 18, speed: 5.2,
-    hp: 100, maxHp: 100, wood: 0, stone: 0, ore: 0,
+    x: HALF_WORLD,
+    y: HALF_WORLD,
+    radius: 18,
+    speed: 5.2,
+    hp: 100,
+    maxHp: 100,
+    wood: 0,
+    stone: 0,
+    ore: 0,
     shards: { overworld: 0, nether: 0, void: 0 },
     unlockedDims: { overworld: true, nether: false, void: false },
-    weaponKey: 'stick', weapon: WEAPONS.stick, facingAngle: 0,
-    isAttacking: false, attackProgress: 0, currentBiome: ''
+    weaponKey: 'stick',
+    weapon: WEAPONS.stick,
+    facingAngle: 0,
+    isAttacking: false,
+    attackProgress: 0,
+    currentBiome: ''
 };
 
+// ENTITIES CONTAINER FOR EACH DIMENSION
 let dimEntities = {
     overworld: { resources: [], enemies: [], structures: [] },
     nether: { resources: [], enemies: [], structures: [] },
@@ -302,9 +368,9 @@ let particles = [];
 let floatingTexts = [];
 let gameTime = 0;
 
-// LOAD PERSISTED DATA
+// --- PERSISTENT STORAGE (LOCALSTORAGE) ---
 function loadSavedData() {
-    const saved = localStorage.getItem('rpg_save_data');
+    const saved = localStorage.getItem('survival_realm_save');
     if (saved) {
         try {
             const data = JSON.parse(saved);
@@ -319,7 +385,7 @@ function loadSavedData() {
             }
             gameTime = data.gameTime || 0;
         } catch (e) {
-            console.error("Could not load save data", e);
+            console.error("Failed loading save data:", e);
         }
     }
 }
@@ -334,94 +400,131 @@ function saveData() {
         weaponKey: player.weaponKey,
         gameTime: gameTime
     };
-    localStorage.setItem('rpg_save_data', JSON.stringify(data));
+    localStorage.setItem('survival_realm_save', JSON.stringify(data));
+}
+
+function resetGameData() {
+    if (confirm("Reset all game progress and start fresh?")) {
+        localStorage.removeItem('survival_realm_save');
+        location.reload();
+    }
 }
 
 loadSavedData();
-setInterval(() => { gameTime++; updateTimeDisplay(); saveData(); }, 1000);
-
-function updateTimeDisplay() {
+setInterval(() => {
+    gameTime++;
     const mins = Math.floor(gameTime / 60).toString().padStart(2, '0');
     const secs = (gameTime % 60).toString().padStart(2, '0');
     document.getElementById('time-val').innerText = `${mins}:${secs}`;
-}
+    saveData();
+}, 1000);
 
-// GENERATE WORLD & STRUCTURES
-function initWorldData() {
+// --- WORLD INITIALIZATION ---
+function initWorld() {
     Object.keys(DIMENSIONS).forEach(dim => {
-        // Resources
+        // Resources Generation
         for (let i = 0; i < 400; i++) {
             const types = ['tree', 'stone', 'ore'];
             const type = types[Math.floor(Math.random() * types.length)];
             dimEntities[dim].resources.push({
                 x: Math.random() * (WORLD_SIZE - 400) + 200,
                 y: Math.random() * (WORLD_SIZE - 400) + 200,
-                type: type, hp: type === 'ore' ? 4 : type === 'stone' ? 3 : 2,
-                maxHp: type === 'ore' ? 4 : type === 'stone' ? 3 : 2, scale: 1
+                type: type,
+                hp: type === 'ore' ? 4 : type === 'stone' ? 3 : 2,
+                scale: 1
             });
         }
 
-        // Structures with Loot Chests (Guaranteed Portal Shards)
-        let shardsInStructures = 5;
-        for (let i = 0; i < 25; i++) {
-            const hasShard = shardsInStructures > 0 && Math.random() < 0.3;
-            if (hasShard) shardsInStructures--;
-            
+        // Chest Structures Generation (Containing Portal Shards)
+        let shardsRemaining = 5;
+        for (let i = 0; i < 28; i++) {
+            const containsShard = shardsRemaining > 0 && Math.random() < 0.35;
+            if (containsShard) shardsRemaining--;
+
             dimEntities[dim].structures.push({
                 x: Math.random() * (WORLD_SIZE - 600) + 300,
                 y: Math.random() * (WORLD_SIZE - 600) + 300,
-                width: 140, height: 140,
-                hasChest: true, chestOpened: false,
-                containsShard: hasShard
+                width: 130,
+                height: 130,
+                hasChest: true,
+                chestOpened: false,
+                containsShard: containsShard
             });
         }
 
-        // Mobs Specific to Dimensions
+        // Dimension Enemies Generation
         const mobKeys = DIMENSIONS[dim].mobs;
-        for (let i = 0; i < 70; i++) {
+        for (let i = 0; i < 65; i++) {
             const mKey = mobKeys[Math.floor(Math.random() * mobKeys.length)];
-            const base = MOBS[mKey];
+            const base = MOBS_CONFIG[mKey];
             dimEntities[dim].enemies.push({
-                key: mKey, x: Math.random() * WORLD_SIZE, y: Math.random() * WORLD_SIZE,
-                hp: base.hp, maxHp: base.hp, radius: base.radius, speed: base.speed,
-                damage: base.damage, name: base.name, hitFlash: 0
+                key: mKey,
+                x: Math.random() * WORLD_SIZE,
+                y: Math.random() * WORLD_SIZE,
+                hp: base.hp,
+                maxHp: base.hp,
+                radius: base.radius,
+                speed: base.speed,
+                damage: base.damage,
+                name: base.name,
+                hitFlash: 0
             });
         }
     });
 
-    // Final Boss Xuchen Spawn
+    // Boss Spawn in Void
     dimEntities['void'].enemies.push({
-        key: 'xuchen', x: HALF_WORLD, y: HALF_WORLD - 200,
-        hp: MOBS.xuchen.hp, maxHp: MOBS.xuchen.hp, radius: MOBS.xuchen.radius,
-        speed: MOBS.xuchen.speed, damage: MOBS.xuchen.damage,
-        name: MOBS.xuchen.name, hitFlash: 0, isBoss: true
+        key: 'xuchen',
+        x: HALF_WORLD,
+        y: HALF_WORLD - 300,
+        hp: MOBS_CONFIG.xuchen.hp,
+        maxHp: MOBS_CONFIG.xuchen.hp,
+        radius: MOBS_CONFIG.xuchen.radius,
+        speed: MOBS_CONFIG.xuchen.speed,
+        damage: MOBS_CONFIG.xuchen.damage,
+        name: MOBS_CONFIG.xuchen.name,
+        hitFlash: 0,
+        isBoss: true
     });
 }
 
-initWorldData();
+initWorld();
 
-// INPUT HANDLING
+// --- CONTROLS & EVENT LISTENERS ---
 const keys = {};
 let mouseX = canvas.width / 2, mouseY = canvas.height / 2;
+
 window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
 window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
-window.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
+window.addEventListener('mousemove', e => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+});
 
-// DIMENSION TELEPORTATION & SHARD UNLOCK CHECK
+// DIMENSION PORTAL TELEPORTATION
 function switchDimension(dimName) {
     if (!player.unlockedDims[dimName]) {
-        showToast("🔒", `LOCKED! COLLECT 5 SHARDS FIRST!`);
+        showToast("🔒 Portal Sealed!", `Collect 5 Shards in current realm to unlock ${DIMENSIONS[dimName].name}!`);
         return;
     }
     if (currentDim === dimName) return;
+
     currentDim = dimName;
-    document.querySelectorAll('.dim-btn').forEach(btn => btn.classList.remove('active'));
-    document.getElementById(`btn-${dimName}`).classList.add('active');
-    showToast("🌀", `TELEPORTED TO ${DIMENSIONS[dimName].name}`);
+    
+    // Update Button Active Styling
+    document.querySelectorAll('.dim-btn').forEach(btn => {
+        btn.className = "dim-btn flex items-center gap-2 rounded-full px-5 py-2.5 font-display text-xs font-bold transition-all duration-200 bg-white/5 text-gray-400 border border-white/10 opacity-60 hover:opacity-100";
+    });
+
+    const activeBtn = document.getElementById(`btn-${dimName}`);
+    activeBtn.className = "dim-btn flex items-center gap-2 rounded-full px-5 py-2.5 font-display text-xs font-bold transition-all duration-200 bg-indigo-600 text-white shadow-[0_0_15px_rgba(79,70,229,0.5)]";
+
+    showToast("🌀 Realm Shift", `Warped into ${DIMENSIONS[dimName].name}`);
     updateHUD();
+    saveData();
 }
 
-// ATTACK & INTERACTION
+// ATTACK & INTERACTION ENGINE
 canvas.addEventListener('pointerdown', () => {
     if (player.hp <= 0) return;
 
@@ -433,12 +536,12 @@ canvas.addEventListener('pointerdown', () => {
     const swingY = player.y + Math.sin(player.facingAngle) * player.weapon.range * 0.6;
     createParticles(swingX, swingY, player.weapon.color, 12);
 
-    // Harvest Resources
+    // Resource Gathering
     currentData.resources.forEach((res, index) => {
         if (Math.hypot(res.x - player.x, res.y - player.y) <= player.weapon.range + 20) {
             res.hp -= 1;
-            res.scale = 1.3;
-            const pColor = res.type === 'tree' ? '#4ade80' : res.type === 'stone' ? '#9ca3af' : '#38bdf8';
+            res.scale = 1.35;
+            const pColor = res.type === 'tree' ? '#34d399' : res.type === 'stone' ? '#9ca3af' : '#38bdf8';
             createParticles(res.x, res.y, pColor, 6);
             spawnFloatingText(res.x, res.y, "-1", "#fbbf24");
 
@@ -453,54 +556,54 @@ canvas.addEventListener('pointerdown', () => {
         }
     });
 
-    // Open Structures & Retrieve Portal Shards
+    // Opening Ruins & Collecting Portal Shards
     currentData.structures.forEach(struct => {
         if (struct.hasChest && !struct.chestOpened) {
             if (Math.hypot(struct.x - player.x, struct.y - player.y) <= player.weapon.range + 30) {
                 struct.chestOpened = true;
                 player.wood += 20; player.stone += 20; player.ore += 15;
 
-                let extraMsg = "";
                 if (struct.containsShard && player.shards[currentDim] < 5) {
                     player.shards[currentDim]++;
-                    extraMsg = ` + 🔮 PORTAL SHARD (${player.shards[currentDim]}/5)!`;
+                    showToast("🔮 PORTAL SHARD DISCOVERED!", `Collected (${player.shards[currentDim]}/5) Shards for ${DIMENSIONS[currentDim].name}!`);
 
                     if (player.shards[currentDim] >= 5) {
                         const nextDim = DIMENSIONS[currentDim].nextDim;
                         if (nextDim) {
                             player.unlockedDims[nextDim] = true;
-                            showToast("🌟", `${DIMENSIONS[nextDim].name} DIMENSION UNLOCKED!`);
+                            showToast("🌟 PORTAL IGNITED!", `${DIMENSIONS[nextDim].name} IS NOW UNLOCKED!`);
                         }
                     }
+                } else {
+                    showToast("🎁 Ancient Loot Chest", "+20 Wood, +20 Stone, +15 Ore acquired!");
                 }
 
-                showToast("🎁", `CHEST OPENED: +20W +20S +15O${extraMsg}`);
-                createParticles(struct.x, struct.y, "#facc15", 25);
+                createParticles(struct.x, struct.y, "#c084fc", 25);
                 updateHUD();
                 saveData();
             }
         }
     });
 
-    // Damage Mobs
+    // Attacking Enemies
     currentData.enemies.forEach((enemy, index) => {
         if (Math.hypot(enemy.x - player.x, enemy.y - player.y) <= player.weapon.range + enemy.radius) {
             let isCrit = Math.random() < 0.25;
             let dmg = isCrit ? Math.floor(player.weapon.damage * 1.5) : player.weapon.damage;
-            
+
             enemy.hp -= dmg;
             enemy.hitFlash = 10;
             const angle = Math.atan2(enemy.y - player.y, enemy.x - player.x);
-            enemy.x += Math.cos(angle) * 30;
-            enemy.y += Math.sin(angle) * 30;
+            enemy.x += Math.cos(angle) * 32;
+            enemy.y += Math.sin(angle) * 32;
 
             createParticles(enemy.x, enemy.y, '#f87171', 10);
-            spawnFloatingText(enemy.x, enemy.y, isCrit ? `💥 CRIT -${dmg}` : `-${dmg}`, isCrit ? "#facc15" : "#f87171");
+            spawnFloatingText(enemy.x, enemy.y, isCrit ? `💥 ${dmg}` : `-${dmg}`, isCrit ? "#facc15" : "#f87171");
 
             if (enemy.hp <= 0) {
-                createParticles(enemy.x, enemy.y, '#ef4444', 20);
+                createParticles(enemy.x, enemy.y, '#ef4444', 24);
                 if (enemy.isBoss) {
-                    showToast("🏆", `${enemy.name.toUpperCase()} DEFEATED! YOU WIN THE GAME!`);
+                    showToast("🏆 REALM VICTORY!", "Boss Xuchen defeated! You saved the Multiverse!");
                 }
                 currentData.enemies.splice(index, 1);
                 updateHUD();
@@ -532,19 +635,21 @@ function triggerDamageFlash() {
 
 function respawnPlayer() {
     player.hp = player.maxHp;
-    player.x = HALF_WORLD; player.y = HALF_WORLD;
-    showToast("✨", "RESPAWNED! INVENTORY KEPT!");
+    player.x = HALF_WORLD;
+    player.y = HALF_WORLD;
+    showToast("✨ REGENERATED", "Restored vitality at realm spawn point.");
     updateHUD();
 }
 
+// --- GAME UPDATE ENGINE ---
 function update() {
     if (player.hp <= 0) return;
 
     let dx = 0, dy = 0;
-    if (keys['w']) dy -= 1;
-    if (keys['s']) dy += 1;
-    if (keys['a']) dx -= 1;
-    if (keys['d']) dx += 1;
+    if (keys['w'] || keys['arrowup']) dy -= 1;
+    if (keys['s'] || keys['arrowdown']) dy += 1;
+    if (keys['a'] || keys['arrowleft']) dx -= 1;
+    if (keys['d'] || keys['arrowright']) dx += 1;
 
     if (dx !== 0 && dy !== 0) { dx *= 0.7071; dy *= 0.7071; }
 
@@ -560,7 +665,7 @@ function update() {
         if (player.attackProgress >= 1) { player.isAttacking = false; player.attackProgress = 0; }
     }
 
-    // Biome Check
+    // Biome Calculation
     const dimConfig = DIMENSIONS[currentDim];
     let biomeIdx = 0;
     if (player.x >= HALF_WORLD && player.y < HALF_WORLD) biomeIdx = 1;
@@ -570,21 +675,22 @@ function update() {
     const currentBiomeObj = dimConfig.biomes[biomeIdx];
     if (player.currentBiome !== currentBiomeObj.name) {
         player.currentBiome = currentBiomeObj.name;
-        showToast("📍", `BIOME: ${currentBiomeObj.name}`);
+        showToast("📍 Region Discovered", currentBiomeObj.name);
     }
 
+    // Particle Updates
     particles.forEach((p, i) => {
         p.x += p.vx; p.y += p.vy; p.alpha -= 0.04;
         if (p.alpha <= 0) particles.splice(i, 1);
     });
 
-    // Enemy AI Movement
+    // Enemy AI Movement & Damage
     const currentData = dimEntities[currentDim];
     currentData.enemies.forEach(enemy => {
         if (enemy.hitFlash > 0) enemy.hitFlash--;
 
         const dist = Math.hypot(player.x - enemy.x, player.y - enemy.y);
-        if (dist < 600) {
+        if (dist < 650) {
             const angle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
             enemy.x += Math.cos(angle) * enemy.speed;
             enemy.y += Math.sin(angle) * enemy.speed;
@@ -603,6 +709,7 @@ function update() {
     });
 }
 
+// --- RENDERING ENGINE ---
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const cameraX = player.x - canvas.width / 2;
@@ -610,7 +717,7 @@ function draw() {
 
     const dimConfig = DIMENSIONS[currentDim];
 
-    // Render Biomes
+    // Render Biome Sectors
     drawBiomeSquare(0, 0, HALF_WORLD, HALF_WORLD, dimConfig.biomes[0], cameraX, cameraY);
     drawBiomeSquare(HALF_WORLD, 0, HALF_WORLD, HALF_WORLD, dimConfig.biomes[1], cameraX, cameraY);
     drawBiomeSquare(0, HALF_WORLD, HALF_WORLD, HALF_WORLD, dimConfig.biomes[2], cameraX, cameraY);
@@ -618,17 +725,20 @@ function draw() {
 
     const currentData = dimEntities[currentDim];
 
-    // Render Structures
+    // Render Ruin Structures
     currentData.structures.forEach(struct => {
         const sx = struct.x - cameraX, sy = struct.y - cameraY;
-        ctx.fillStyle = "rgba(30, 41, 59, 0.85)";
+        ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
         ctx.fillRect(sx - struct.width / 2, sy - struct.height / 2, struct.width, struct.height);
-        ctx.strokeStyle = "#64748b"; ctx.lineWidth = 3;
+        ctx.strokeStyle = struct.containsShard && !struct.chestOpened ? "#c084fc" : "rgba(255,255,255,0.2)";
+        ctx.lineWidth = 2;
         ctx.strokeRect(sx - struct.width / 2, sy - struct.height / 2, struct.width, struct.height);
 
         if (struct.hasChest) {
-            ctx.fillStyle = struct.chestOpened ? "#64748b" : struct.containsShard ? "#c084fc" : "#fbbf24";
-            ctx.fillRect(sx - 12, sy - 12, 24, 24);
+            ctx.fillStyle = struct.chestOpened ? "#475569" : struct.containsShard ? "#c084fc" : "#fbbf24";
+            ctx.beginPath();
+            ctx.roundRect(sx - 12, sy - 12, 24, 24, 6);
+            ctx.fill();
         }
     });
 
@@ -637,68 +747,91 @@ function draw() {
         const rx = res.x - cameraX, ry = res.y - cameraY;
         ctx.save(); ctx.translate(rx, ry); ctx.scale(res.scale, res.scale);
         if (res.type === 'tree') {
-            ctx.fillStyle = "#523a28"; ctx.fillRect(-4, -4, 8, 14);
-            ctx.fillStyle = "#15803d"; ctx.beginPath(); ctx.arc(0, -12, 16, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = "#3f2e21"; ctx.fillRect(-4, -2, 8, 16);
+            ctx.fillStyle = "#10b981"; ctx.beginPath(); ctx.arc(0, -12, 16, 0, Math.PI * 2); ctx.fill();
         } else if (res.type === 'stone') {
-            ctx.fillStyle = "#6b7280"; ctx.beginPath(); ctx.arc(0, 0, 12, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = "#64748b"; ctx.beginPath(); ctx.arc(0, 0, 13, 0, Math.PI * 2); ctx.fill();
         } else if (res.type === 'ore') {
-            ctx.fillStyle = "#374151"; ctx.beginPath(); ctx.arc(0, 0, 12, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = "#334155"; ctx.beginPath(); ctx.arc(0, 0, 13, 0, Math.PI * 2); ctx.fill();
             ctx.fillStyle = "#38bdf8"; ctx.beginPath(); ctx.arc(-2, -2, 6, 0, Math.PI * 2); ctx.fill();
         }
         ctx.restore();
     });
 
-    // RENDER ENEMIES WITH CUSTOM IMAGE SPRITE & ONLY DISPLAY THEIR NAME
+    // RENDER ENEMIES (WITH IMAGE SPRITES & CLEAN CANVAS FALLBACKS)
     currentData.enemies.forEach(e => {
         const ex = e.x - cameraX, ey = e.y - cameraY;
         const sprite = loadedSprites[e.key];
+        const baseConfig = MOBS_CONFIG[e.key] || { fallbackColor: '#9333ea' };
 
         ctx.save();
-        if (e.hitFlash > 0) ctx.filter = 'brightness(2.5)';
+        if (e.hitFlash > 0) ctx.filter = 'brightness(2.2)';
 
-        // Draw Custom Image Sprite
-        if (sprite && sprite.complete && sprite.naturalWidth !== 0) {
+        // Draw Image Sprite if Loaded, Else Render Stylized Canvas Fallback Avatar
+        if (sprite && sprite.isLoaded) {
+            ctx.beginPath();
+            ctx.arc(ex, ey, e.radius, 0, Math.PI * 2);
+            ctx.clip();
             ctx.drawImage(sprite, ex - e.radius, ey - e.radius, e.radius * 2, e.radius * 2);
         } else {
-            // Fallback Circle
-            ctx.fillStyle = "#a855f7";
-            ctx.beginPath(); ctx.arc(ex, ey, e.radius, 0, Math.PI * 2); ctx.fill();
+            // Clean Fallback Circle with Initials
+            ctx.fillStyle = baseConfig.fallbackColor;
+            ctx.beginPath();
+            ctx.arc(ex, ey, e.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Initial Text Fallback
+            ctx.fillStyle = '#ffffff';
+            ctx.font = `700 ${e.radius * 0.9}px 'Plus Jakarta Sans', sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(e.name.charAt(0), ex, ey);
         }
         ctx.restore();
 
-        // ONLY DISPLAY ENEMY NAME ABOVE SPRITE (No nicknames or descriptions)
+        // DISPLAY ONLY THE ENEMY NAME ABOVE HEAD
         ctx.fillStyle = "#ffffff";
         ctx.font = "800 12px 'Plus Jakarta Sans', sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText(e.name, ex, ey - e.radius - 18);
+        ctx.fillText(e.name, ex, ey - e.radius - 16);
 
         // Overhead Health Bar
-        const barW = 38, barH = 4;
-        ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillRect(ex - barW / 2, ey - e.radius - 12, barW, barH);
+        const barW = 36, barH = 4;
+        ctx.fillStyle = "rgba(0,0,0,0.6)";
+        ctx.fillRect(ex - barW / 2, ey - e.radius - 10, barW, barH);
         const hpPct = Math.max(0, e.hp / e.maxHp);
-        ctx.fillStyle = "#ef4444"; ctx.fillRect(ex - barW / 2, ey - e.radius - 12, barW * hpPct, barH);
+        ctx.fillStyle = "#f87171";
+        ctx.fillRect(ex - barW / 2, ey - e.radius - 10, barW * hpPct, barH);
     });
 
-    // Render Player & Weapon
+    // Render Player Avatar & Weapon Swing Arc
     const px = canvas.width / 2, py = canvas.height / 2;
-    ctx.fillStyle = "#2563eb"; ctx.beginPath(); ctx.arc(px, py, player.radius, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#6366f1";
+    ctx.beginPath(); ctx.arc(px, py, player.radius, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = "#a5b4fc"; ctx.lineWidth = 3; ctx.stroke();
 
-    ctx.save(); ctx.translate(px, py);
+    ctx.save();
+    ctx.translate(px, py);
     let swingAngle = player.facingAngle;
     if (player.isAttacking) swingAngle += Math.sin(player.attackProgress * Math.PI) * 1.5 - 0.75;
     ctx.rotate(swingAngle);
-    ctx.fillStyle = player.weapon.color; ctx.fillRect(10, -3, player.weapon.range * 0.55, 6);
+    ctx.fillStyle = player.weapon.color;
+    ctx.fillRect(10, -3, player.weapon.range * 0.55, 6);
     ctx.restore();
 
-    // Render Particles & Text
+    // Render Floating Particles & Text
     particles.forEach(p => {
         ctx.fillStyle = p.color; ctx.globalAlpha = p.alpha;
-        ctx.beginPath(); ctx.arc(p.x - cameraX, p.y - cameraY, p.radius, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1.0;
+        ctx.beginPath(); ctx.arc(p.x - cameraX, p.y - cameraY, p.radius, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = 1.0;
     });
 
     floatingTexts.forEach((ft, i) => {
         ctx.fillStyle = ft.color; ctx.globalAlpha = ft.alpha;
-        ctx.font = "800 14px 'Plus Jakarta Sans', sans-serif"; ctx.textAlign = "center";
+        ctx.font = "800 13px 'Space Grotesk', sans-serif"; ctx.textAlign = "center";
         ctx.fillText(ft.text, ft.x - cameraX, ft.y - cameraY);
         ctx.globalAlpha = 1.0; ft.y -= 0.8; ft.alpha -= 0.035;
         if (ft.alpha <= 0) floatingTexts.splice(i, 1);
@@ -708,101 +841,123 @@ function draw() {
 }
 
 function drawBiomeSquare(x, y, w, h, biomeObj, camX, camY) {
-    ctx.fillStyle = biomeObj.bg; ctx.fillRect(x - camX, y - camY, w, h);
+    ctx.fillStyle = biomeObj.bg;
+    ctx.fillRect(x - camX, y - camY, w, h);
 }
 
 function drawMinimap() {
-    const scale = 170 / WORLD_SIZE;
-    minimapCtx.clearRect(0, 0, 170, 170);
+    const scale = 160 / WORLD_SIZE;
+    minimapCtx.clearRect(0, 0, 160, 160);
 
     const dimConfig = DIMENSIONS[currentDim];
-    minimapCtx.fillStyle = dimConfig.biomes[0].bg; minimapCtx.fillRect(0, 0, 85, 85);
-    minimapCtx.fillStyle = dimConfig.biomes[1].bg; minimapCtx.fillRect(85, 0, 85, 85);
-    minimapCtx.fillStyle = dimConfig.biomes[2].bg; minimapCtx.fillRect(0, 85, 85, 85);
-    minimapCtx.fillStyle = dimConfig.biomes[3].bg; minimapCtx.fillRect(85, 85, 85, 85);
+    minimapCtx.fillStyle = dimConfig.biomes[0].bg; minimapCtx.fillRect(0, 0, 80, 80);
+    minimapCtx.fillStyle = dimConfig.biomes[1].bg; minimapCtx.fillRect(80, 0, 80, 80);
+    minimapCtx.fillStyle = dimConfig.biomes[2].bg; minimapCtx.fillRect(0, 80, 80, 80);
+    minimapCtx.fillStyle = dimConfig.biomes[3].bg; minimapCtx.fillRect(80, 80, 80, 80);
 
     const currentData = dimEntities[currentDim];
-    minimapCtx.fillStyle = "#fbbf24";
+    minimapCtx.fillStyle = "#c084fc";
     currentData.structures.forEach(struct => {
-        minimapCtx.fillRect(struct.x * scale - 2, struct.y * scale - 2, 4, 4);
+        minimapCtx.fillRect(struct.x * scale - 1.5, struct.y * scale - 1.5, 3, 3);
     });
 
-    minimapCtx.fillStyle = "#ffffff";
+    // Player Blip
+    minimapCtx.fillStyle = "#6366f1";
     minimapCtx.beginPath(); minimapCtx.arc(player.x * scale, player.y * scale, 3, 0, Math.PI * 2); minimapCtx.fill();
 }
 
-function loop() { update(); draw(); requestAnimationFrame(loop); }
+function gameLoop() {
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+}
 
+// --- GUI & CRAFTING UPDATES ---
 function updateHUD() {
     const hpPct = Math.max(0, (player.hp / player.maxHp) * 100);
     document.getElementById('hp-bar').style.width = `${hpPct}%`;
-    document.getElementById('hp-text').innerText = `${Math.ceil(player.hp)} / ${player.maxHp} HP`;
+    document.getElementById('hp-text').innerText = `${Math.ceil(player.hp)} / ${player.maxHp}`;
     document.getElementById('wood-val').innerText = player.wood;
     document.getElementById('stone-val').innerText = player.stone;
     document.getElementById('ore-val').innerText = player.ore;
     document.getElementById('shard-val').innerText = `${player.shards[currentDim]}/5`;
-    
-    // Quest Description Dynamic Update
-    const qDesc = document.getElementById('quest-desc');
+
+    // Dynamic Quest Tracker Text
+    const questDesc = document.getElementById('quest-desc');
+    const objTag = document.getElementById('objective-tag');
     if (currentDim === 'overworld') {
-        qDesc.innerText = player.unlockedDims.nether ? "Nether Unlocked! Teleport to Nether." : `Find 5 Portal Shards in Overworld chests (${player.shards.overworld}/5)!`;
+        objTag.innerText = "DIMENSION 1";
+        questDesc.innerHTML = player.unlockedDims.nether ? "Nether Unlocked! Step through the portal button below." : `Open ruin chests to collect <span class="font-bold text-purple-300">5 Overworld Shards</span> (${player.shards.overworld}/5)!`;
     } else if (currentDim === 'nether') {
-        qDesc.innerText = player.unlockedDims.void ? "The Void Unlocked! Teleport to The Void." : `Find 5 Portal Shards in Nether chests (${player.shards.nether}/5)!`;
+        objTag.innerText = "DIMENSION 2";
+        questDesc.innerHTML = player.unlockedDims.void ? "The Void Unlocked! Step through the portal button below." : `Open Nether ruin chests to collect <span class="font-bold text-purple-300">5 Nether Shards</span> (${player.shards.nether}/5)!`;
     } else {
-        qDesc.innerText = "Defeat the final boss Xuchen in The Void to complete the game!";
+        objTag.innerText = "FINAL REALM";
+        questDesc.innerHTML = "Locate and defeat <span class="font-bold text-rose-400">Boss Xuchen</span> in The Void!";
     }
 
-    // Update Teleport Lock States
+    // Portal Buttons Requirement States
     const btnNether = document.getElementById('btn-nether');
     if (player.unlockedDims.nether) {
-        btnNether.classList.remove('locked');
-        btnNether.innerText = "🔥 Nether";
+        btnNether.innerHTML = `<span>🔥</span> Nether`;
+        btnNether.classList.remove('opacity-60');
     }
 
     const btnVoid = document.getElementById('btn-void');
     if (player.unlockedDims.void) {
-        btnVoid.classList.remove('locked');
-        btnVoid.innerText = "🔮 The Void";
+        btnVoid.innerHTML = `<span>🔮</span> The Void`;
+        btnVoid.classList.remove('opacity-60');
     }
 
-    let wElem = document.getElementById('weapon-val');
-    wElem.innerText = player.weapon.name;
-    wElem.className = `rarity-${player.weapon.rarity}`;
+    document.getElementById('weapon-val').innerText = player.weapon.name;
+
+    // Real-Time Dynamic Button Crafting State Feedback
+    document.getElementById('craft-spear').disabled = !(player.wood >= 10 && player.stone >= 10);
+    document.getElementById('craft-hammer').disabled = !(player.wood >= 15 && player.ore >= 20);
+    document.getElementById('craft-blade').disabled = !(player.wood >= 25 && player.stone >= 25 && player.ore >= 15);
+    document.getElementById('craft-scythe').disabled = !(player.wood >= 40 && player.stone >= 40 && player.ore >= 30);
+    document.getElementById('craft-heal').disabled = !(player.wood >= 5 && player.stone >= 5);
 }
 
-function showToast(icon, msg) {
-    const toast = document.getElementById('toast-msg');
-    toast.children[0].innerText = icon;
-    toast.children[1].innerText = msg;
-    toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 2200);
+function showToast(title, message) {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = 'glass-panel animate-toast pointer-events-auto flex items-start gap-3 rounded-2xl p-3.5 shadow-2xl border border-white/15 max-w-sm';
+    toast.innerHTML = `
+        <div class="text-lg">✨</div>
+        <div>
+            <div class="text-xs font-bold text-gray-100">${title}</div>
+            <div class="text-[11px] text-gray-300">${message}</div>
+        </div>
+    `;
+    container.appendChild(toast);
+    setTimeout(() => { toast.remove(); }, 3000);
 }
 
 function craftItem(type) {
     if (type === 'spear' && player.wood >= 10 && player.stone >= 10) {
         player.wood -= 10; player.stone -= 10; player.weaponKey = 'spear'; player.weapon = WEAPONS.spear;
-        showToast("🗡️", "CRAFTED: Stone Spear!");
+        showToast("🗡️ Weapon Forged", "Stone Spear equipped!");
     } else if (type === 'hammer' && player.wood >= 15 && player.ore >= 20) {
         player.wood -= 15; player.ore -= 20; player.weaponKey = 'hammer'; player.weapon = WEAPONS.hammer;
-        showToast("🔨", "CRAFTED: Ore Sledge!");
+        showToast("🔨 Weapon Forged", "Ore Sledge equipped!");
     } else if (type === 'blade' && player.wood >= 25 && player.stone >= 25 && player.ore >= 15) {
         player.wood -= 25; player.stone -= 25; player.ore -= 15; player.weaponKey = 'blade'; player.weapon = WEAPONS.blade;
-        showToast("⚡", "CRAFTED: Plasma Sword!");
+        showToast("⚡ Weapon Forged", "Plasma Sword equipped!");
     } else if (type === 'scythe' && player.wood >= 40 && player.stone >= 40 && player.ore >= 30) {
         player.wood -= 40; player.stone -= 40; player.ore -= 30; player.weaponKey = 'scythe'; player.weapon = WEAPONS.scythe;
-        showToast("🔮", "CRAFTED: Void Scythe!");
+        showToast("🔮 Weapon Forged", "Void Scythe equipped!");
     } else if (type === 'heal' && player.wood >= 5 && player.stone >= 5) {
         player.wood -= 5; player.stone -= 5; player.hp = Math.min(100, player.hp + 45);
-        showToast("🧪", "RECOVERED +45 HP!");
-    } else {
-        showToast("⚠️", "NOT ENOUGH MATERIALS!");
+        showToast("🧪 Vitality Restored", "Recovered +45 HP!");
     }
     updateHUD();
     saveData();
 }
 
+// START LOOP
 updateHUD();
-loop();
+gameLoop();
 </script>
 </body>
 </html>
