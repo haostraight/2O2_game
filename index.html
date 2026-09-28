@@ -81,6 +81,53 @@
         }
 
         .animate-toast { animation: toastIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+        .hotbar-slot {
+            width: 52px;
+            height: 52px;
+            position: relative;
+            background: rgba(15, 23, 42, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .hotbar-slot:hover {
+            border-color: rgba(129, 140, 248, 0.6);
+            background: rgba(30, 41, 59, 0.9);
+        }
+
+        .hotbar-slot.active {
+            border-color: #818cf8;
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.6);
+            background: rgba(49, 46, 129, 0.6);
+            transform: translateY(-2px);
+        }
+
+        .hotbar-key {
+            position: absolute;
+            top: 2px;
+            left: 4px;
+            font-size: 10px;
+            font-weight: 800;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .hotbar-count {
+            position: absolute;
+            bottom: 2px;
+            right: 4px;
+            font-size: 11px;
+            font-weight: 800;
+            color: #38bdf8;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 0 4px;
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body class="relative min-h-screen select-none overflow-hidden bg-gray-950 font-sans text-gray-100">
@@ -149,23 +196,49 @@
         </div>
     </div>
 
-    <!-- Equipped Weapon -->
-    <div class="flex items-center justify-between rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-xs">
-        <span class="text-gray-400">Equipped Weapon</span>
-        <span id="weapon-val" class="font-bold text-gray-200">Wooden Stick</span>
+    <!-- Equipped Gear HUD -->
+    <div class="flex flex-col gap-1.5 rounded-xl border border-white/10 bg-black/40 p-2.5 text-xs">
+        <div class="flex items-center justify-between">
+            <span class="text-gray-400">Equipped Weapon</span>
+            <span id="weapon-val" class="font-bold text-indigo-300">Wooden Stick</span>
+        </div>
+        <div class="flex items-center justify-between border-t border-white/10 pt-1.5">
+            <span class="text-gray-400">Equipped Armor</span>
+            <span id="armor-val" class="font-bold text-emerald-400">None</span>
+        </div>
     </div>
 </div>
 
-<!-- Dimension Selector -->
-<div id="dimension-bar" class="glass-panel pointer-events-auto absolute bottom-5 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full p-2 shadow-2xl">
+<!-- BOTTOM EQUIPMENT & HOTBAR CONTROLLER -->
+<div class="pointer-events-auto absolute bottom-5 left-1/2 z-30 flex -translate-x-1/2 items-center gap-4">
+    <!-- Item Hotbar (Slots 1-6) -->
+    <div id="hotbar-container" class="glass-panel flex items-center gap-2 rounded-2xl p-2.5 shadow-2xl">
+        <!-- Rendered via JS -->
+    </div>
+
+    <!-- Armor Equipment Slot Beside Hotbar -->
+    <div class="glass-panel flex items-center gap-2 rounded-2xl p-2.5 shadow-2xl border-l-2 border-indigo-500/40">
+        <div class="text-center pr-1">
+            <div class="text-[9px] font-extrabold text-indigo-300 uppercase tracking-wider">BODY</div>
+            <div class="text-[9px] font-bold text-gray-400">ARMOR</div>
+        </div>
+        <div id="armor-slot" onclick="cycleArmor()" class="hotbar-slot !border-emerald-500/50 hover:!border-emerald-400" title="Click to cycle equipped armor">
+            <span class="hotbar-key">A</span>
+            <span id="armor-slot-icon" class="text-2xl">🛡️</span>
+        </div>
+    </div>
+</div>
+
+<!-- Dimension Selector Top Center -->
+<div id="dimension-bar" class="glass-panel pointer-events-auto absolute top-5 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full p-2 shadow-2xl">
     <button id="btn-overworld" onclick="switchDimension('overworld')" class="dim-btn flex items-center gap-2 rounded-full px-5 py-2.5 font-display text-xs font-bold transition-all duration-200 bg-indigo-600 text-white shadow-[0_0_15px_rgba(79,70,229,0.5)]">
         <span>🌿</span> Overworld
     </button>
     <button id="btn-nether" onclick="switchDimension('nether')" class="dim-btn flex items-center gap-2 rounded-full px-5 py-2.5 font-display text-xs font-bold transition-all duration-200 bg-white/5 text-gray-400 border border-white/10 opacity-60 hover:opacity-100">
-        <span>🔒</span> Nether [5 Shards Required]
+        <span>🔒</span> Nether
     </button>
     <button id="btn-void" onclick="switchDimension('void')" class="dim-btn flex items-center gap-2 rounded-full px-5 py-2.5 font-display text-xs font-bold transition-all duration-200 bg-white/5 text-gray-400 border border-white/10 opacity-60 hover:opacity-100">
-        <span>🔒</span> The Void [5 Shards Required]
+        <span>🔒</span> The Void
     </button>
 </div>
 
@@ -195,7 +268,7 @@
     <div class="flex items-center justify-between border-b border-white/10 pb-4">
         <div>
             <h2 class="font-display text-2xl font-extrabold tracking-wide text-white">⚒️ FORGE & CRAFTING WORKSTATION</h2>
-            <p class="text-xs text-gray-400">Construct unique equipment, armors, and consumables to survive multi-dimensional threats.</p>
+            <p class="text-xs text-gray-400">Construct unique equipment, body armors, trackers, and consumables to survive multi-dimensional threats.</p>
         </div>
         <div class="flex items-center gap-4">
             <div class="flex items-center gap-3 rounded-2xl bg-black/40 px-4 py-2 border border-white/10 text-xs">
@@ -221,10 +294,10 @@
 
 <script>
 // ==========================================
-// ANIMATION & TWEAK CONFIGURATION
+// ANIMATION & CONFIGURATION
 // ==========================================
 const ANIMATION_SETTINGS = {
-    weaponSwingAngle: Math.PI / 2, // 90 degree arc
+    weaponSwingAngle: Math.PI / 2,
     weaponSwingSpeed: 0.15,
     mobWalkWobbleSpeed: 0.015,
     mobWalkWobbleAmount: 0.25,
@@ -254,12 +327,42 @@ const WEAPONS = {
     hammer: { id: 'hammer', name: 'Ore Sledge', damage: 75, range: 75, color: '#38bdf8' },
     blade:  { id: 'blade', name: 'Plasma Sword', damage: 120, range: 110, color: '#fbbf24' },
     scythe: { id: 'scythe', name: 'Void Scythe', damage: 190, range: 130, color: '#c084fc' },
-    bow:    { id: 'bow', name: 'Frostbite Bow', damage: 95, range: 140, color: '#60a5fa' },
-    shield: { id: 'shield', name: 'Nether Core Aegis', damage: 140, range: 85, color: '#f97316' }
+    bow:    { id: 'bow', name: 'Frostbite Bow', damage: 95, range: 140, color: '#60a5fa' }
 };
 
-// FULL EXPANDED CRAFTABLE ITEMS CATALOG
+// ARMORS DEFINITION
+const ARMORS = {
+    padded: { id: 'padded', name: 'Reinforced Plating', icon: '🛡️', hpBonus: 30, color: '#34d399', auraColor: 'rgba(52, 211, 153, 0.4)' },
+    shadow: { id: 'shadow', name: 'Shadow Cloak', icon: '🧥', hpBonus: 75, color: '#a855f7', auraColor: 'rgba(168, 85, 247, 0.4)' },
+    aegis:  { id: 'aegis', name: 'Aegis Plate', icon: '🦾', hpBonus: 130, color: '#38bdf8', auraColor: 'rgba(56, 189, 248, 0.5)' }
+};
+
+// FULL EXPANDED CRAFTABLE CATALOG
 const CRAFTABLES = [
+    {
+        id: 'tracker', name: 'Shard Compass', type: 'utility',
+        icon: '🧭', rarity: 'Special', desc: 'Ancient compass that projects a beam pointing to nearest portal shard.',
+        stats: 'Locates Portal Shards', cost: { wood: 10, stone: 15, ore: 5 },
+        consumable: false, apply: () => { player.hasShardTracker = true; }
+    },
+    {
+        id: 'padded', name: 'Reinforced Plating', type: 'armor', armorKey: 'padded',
+        icon: '🛡️', rarity: 'Uncommon', desc: 'Crafted stone-reinforced torso armor.',
+        stats: '+30 Max HP • Defense Aura', cost: { wood: 15, stone: 20, ore: 5 },
+        consumable: false
+    },
+    {
+        id: 'shadow', name: 'Shadow Cloak', type: 'armor', armorKey: 'shadow',
+        icon: '🧥', rarity: 'Epic', desc: 'Weaved cloak infused with shadow ore to absorb hits.',
+        stats: '+75 Max HP • Dark Aura', cost: { wood: 25, stone: 25, ore: 20 },
+        consumable: false
+    },
+    {
+        id: 'aegis', name: 'Aegis Plate', type: 'armor', armorKey: 'aegis',
+        icon: '🦾', rarity: 'Mythic', desc: 'Heavy impenetrable metallic armor plate.',
+        stats: '+130 Max HP • Aegis Shield', cost: { wood: 40, stone: 40, ore: 35 },
+        consumable: false
+    },
     {
         id: 'spear', name: 'Stone Spear', type: 'weapon', weaponKey: 'spear',
         icon: '🗡️', rarity: 'Uncommon', desc: 'Crafted from sharpened stone. Long reach attack.',
@@ -276,12 +379,6 @@ const CRAFTABLES = [
         id: 'bow', name: 'Frostbite Bow', type: 'weapon', weaponKey: 'bow',
         icon: '🏹', rarity: 'Rare', desc: 'Long-range weapon infused with icy tundra essence.',
         stats: '+95 Damage • 140 Range', cost: { wood: 30, stone: 15, ore: 10 },
-        consumable: false
-    },
-    {
-        id: 'shield', name: 'Nether Core Aegis', type: 'weapon', weaponKey: 'shield',
-        icon: '🛡️', rarity: 'Epic', desc: 'Forged from lava-infused minerals to deliver heavy sweeping attacks.',
-        stats: '+140 Damage • High Defense', cost: { wood: 20, stone: 35, ore: 25 },
         consumable: false
     },
     {
@@ -303,12 +400,6 @@ const CRAFTABLES = [
         consumable: false, apply: () => { player.speed += 1.2; }
     },
     {
-        id: 'armor', name: 'Shadow Cloak', type: 'stat',
-        icon: '🧥', rarity: 'Epic', desc: 'Hardened armor increasing total survivor maximum vitality.',
-        stats: '+50 Max HP Bonus', cost: { wood: 25, stone: 30, ore: 20 },
-        consumable: false, apply: () => { player.maxHp += 50; player.hp += 50; }
-    },
-    {
         id: 'heal', name: 'Health Salve', type: 'consumable',
         icon: '🧪', rarity: 'Common', desc: 'A soothing concoction restoring lost health points.',
         stats: '+45 Vitality Restored', cost: { wood: 5, stone: 5, ore: 0 },
@@ -322,7 +413,7 @@ const CRAFTABLES = [
     }
 ];
 
-// MOBS CONFIG (Radius = Hitbox, Size = Visual Sprite Appearance)
+// MOBS CONFIG
 const MOBS_CONFIG = {
     gerard:  { name: 'Gerard', spriteSrc: 'images/gerard.jpeg', hp: 100, speed: 2.8, radius: 20, size: 28, damage: 0.25, fallbackColor: '#ef4444' },
     jason:   { name: 'Jason', spriteSrc: 'images/jason.jpeg', hp: 130, speed: 2.5, radius: 22, size: 30, damage: 0.35, fallbackColor: '#f97316' },
@@ -377,12 +468,21 @@ const DIMENSIONS = {
 };
 
 let currentDim = 'overworld';
+let activeHotbarIndex = 0;
+
 let player = {
     x: HALF_WORLD, y: HALF_WORLD, radius: 18, speed: 5.2,
     hp: 100, maxHp: 100, wood: 0, stone: 0, ore: 0,
     shards: { overworld: 0, nether: 0, void: 0 },
     unlockedDims: { overworld: true, nether: false, void: false },
-    craftedItems: {}, // Tracks items crafted (one-time crafts)
+    craftedItems: {},
+    hasShardTracker: false,
+    hotbar: [
+        { id: 'stick', name: 'Wooden Stick', type: 'weapon', weaponKey: 'stick', icon: '🪵', count: 1 },
+        null, null, null, null, null
+    ],
+    ownedArmors: [],
+    armorKey: null, armor: null,
     weaponKey: 'stick', weapon: WEAPONS.stick,
     facingAngle: 0, isAttacking: false, attackProgress: 0
 };
@@ -407,9 +507,17 @@ function loadSavedData() {
             player.shards = data.shards || { overworld: 0, nether: 0, void: 0 };
             player.unlockedDims = data.unlockedDims || { overworld: true, nether: false, void: false };
             player.craftedItems = data.craftedItems || {};
+            player.hasShardTracker = data.hasShardTracker || false;
+            player.hotbar = data.hotbar || player.hotbar;
+            player.ownedArmors = data.ownedArmors || [];
+
             if (data.weaponKey && WEAPONS[data.weaponKey]) {
                 player.weaponKey = data.weaponKey;
                 player.weapon = WEAPONS[data.weaponKey];
+            }
+            if (data.armorKey && ARMORS[data.armorKey]) {
+                player.armorKey = data.armorKey;
+                player.armor = ARMORS[data.armorKey];
             }
             if (data.maxHp) player.maxHp = data.maxHp;
             if (data.speed) player.speed = data.speed;
@@ -423,6 +531,8 @@ function saveData() {
         wood: player.wood, stone: player.stone, ore: player.ore,
         shards: player.shards, unlockedDims: player.unlockedDims,
         craftedItems: player.craftedItems, weaponKey: player.weaponKey,
+        armorKey: player.armorKey, hasShardTracker: player.hasShardTracker,
+        hotbar: player.hotbar, ownedArmors: player.ownedArmors,
         maxHp: player.maxHp, speed: player.speed, gameTime: gameTime
     };
     localStorage.setItem('survival_realm_save', JSON.stringify(data));
@@ -435,12 +545,55 @@ function resetGameData() {
     }
 }
 
+function selectHotbarSlot(index) {
+    if (index < 0 || index >= 6) return;
+    activeHotbarIndex = index;
+    const item = player.hotbar[index];
+    
+    if (item && item.type === 'weapon' && WEAPONS[item.weaponKey]) {
+        player.weaponKey = item.weaponKey;
+        player.weapon = WEAPONS[item.weaponKey];
+    }
+    
+    updateHUD();
+}
+
+function cycleArmor() {
+    if (player.ownedArmors.length === 0) {
+        showToast("🛡️ No Armor Available", "Craft armor pieces in the Crafting Matrix to equip!");
+        return;
+    }
+
+    if (!player.armorKey) {
+        player.armorKey = player.ownedArmors[0];
+    } else {
+        const currIndex = player.ownedArmors.indexOf(player.armorKey);
+        if (currIndex >= player.ownedArmors.length - 1) {
+            player.armorKey = null; // Unequip
+        } else {
+            player.armorKey = player.ownedArmors[currIndex + 1];
+        }
+    }
+
+    if (player.armorKey && ARMORS[player.armorKey]) {
+        player.armor = ARMORS[player.armorKey];
+        showToast("🛡️ Armor Equipped", `Equipped ${player.armor.name}`);
+    } else {
+        player.armor = null;
+        showToast("🛡️ Armor Unequipped", "You are now wearing no outer armor.");
+    }
+
+    updateHUD();
+    saveData();
+}
+
 function updateHUD() {
     document.getElementById('wood-val').innerText = player.wood;
     document.getElementById('stone-val').innerText = player.stone;
     document.getElementById('ore-val').innerText = player.ore;
     document.getElementById('shard-val').innerText = `${player.shards[currentDim]}/5`;
-    document.getElementById('weapon-val').innerText = player.weapon.name;
+    document.getElementById('weapon-val').innerText = player.weapon ? player.weapon.name : 'Wooden Stick';
+    document.getElementById('armor-val').innerText = player.armor ? player.armor.name : 'None';
     document.getElementById('hp-text').innerText = `${Math.max(0, Math.ceil(player.hp))} / ${player.maxHp}`;
     
     document.getElementById('fs-wood').innerText = player.wood;
@@ -450,13 +603,29 @@ function updateHUD() {
     const pct = Math.max(0, (player.hp / player.maxHp) * 100);
     document.getElementById('hp-bar').style.width = `${pct}%`;
 
-    Object.keys(player.unlockedDims).forEach(dim => {
-        const btn = document.getElementById(`btn-${dim}`);
-        if (btn && player.unlockedDims[dim]) {
-            btn.innerText = dim.toUpperCase();
-            btn.style.opacity = '1';
-        }
-    });
+    // Render Hotbar Slots
+    const hotbarElem = document.getElementById('hotbar-container');
+    let hotbarHTML = '';
+    for (let i = 0; i < 6; i++) {
+        const item = player.hotbar[i];
+        const isActive = i === activeHotbarIndex;
+        hotbarHTML += `
+            <div onclick="selectHotbarSlot(${i})" class="hotbar-slot ${isActive ? 'active' : ''}">
+                <span class="hotbar-key">${i + 1}</span>
+                ${item ? `<span class="text-2xl">${item.icon}</span>` : ''}
+                ${item && item.count > 1 ? `<span class="hotbar-count">x${item.count}</span>` : ''}
+            </div>
+        `;
+    }
+    hotbarElem.innerHTML = hotbarHTML;
+
+    // Render Armor Slot UI
+    const armorIconElem = document.getElementById('armor-slot-icon');
+    if (player.armor) {
+        armorIconElem.innerText = player.armor.icon;
+    } else {
+        armorIconElem.innerText = '🛡️';
+    }
 
     renderCraftingUI();
 }
@@ -472,14 +641,12 @@ function renderCraftingUI() {
         const isCrafted = player.craftedItems[item.id] && !item.consumable;
         const canAfford = player.wood >= item.cost.wood && player.stone >= item.cost.stone && player.ore >= item.cost.ore;
 
-        // Cost String
         let costStr = [];
         if (item.cost.wood > 0) costStr.push(`${item.cost.wood}W`);
         if (item.cost.stone > 0) costStr.push(`${item.cost.stone}S`);
         if (item.cost.ore > 0) costStr.push(`${item.cost.ore}O`);
         const costText = costStr.join(' • ');
 
-        // Compact Entry
         compactHTML += `
             <button onclick="craftItem('${item.id}')" ${isCrafted || !canAfford ? 'disabled' : ''}
                 class="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] p-2.5 text-left transition-all hover:bg-white/[0.1] active:scale-95 disabled:opacity-40 disabled:pointer-events-none">
@@ -494,7 +661,6 @@ function renderCraftingUI() {
             </button>
         `;
 
-        // Fullscreen Entry
         fullHTML += `
             <div class="glass-panel flex flex-col justify-between rounded-2xl border border-white/10 p-4 transition-all hover:border-indigo-500/40">
                 <div>
@@ -540,15 +706,94 @@ function toggleFullscreenCrafting(show) {
 
 window.addEventListener('keydown', e => {
     if (e.key === 'Escape') toggleFullscreenCrafting(false);
+    if (['1','2','3','4','5','6'].includes(e.key)) {
+        selectHotbarSlot(parseInt(e.key) - 1);
+    }
 });
 
-function showToast(title, desc) {
-    const container = document.getElementById('toast-container');
-    const toast = document.createElement('div');
-    toast.className = 'animate-toast glass-panel rounded-xl px-4 py-2 text-center text-xs shadow-lg border border-indigo-500/30';
-    toast.innerHTML = `<div class="font-bold text-indigo-300">${title}</div><div class="text-gray-300 text-[11px]">${desc}</div>`;
-    container.appendChild(toast);
-    setTimeout(() => toast.remove(), 3500);
+function addItemToHotbar(itemDef) {
+    if (itemDef.type === 'armor') {
+        if (!player.ownedArmors.includes(itemDef.armorKey)) {
+            player.ownedArmors.push(itemDef.armorKey);
+        }
+        player.armorKey = itemDef.armorKey;
+        player.armor = ARMORS[itemDef.armorKey];
+        return;
+    }
+
+    // Try stacking existing item in hotbar first
+    let existingIndex = player.hotbar.findIndex(slot => slot && slot.id === itemDef.id);
+    if (existingIndex !== -1 && itemDef.consumable) {
+        player.hotbar[existingIndex].count++;
+        selectHotbarSlot(existingIndex);
+        return;
+    }
+
+    // Otherwise place in first empty hotbar slot
+    let emptyIndex = player.hotbar.findIndex(slot => slot === null);
+    if (emptyIndex !== -1) {
+        player.hotbar[emptyIndex] = {
+            id: itemDef.id,
+            name: itemDef.name,
+            type: itemDef.type,
+            weaponKey: itemDef.weaponKey,
+            icon: itemDef.icon,
+            count: 1,
+            apply: itemDef.apply
+        };
+        selectHotbarSlot(emptyIndex);
+    } else {
+        showToast("🎒 Hotbar Full", "Could not add item to hotbar.");
+    }
+}
+
+function craftItem(itemId) {
+    const item = CRAFTABLES.find(c => c.id === itemId);
+    if (!item) return;
+
+    if (!item.consumable && player.craftedItems[item.id]) {
+        showToast("⚠️ Already Crafted", "You can only craft this equipment once!");
+        return;
+    }
+
+    if (player.wood >= item.cost.wood && player.stone >= item.cost.stone && player.ore >= item.cost.ore) {
+        player.wood -= item.cost.wood;
+        player.stone -= item.cost.stone;
+        player.ore -= item.cost.ore;
+
+        if (!item.consumable) player.craftedItems[item.id] = true;
+
+        addItemToHotbar(item);
+
+        if (item.apply) item.apply();
+
+        showToast(`${item.icon} Crafted!`, `Constructed ${item.name}!`);
+        updateHUD();
+        saveData();
+    } else {
+        showToast("❌ Insufficient Resources", "Gather more materials to forge this item.");
+    }
+}
+
+function useActiveHotbarItem() {
+    const item = player.hotbar[activeHotbarIndex];
+    if (!item) return false;
+
+    if (item.type === 'consumable') {
+        const itemDef = CRAFTABLES.find(c => c.id === item.id);
+        if (itemDef && itemDef.apply) {
+            itemDef.apply();
+            item.count--;
+            showToast(`${item.icon} Consumed`, `Used ${item.name}!`);
+            if (item.count <= 0) {
+                player.hotbar[activeHotbarIndex] = null;
+            }
+            updateHUD();
+            saveData();
+            return true;
+        }
+    }
+    return false;
 }
 
 loadSavedData();
@@ -643,41 +888,12 @@ function switchDimension(dimName) {
     saveData();
 }
 
-function craftItem(itemId) {
-    const item = CRAFTABLES.find(c => c.id === itemId);
-    if (!item) return;
-
-    // Check if non-consumable item has already been crafted
-    if (!item.consumable && player.craftedItems[item.id]) {
-        showToast("⚠️ Already Crafted", "You can only craft this equipment once!");
-        return;
-    }
-
-    // Check resources
-    if (player.wood >= item.cost.wood && player.stone >= item.cost.stone && player.ore >= item.cost.ore) {
-        player.wood -= item.cost.wood;
-        player.stone -= item.cost.stone;
-        player.ore -= item.cost.ore;
-
-        if (!item.consumable) player.craftedItems[item.id] = true;
-
-        if (item.type === 'weapon' && item.weaponKey && WEAPONS[item.weaponKey]) {
-            player.weaponKey = item.weaponKey;
-            player.weapon = WEAPONS[item.weaponKey];
-        }
-
-        if (item.apply) item.apply();
-
-        showToast(`${item.icon} Crafted!`, `Constructed ${item.name}!`);
-        updateHUD();
-        saveData();
-    } else {
-        showToast("❌ Insufficient Resources", "Gather more materials to forge this item.");
-    }
-}
-
 canvas.addEventListener('pointerdown', () => {
     if (player.hp <= 0) return;
+
+    if (useActiveHotbarItem()) {
+        return; // Consumed item instead of attacking
+    }
 
     player.isAttacking = true;
     player.attackProgress = 0;
@@ -879,60 +1095,32 @@ function drawResource(res, rx, ry) {
 
     if (res.type === 'tree') {
         ctx.fillStyle = 'rgba(0,0,0,0.25)';
-        ctx.beginPath();
-        ctx.ellipse(0, 18, 22, 10, 0, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.beginPath(); ctx.ellipse(0, 18, 22, 10, 0, 0, Math.PI * 2); ctx.fill();
 
-        ctx.fillStyle = '#78350f';
-        ctx.fillRect(-5, -5, 10, 22);
+        ctx.fillStyle = '#78350f'; ctx.fillRect(-5, -5, 10, 22);
 
-        ctx.fillStyle = '#047857';
-        ctx.beginPath(); ctx.arc(0, -12, 22, 0, Math.PI * 2); ctx.fill();
-
-        ctx.fillStyle = '#10b981';
-        ctx.beginPath(); ctx.arc(-6, -18, 14, 0, Math.PI * 2); ctx.fill();
-
-        ctx.fillStyle = '#34d399';
-        ctx.beginPath(); ctx.arc(4, -22, 10, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#047857'; ctx.beginPath(); ctx.arc(0, -12, 22, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#10b981'; ctx.beginPath(); ctx.arc(-6, -18, 14, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#34d399'; ctx.beginPath(); ctx.arc(4, -22, 10, 0, Math.PI * 2); ctx.fill();
     } else if (res.type === 'stone') {
-        ctx.fillStyle = 'rgba(0,0,0,0.3)';
-        ctx.beginPath();
-        ctx.ellipse(0, 10, 18, 8, 0, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(0, 10, 18, 8, 0, 0, Math.PI * 2); ctx.fill();
 
-        ctx.fillStyle = '#64748b';
-        ctx.beginPath();
+        ctx.fillStyle = '#64748b'; ctx.beginPath();
         ctx.moveTo(-16, 8); ctx.lineTo(-20, -6); ctx.lineTo(-6, -18);
-        ctx.lineTo(14, -14); ctx.lineTo(20, 4); ctx.lineTo(8, 14);
-        ctx.closePath(); ctx.fill();
+        ctx.lineTo(14, -14); ctx.lineTo(20, 4); ctx.lineTo(8, 14); ctx.closePath(); ctx.fill();
 
-        ctx.fillStyle = '#94a3b8';
-        ctx.beginPath();
-        ctx.moveTo(-6, -18); ctx.lineTo(14, -14); ctx.lineTo(2, -2); ctx.lineTo(-12, -4);
-        ctx.closePath(); ctx.fill();
+        ctx.fillStyle = '#94a3b8'; ctx.beginPath();
+        ctx.moveTo(-6, -18); ctx.lineTo(14, -14); ctx.lineTo(2, -2); ctx.lineTo(-12, -4); ctx.closePath(); ctx.fill();
     } else if (res.type === 'ore') {
-        ctx.fillStyle = 'rgba(0,0,0,0.35)';
-        ctx.beginPath();
-        ctx.ellipse(0, 10, 20, 8, 0, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.beginPath(); ctx.ellipse(0, 10, 20, 8, 0, 0, Math.PI * 2); ctx.fill();
 
-        ctx.fillStyle = '#334155';
-        ctx.beginPath();
+        ctx.fillStyle = '#334155'; ctx.beginPath();
         ctx.moveTo(-18, 6); ctx.lineTo(-14, -14); ctx.lineTo(10, -18);
-        ctx.lineTo(18, -2); ctx.lineTo(12, 12); ctx.lineTo(-10, 14);
-        ctx.closePath(); ctx.fill();
+        ctx.lineTo(18, -2); ctx.lineTo(12, 12); ctx.lineTo(-10, 14); ctx.closePath(); ctx.fill();
 
-        ctx.fillStyle = '#06b6d4';
-        ctx.shadowColor = '#38bdf8';
-        ctx.shadowBlur = 10;
-        
-        ctx.beginPath();
-        ctx.moveTo(-8, 2); ctx.lineTo(-2, -12); ctx.lineTo(4, 2); ctx.closePath();
-        ctx.fill();
-
-        ctx.beginPath();
-        ctx.moveTo(2, 0); ctx.lineTo(12, -10); ctx.lineTo(12, 4); ctx.closePath();
-        ctx.fill();
+        ctx.fillStyle = '#06b6d4'; ctx.shadowColor = '#38bdf8'; ctx.shadowBlur = 10;
+        ctx.beginPath(); ctx.moveTo(-8, 2); ctx.lineTo(-2, -12); ctx.lineTo(4, 2); ctx.closePath(); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(2, 0); ctx.lineTo(12, -10); ctx.lineTo(12, 4); ctx.closePath(); ctx.fill();
         ctx.shadowBlur = 0;
     }
     ctx.restore();
@@ -954,10 +1142,8 @@ function drawStructure(struct, cameraX, cameraY) {
         ctx.fillRect(sx - 14, sy - 10, 28, 24);
 
         if (struct.chestOpened) {
-            ctx.fillStyle = '#475569';
-            ctx.fillRect(sx - 12, sy - 12, 24, 20);
-            ctx.fillStyle = '#1e293b';
-            ctx.fillRect(sx - 10, sy - 10, 20, 8);
+            ctx.fillStyle = '#475569'; ctx.fillRect(sx - 12, sy - 12, 24, 20);
+            ctx.fillStyle = '#1e293b'; ctx.fillRect(sx - 10, sy - 10, 20, 8);
         } else {
             ctx.fillStyle = struct.containsShard ? '#9333ea' : '#d97706';
             ctx.fillRect(sx - 12, sy - 12, 24, 20);
@@ -965,6 +1151,60 @@ function drawStructure(struct, cameraX, cameraY) {
             ctx.fillStyle = struct.containsShard ? '#e9d5ff' : '#fef08a';
             ctx.fillRect(sx - 3, sy - 4, 6, 8);
         }
+    }
+}
+
+function drawShardTrackerOverlay(cameraX, cameraY) {
+    if (!player.hasShardTracker) return;
+
+    const currentData = dimEntities[currentDim];
+    let nearestStruct = null;
+    let minDist = Infinity;
+
+    currentData.structures.forEach(struct => {
+        if (struct.containsShard && !struct.chestOpened) {
+            const d = Math.hypot(struct.x - player.x, struct.y - player.y);
+            if (d < minDist) {
+                minDist = d;
+                nearestStruct = struct;
+            }
+        }
+    });
+
+    if (nearestStruct) {
+        const px = canvas.width / 2;
+        const py = canvas.height / 2;
+        const targetX = nearestStruct.x - cameraX;
+        const targetY = nearestStruct.y - cameraY;
+
+        const angle = Math.atan2(targetY - py, targetX - px);
+
+        ctx.save();
+        ctx.strokeStyle = 'rgba(192, 132, 252, 0.6)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([8, 8]);
+        ctx.beginPath();
+        ctx.moveTo(px, py);
+        ctx.lineTo(targetX, targetY);
+        ctx.stroke();
+        ctx.restore();
+
+        // Pointer Arrow near player
+        ctx.save();
+        ctx.translate(px + Math.cos(angle) * 60, py + Math.sin(angle) * 60);
+        ctx.rotate(angle);
+        ctx.fillStyle = '#c084fc';
+        ctx.beginPath();
+        ctx.moveTo(12, 0); ctx.lineTo(-8, -8); ctx.lineTo(-4, 0); ctx.lineTo(-8, 8);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+
+        // Shard Distance Tag
+        ctx.font = 'bold 10px "Plus Jakarta Sans", sans-serif';
+        ctx.fillStyle = '#e9d5ff';
+        ctx.textAlign = 'center';
+        ctx.fillText(`SHARD REASON: ${Math.round(minDist / 10)}m`, px + Math.cos(angle) * 90, py + Math.sin(angle) * 90);
     }
 }
 
@@ -992,7 +1232,10 @@ function draw() {
         }
     });
 
-    // Enemies (Render using size parameter)
+    // Shard Tracker Guidance Line
+    drawShardTrackerOverlay(cameraX, cameraY);
+
+    // Enemies
     currentData.enemies.forEach(enemy => {
         const ex = enemy.x - cameraX, ey = enemy.y - cameraY;
         if (ex < -80 || ex > canvas.width + 80 || ey < -80 || ey > canvas.height + 80) return;
@@ -1072,6 +1315,17 @@ function draw() {
     ctx.ellipse(0, 14, player.radius * 0.9, player.radius * 0.4, 0, 0, Math.PI * 2);
     ctx.fill();
 
+    // Armor Visual Aura Ring
+    if (player.armor) {
+        ctx.strokeStyle = player.armor.color;
+        ctx.fillStyle = player.armor.auraColor;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(0, 0, player.radius + 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+    }
+
     ctx.rotate(player.facingAngle);
 
     let currentSwingOffset = 0;
@@ -1084,27 +1338,29 @@ function draw() {
     ctx.rotate(currentSwingOffset);
 
     // Weapon
-    ctx.strokeStyle = player.weapon.color;
-    ctx.lineWidth = player.isAttacking ? 8 : 6;
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.lineTo(player.weapon.range, 0);
-    ctx.stroke();
-
-    if (player.isAttacking) {
-        ctx.fillStyle = player.weapon.color;
-        ctx.globalAlpha = 0.25;
+    if (player.weapon) {
+        ctx.strokeStyle = player.weapon.color;
+        ctx.lineWidth = player.isAttacking ? 8 : 6;
+        ctx.lineCap = 'round';
         ctx.beginPath();
         ctx.moveTo(0, 0);
-        ctx.arc(0, 0, player.weapon.range, -ANIMATION_SETTINGS.weaponSwingAngle / 2, currentSwingOffset, false);
-        ctx.closePath();
-        ctx.fill();
-        ctx.globalAlpha = 1.0;
+        ctx.lineTo(player.weapon.range, 0);
+        ctx.stroke();
+
+        if (player.isAttacking) {
+            ctx.fillStyle = player.weapon.color;
+            ctx.globalAlpha = 0.25;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.arc(0, 0, player.weapon.range, -ANIMATION_SETTINGS.weaponSwingAngle / 2, currentSwingOffset, false);
+            ctx.closePath();
+            ctx.fill();
+            ctx.globalAlpha = 1.0;
+        }
     }
     ctx.restore();
 
-    // Player Circle
+    // Player Core Body
     ctx.fillStyle = '#6366f1';
     ctx.beginPath();
     ctx.arc(0, 0, player.radius, 0, Math.PI * 2);
