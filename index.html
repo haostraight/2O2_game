@@ -66,23 +66,8 @@
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.5); border-radius: 99px; }
         ::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.5); border-radius: 99px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(129, 140, 248, 0.8); }
 
-        @keyframes shardGlow {
-            0%, 100% { filter: drop-shadow(0 0 6px rgba(192, 132, 252, 0.8)); transform: scale(1); }
-            50% { filter: drop-shadow(0 0 14px rgba(192, 132, 252, 1)); transform: scale(1.08); }
-        }
-
-        .shard-pulse { animation: shardGlow 2.5s infinite ease-in-out; }
-
-        @keyframes toastIn {
-            from { opacity: 0; transform: translateY(-20px) scale(0.92); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-
-        .animate-toast { animation: toastIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-
-        .hotbar-slot {
+        .hotbar-slot, .inv-slot {
             width: 52px;
             height: 52px;
             position: relative;
@@ -96,7 +81,7 @@
             transition: all 0.15s ease;
         }
 
-        .hotbar-slot:hover {
+        .hotbar-slot:hover, .inv-slot:hover {
             border-color: rgba(129, 140, 248, 0.6);
             background: rgba(30, 41, 59, 0.9);
         }
@@ -117,14 +102,14 @@
             color: rgba(255, 255, 255, 0.5);
         }
 
-        .hotbar-count {
+        .item-count {
             position: absolute;
             bottom: 2px;
             right: 4px;
             font-size: 11px;
             font-weight: 800;
             color: #38bdf8;
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(0, 0, 0, 0.7);
             padding: 0 4px;
             border-radius: 4px;
         }
@@ -137,17 +122,16 @@
 
 <div id="toast-container" class="pointer-events-none absolute top-6 left-1/2 z-30 flex -translate-x-1/2 flex-col items-center gap-2"></div>
 
-<!-- HUD STATS -->
-<div id="stats-hud" class="glass-panel glass-panel-glow pointer-events-auto absolute top-5 left-5 z-20 w-80 rounded-2xl p-4 transition-all duration-300">
+<!-- STATUS HUD -->
+<div id="stats-hud" class="glass-panel glass-panel-glow pointer-events-auto absolute top-5 left-5 z-20 w-80 rounded-2xl p-4">
     <div class="mb-3 flex items-center justify-between border-b border-white/10 pb-2">
         <div class="flex items-center gap-2">
             <span class="inline-block h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]"></span>
             <span class="font-display text-xs font-bold tracking-widest text-gray-300 uppercase">SURVIVOR STATUS</span>
         </div>
-        <div class="flex items-center gap-1.5 rounded-full bg-black/40 px-2.5 py-0.5 text-[11px] font-semibold text-gray-400 border border-white/5">
-            <span>⏱️</span>
-            <span id="time-val" class="font-mono text-gray-200">00:00</span>
-        </div>
+        <button onclick="toggleInventory(true)" class="rounded-lg bg-indigo-600/30 px-2.5 py-1 text-xs font-bold text-indigo-300 border border-indigo-400/30 hover:bg-indigo-600/50">
+            🎒 Inventory [TAB]
+        </button>
     </div>
 
     <!-- Health Bar -->
@@ -157,19 +141,8 @@
             <span id="hp-text" class="text-gray-200">100 / 100</span>
         </div>
         <div class="relative h-4 w-full overflow-hidden rounded-full border border-white/10 bg-black/50 p-0.5">
-            <div id="hp-bar" class="h-full w-full rounded-full bg-gradient-to-r from-rose-600 via-rose-500 to-amber-500 shadow-[0_0_12px_rgba(244,63,94,0.6)] transition-all duration-300"></div>
+            <div id="hp-bar" class="h-full w-full rounded-full bg-gradient-to-r from-rose-600 via-rose-500 to-amber-500 transition-all duration-300"></div>
         </div>
-    </div>
-
-    <!-- Quest Objective -->
-    <div class="mb-3.5 rounded-xl border border-indigo-500/30 bg-gradient-to-r from-indigo-950/50 via-purple-950/30 to-slate-900/50 p-3 shadow-inner">
-        <div class="flex items-center justify-between">
-            <span class="text-[10px] font-extrabold tracking-wider text-indigo-400 uppercase">MAIN OBJECTIVE</span>
-            <span id="objective-tag" class="rounded bg-indigo-500/20 px-1.5 py-0.5 text-[9px] font-bold text-indigo-300">DIMENSION 1</span>
-        </div>
-        <p id="quest-desc" class="mt-1 text-xs font-semibold leading-relaxed text-gray-200">
-            Search chest ruins to locate <span class="font-bold text-purple-300">5 Overworld Shards</span> to ignite the Nether Portal!
-        </p>
     </div>
 
     <!-- Resource Grid -->
@@ -177,51 +150,58 @@
         <div class="rounded-lg border border-white/5 bg-white/[0.03] p-1.5">
             <div class="text-base">🪵</div>
             <div id="wood-val" class="font-display text-xs font-bold text-amber-200">0</div>
-            <div class="text-[9px] font-medium text-gray-400 uppercase">Wood</div>
         </div>
         <div class="rounded-lg border border-white/5 bg-white/[0.03] p-1.5">
             <div class="text-base">🪨</div>
             <div id="stone-val" class="font-display text-xs font-bold text-slate-300">0</div>
-            <div class="text-[9px] font-medium text-gray-400 uppercase">Stone</div>
         </div>
         <div class="rounded-lg border border-white/5 bg-white/[0.03] p-1.5">
             <div class="text-base">💎</div>
             <div id="ore-val" class="font-display text-xs font-bold text-cyan-300">0</div>
-            <div class="text-[9px] font-medium text-gray-400 uppercase">Ore</div>
         </div>
-        <div class="shard-pulse rounded-lg border border-purple-500/30 bg-purple-950/40 p-1.5 shadow-[0_0_10px_rgba(168,85,247,0.2)]">
+        <div class="rounded-lg border border-purple-500/30 bg-purple-950/40 p-1.5">
             <div class="text-base">🔮</div>
             <div id="shard-val" class="font-display text-xs font-bold text-purple-300">0/5</div>
-            <div class="text-[9px] font-medium text-purple-200 uppercase">Shards</div>
         </div>
     </div>
 
-    <!-- Equipped Gear HUD -->
+    <!-- Equipped Gear HUD with Detailed Armor Buff Display -->
     <div class="flex flex-col gap-1.5 rounded-xl border border-white/10 bg-black/40 p-2.5 text-xs">
         <div class="flex items-center justify-between">
             <span class="text-gray-400">Equipped Weapon</span>
             <span id="weapon-val" class="font-bold text-indigo-300">Wooden Stick</span>
         </div>
-        <div class="flex items-center justify-between border-t border-white/10 pt-1.5">
-            <span class="text-gray-400">Equipped Armor</span>
-            <span id="armor-val" class="font-bold text-emerald-400">None</span>
+        <div class="flex flex-col border-t border-white/10 pt-1.5">
+            <div class="flex items-center justify-between">
+                <span class="text-gray-400">Equipped Armor</span>
+                <span id="armor-val" class="font-bold text-emerald-400">None</span>
+            </div>
+            <div id="armor-buff-val" class="mt-0.5 text-[10px] font-semibold text-emerald-300/80">
+                Buffs: No Active Protection
+            </div>
         </div>
     </div>
 </div>
 
-<!-- BOTTOM EQUIPMENT & HOTBAR CONTROLLER -->
-<div class="pointer-events-auto absolute bottom-5 left-1/2 z-30 flex -translate-x-1/2 items-center gap-4">
-    <!-- Item Hotbar (Slots 1-6) -->
-    <div id="hotbar-container" class="glass-panel flex items-center gap-2 rounded-2xl p-2.5 shadow-2xl">
-        <!-- Rendered via JS -->
+<!-- DUAL HOTBAR SYSTEM (Bottom) -->
+<div class="pointer-events-auto absolute bottom-5 left-1/2 z-30 flex -translate-x-1/2 items-center gap-3">
+    <!-- Weapon / Utility Hotbar -->
+    <div class="glass-panel flex flex-col items-center gap-1 rounded-2xl p-2">
+        <span class="text-[9px] font-extrabold tracking-widest text-indigo-300 uppercase">WEAPONS & TOOLS</span>
+        <div id="weapon-hotbar" class="flex items-center gap-1.5"></div>
     </div>
 
-    <!-- Armor Equipment Slot Beside Hotbar -->
-    <div class="glass-panel flex items-center gap-2 rounded-2xl p-2.5 shadow-2xl border-l-2 border-indigo-500/40">
-        <div class="text-center pr-1">
-            <div class="text-[9px] font-extrabold text-indigo-300 uppercase tracking-wider">BODY</div>
-            <div class="text-[9px] font-bold text-gray-400">ARMOR</div>
-        </div>
+    <div class="h-10 w-0.5 bg-white/20"></div>
+
+    <!-- Consumables Hotbar -->
+    <div class="glass-panel flex flex-col items-center gap-1 rounded-2xl p-2 border-amber-500/30">
+        <span class="text-[9px] font-extrabold tracking-widest text-amber-300 uppercase">CONSUMABLES</span>
+        <div id="consumable-hotbar" class="flex items-center gap-1.5"></div>
+    </div>
+
+    <!-- Armor Slot -->
+    <div class="glass-panel flex flex-col items-center gap-1 rounded-2xl p-2 border-emerald-500/30">
+        <span class="text-[9px] font-extrabold tracking-widest text-emerald-300 uppercase">ARMOR</span>
         <div id="armor-slot" onclick="cycleArmor()" class="hotbar-slot !border-emerald-500/50 hover:!border-emerald-400" title="Click to cycle equipped armor">
             <span class="hotbar-key">A</span>
             <span id="armor-slot-icon" class="text-2xl">🛡️</span>
@@ -229,86 +209,53 @@
     </div>
 </div>
 
-<!-- Dimension Selector Top Center -->
-<div id="dimension-bar" class="glass-panel pointer-events-auto absolute top-5 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full p-2 shadow-2xl">
-    <button id="btn-overworld" onclick="switchDimension('overworld')" class="dim-btn flex items-center gap-2 rounded-full px-5 py-2.5 font-display text-xs font-bold transition-all duration-200 bg-indigo-600 text-white shadow-[0_0_15px_rgba(79,70,229,0.5)]">
-        <span>🌿</span> Overworld
-    </button>
-    <button id="btn-nether" onclick="switchDimension('nether')" class="dim-btn flex items-center gap-2 rounded-full px-5 py-2.5 font-display text-xs font-bold transition-all duration-200 bg-white/5 text-gray-400 border border-white/10 opacity-60 hover:opacity-100">
-        <span>🔒</span> Nether
-    </button>
-    <button id="btn-void" onclick="switchDimension('void')" class="dim-btn flex items-center gap-2 rounded-full px-5 py-2.5 font-display text-xs font-bold transition-all duration-200 bg-white/5 text-gray-400 border border-white/10 opacity-60 hover:opacity-100">
-        <span>🔒</span> The Void
-    </button>
+<!-- DIMENSION SELECTOR -->
+<div id="dimension-bar" class="glass-panel pointer-events-auto absolute top-5 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full p-2">
+    <button id="btn-overworld" onclick="switchDimension('overworld')" class="dim-btn flex items-center gap-2 rounded-full px-5 py-2.5 font-display text-xs font-bold transition-all bg-indigo-600 text-white">🌿 Overworld</button>
+    <button id="btn-nether" onclick="switchDimension('nether')" class="dim-btn flex items-center gap-2 rounded-full px-5 py-2.5 font-display text-xs font-bold transition-all bg-white/5 text-gray-400 opacity-60">🔒 Nether</button>
+    <button id="btn-void" onclick="switchDimension('void')" class="dim-btn flex items-center gap-2 rounded-full px-5 py-2.5 font-display text-xs font-bold transition-all bg-white/5 text-gray-400 opacity-60">🔒 The Void</button>
 </div>
 
-<!-- Compact Crafting Side Panel -->
-<div id="crafting-panel" class="glass-panel pointer-events-auto absolute top-5 right-5 z-20 w-80 rounded-2xl p-4 shadow-2xl transition-all">
+<!-- CRAFTING PANEL -->
+<div id="crafting-panel" class="glass-panel pointer-events-auto absolute top-5 right-5 z-20 w-80 rounded-2xl p-4 shadow-2xl">
     <div class="mb-3 flex items-center justify-between border-b border-white/10 pb-2">
         <div class="flex items-center gap-2">
             <span class="text-sm">⚒️</span>
-            <span class="font-display text-xs font-bold tracking-wider text-gray-200 uppercase">CRAFTING MATRIX</span>
+            <span class="font-display text-xs font-bold tracking-wider text-gray-200 uppercase">FORGE MATRIX</span>
         </div>
-        <div class="flex items-center gap-2">
-            <button onclick="toggleFullscreenCrafting(true)" title="Expand Fullscreen" class="rounded-lg bg-indigo-600/30 px-2 py-1 text-[11px] font-bold text-indigo-300 hover:bg-indigo-600/50 border border-indigo-400/30">
-                ⛶ Fullscreen
-            </button>
-            <button onclick="resetGameData()" class="text-[10px] font-semibold text-rose-400 hover:text-rose-300 underline">Reset</button>
-        </div>
+        <button onclick="resetGameData()" class="rounded bg-rose-600/30 px-2 py-0.5 text-[11px] font-extrabold text-rose-300 border border-rose-500/40 hover:bg-rose-600/60 transition-all">
+            RESET DATA
+        </button>
     </div>
-
-    <!-- Scrollable Mini Craft List -->
-    <div id="compact-craft-list" class="flex flex-col gap-2 max-h-80 overflow-y-auto pr-1">
-        <!-- Rendered via JS -->
-    </div>
+    <div id="compact-craft-list" class="flex flex-col gap-2 max-h-80 overflow-y-auto pr-1"></div>
 </div>
 
-<!-- Fullscreen Crafting Overlay Grid -->
-<div id="fullscreen-crafting" class="glass-panel pointer-events-auto fixed inset-6 z-50 hidden flex-col rounded-3xl p-6 shadow-2xl backdrop-blur-2xl">
+<!-- LARGE UNLIMITED INVENTORY MODAL -->
+<div id="inventory-modal" class="glass-panel pointer-events-auto fixed inset-10 z-50 hidden flex-col rounded-3xl p-6 shadow-2xl backdrop-blur-2xl">
     <div class="flex items-center justify-between border-b border-white/10 pb-4">
         <div>
-            <h2 class="font-display text-2xl font-extrabold tracking-wide text-white">⚒️ FORGE & CRAFTING WORKSTATION</h2>
-            <p class="text-xs text-gray-400">Construct unique equipment, body armors, trackers, and consumables to survive multi-dimensional threats.</p>
+            <h2 class="font-display text-2xl font-extrabold tracking-wide text-white">🎒 EXPANDED SURVIVAL INVENTORY</h2>
+            <p class="text-xs text-gray-400">Drag & drop items onto hotbars. Click consumables to use them instantly!</p>
         </div>
-        <div class="flex items-center gap-4">
-            <div class="flex items-center gap-3 rounded-2xl bg-black/40 px-4 py-2 border border-white/10 text-xs">
-                <span>🪵 <strong id="fs-wood" class="text-amber-200">0</strong></span>
-                <span>🪨 <strong id="fs-stone" class="text-slate-300">0</strong></span>
-                <span>💎 <strong id="fs-ore" class="text-cyan-300">0</strong></span>
-            </div>
-            <button onclick="toggleFullscreenCrafting(false)" class="rounded-xl bg-rose-600/30 px-4 py-2 font-display text-xs font-bold text-rose-200 border border-rose-500/40 hover:bg-rose-600/50">
-                ✖ Close [ESC]
-            </button>
-        </div>
+        <button onclick="toggleInventory(false)" class="rounded-xl bg-rose-600/30 px-4 py-2 font-display text-xs font-bold text-rose-200 border border-rose-500/40 hover:bg-rose-600/50">
+            ✖ Close [ESC]
+        </button>
     </div>
 
-    <!-- Crafting Grid -->
-    <div id="fullscreen-craft-grid" class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto pr-2 flex-1">
-        <!-- Rendered via JS -->
+    <div class="mt-6 flex flex-1 gap-6 overflow-hidden">
+        <div class="flex-1 overflow-y-auto pr-2">
+            <h3 class="mb-3 font-display text-xs font-bold tracking-wider text-indigo-300 uppercase">STORAGE VAULT (UNLIMITED ITEMS & STACKS)</h3>
+            <div id="inventory-grid" class="grid grid-cols-6 lg:grid-cols-8 gap-3"></div>
+        </div>
     </div>
-</div>
-
-<div id="minimap-container" class="glass-panel pointer-events-none absolute bottom-5 right-5 z-20 h-40 w-40 overflow-hidden rounded-2xl border-2 border-white/15 shadow-2xl">
-    <canvas id="minimapCanvas" width="160" height="160" class="block h-full w-full"></canvas>
 </div>
 
 <script>
-// ==========================================
-// ANIMATION & CONFIGURATION
-// ==========================================
-const ANIMATION_SETTINGS = {
-    weaponSwingAngle: Math.PI / 2,
-    weaponSwingSpeed: 0.15,
-    mobWalkWobbleSpeed: 0.015,
-    mobWalkWobbleAmount: 0.25,
-    mobIdleBobSpeed: 0.005,
-    mobIdleBobAmount: 3
-};
-
+// CONFIG & CONSTANTS
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-const minimapCanvas = document.getElementById('minimapCanvas');
-const minimapCtx = minimapCanvas.getContext('2d');
+const WORLD_SIZE = 8000;
+const HALF_WORLD = WORLD_SIZE / 2;
 
 function resizeCanvas() {
     canvas.width = window.innerWidth;
@@ -317,10 +264,6 @@ function resizeCanvas() {
 resizeCanvas();
 window.addEventListener('resize', resizeCanvas);
 
-const WORLD_SIZE = 8000;
-const HALF_WORLD = WORLD_SIZE / 2;
-
-// WEAPONS DEFINITION
 const WEAPONS = {
     stick:  { id: 'stick', name: 'Wooden Stick', damage: 20, range: 65, color: '#9ca3af' },
     spear:  { id: 'spear', name: 'Stone Spear', damage: 40, range: 90, color: '#34d399' },
@@ -330,157 +273,41 @@ const WEAPONS = {
     bow:    { id: 'bow', name: 'Frostbite Bow', damage: 95, range: 140, color: '#60a5fa' }
 };
 
-// ARMORS DEFINITION
 const ARMORS = {
-    padded: { id: 'padded', name: 'Reinforced Plating', icon: '🛡️', hpBonus: 30, color: '#34d399', auraColor: 'rgba(52, 211, 153, 0.4)' },
-    shadow: { id: 'shadow', name: 'Shadow Cloak', icon: '🧥', hpBonus: 75, color: '#a855f7', auraColor: 'rgba(168, 85, 247, 0.4)' },
-    aegis:  { id: 'aegis', name: 'Aegis Plate', icon: '🦾', hpBonus: 130, color: '#38bdf8', auraColor: 'rgba(56, 189, 248, 0.5)' }
+    padded: { id: 'padded', name: 'Reinforced Plating', icon: '🛡️', hpBonus: 30, desc: '+30 HP • Defense Shield' },
+    shadow: { id: 'shadow', name: 'Shadow Cloak', icon: '🧥', hpBonus: 75, desc: '+75 HP • Dark Veil Protection' },
+    aegis:  { id: 'aegis', name: 'Aegis Plate', icon: '🦾', hpBonus: 130, desc: '+130 HP • Aegis Forcefield' }
 };
 
-// FULL EXPANDED CRAFTABLE CATALOG
 const CRAFTABLES = [
-    {
-        id: 'tracker', name: 'Shard Compass', type: 'utility',
-        icon: '🧭', rarity: 'Special', desc: 'Ancient compass that projects a beam pointing to nearest portal shard.',
-        stats: 'Locates Portal Shards', cost: { wood: 10, stone: 15, ore: 5 },
-        consumable: false, apply: () => { player.hasShardTracker = true; }
-    },
-    {
-        id: 'padded', name: 'Reinforced Plating', type: 'armor', armorKey: 'padded',
-        icon: '🛡️', rarity: 'Uncommon', desc: 'Crafted stone-reinforced torso armor.',
-        stats: '+30 Max HP • Defense Aura', cost: { wood: 15, stone: 20, ore: 5 },
-        consumable: false
-    },
-    {
-        id: 'shadow', name: 'Shadow Cloak', type: 'armor', armorKey: 'shadow',
-        icon: '🧥', rarity: 'Epic', desc: 'Weaved cloak infused with shadow ore to absorb hits.',
-        stats: '+75 Max HP • Dark Aura', cost: { wood: 25, stone: 25, ore: 20 },
-        consumable: false
-    },
-    {
-        id: 'aegis', name: 'Aegis Plate', type: 'armor', armorKey: 'aegis',
-        icon: '🦾', rarity: 'Mythic', desc: 'Heavy impenetrable metallic armor plate.',
-        stats: '+130 Max HP • Aegis Shield', cost: { wood: 40, stone: 40, ore: 35 },
-        consumable: false
-    },
-    {
-        id: 'spear', name: 'Stone Spear', type: 'weapon', weaponKey: 'spear',
-        icon: '🗡️', rarity: 'Uncommon', desc: 'Crafted from sharpened stone. Long reach attack.',
-        stats: '+40 Damage • 90 Range', cost: { wood: 10, stone: 10, ore: 0 },
-        consumable: false
-    },
-    {
-        id: 'hammer', name: 'Ore Sledge', type: 'weapon', weaponKey: 'hammer',
-        icon: '🔨', rarity: 'Rare', desc: 'Heavy blunt sledge that smashes armor.',
-        stats: '+75 Damage • High Impact', cost: { wood: 15, stone: 0, ore: 20 },
-        consumable: false
-    },
-    {
-        id: 'bow', name: 'Frostbite Bow', type: 'weapon', weaponKey: 'bow',
-        icon: '🏹', rarity: 'Rare', desc: 'Long-range weapon infused with icy tundra essence.',
-        stats: '+95 Damage • 140 Range', cost: { wood: 30, stone: 15, ore: 10 },
-        consumable: false
-    },
-    {
-        id: 'blade', name: 'Plasma Sword', type: 'weapon', weaponKey: 'blade',
-        icon: '⚡', rarity: 'Legendary', desc: 'High-tech sword slicing through reality with dynamic arcs.',
-        stats: '+120 Damage • 110 Range', cost: { wood: 25, stone: 25, ore: 15 },
-        consumable: false
-    },
-    {
-        id: 'scythe', name: 'Void Scythe', type: 'weapon', weaponKey: 'scythe',
-        icon: '🔮', rarity: 'Mythic', desc: 'An ancient relic capable of cleaving void matter.',
-        stats: '+190 Damage • 130 Cleave Arc', cost: { wood: 40, stone: 40, ore: 30 },
-        consumable: false
-    },
-    {
-        id: 'boots', name: 'Swift Boots', type: 'stat',
-        icon: '🥾', rarity: 'Uncommon', desc: 'Lightweight boots that permanently boost movement speed.',
-        stats: '+20% Speed Increase', cost: { wood: 15, stone: 5, ore: 5 },
-        consumable: false, apply: () => { player.speed += 1.2; }
-    },
-    {
-        id: 'heal', name: 'Health Salve', type: 'consumable',
-        icon: '🧪', rarity: 'Common', desc: 'A soothing concoction restoring lost health points.',
-        stats: '+45 Vitality Restored', cost: { wood: 5, stone: 5, ore: 0 },
-        consumable: true, apply: () => { player.hp = Math.min(player.maxHp, player.hp + 45); }
-    },
-    {
-        id: 'elixir', name: 'Full Recovery Elixir', type: 'consumable',
-        icon: '🍷', rarity: 'Rare', desc: 'A potent elixir fully restoring player vitality.',
-        stats: 'Restores 100% Health', cost: { wood: 15, stone: 15, ore: 10 },
-        consumable: true, apply: () => { player.hp = player.maxHp; }
-    }
+    { id: 'padded', name: 'Reinforced Plating', type: 'armor', armorKey: 'padded', icon: '🛡️', stats: '+30 Max HP', cost: { wood: 15, stone: 20, ore: 5 } },
+    { id: 'shadow', name: 'Shadow Cloak', type: 'armor', armorKey: 'shadow', icon: '🧥', stats: '+75 Max HP', cost: { wood: 25, stone: 25, ore: 20 } },
+    { id: 'aegis', name: 'Aegis Plate', type: 'armor', armorKey: 'aegis', icon: '🦾', stats: '+130 Max HP', cost: { wood: 40, stone: 40, ore: 35 } },
+    { id: 'spear', name: 'Stone Spear', type: 'weapon', weaponKey: 'spear', icon: '🗡️', stats: '+40 DMG', cost: { wood: 10, stone: 10, ore: 0 } },
+    { id: 'hammer', name: 'Ore Sledge', type: 'weapon', weaponKey: 'hammer', icon: '🔨', stats: '+75 DMG', cost: { wood: 15, stone: 0, ore: 20 } },
+    { id: 'bow', name: 'Frostbite Bow', type: 'weapon', weaponKey: 'bow', icon: '🏹', stats: '+95 DMG', cost: { wood: 30, stone: 15, ore: 10 } },
+    { id: 'blade', name: 'Plasma Sword', type: 'weapon', weaponKey: 'blade', icon: '⚡', stats: '+120 DMG', cost: { wood: 25, stone: 25, ore: 15 } },
+    { id: 'scythe', name: 'Void Scythe', type: 'weapon', weaponKey: 'scythe', icon: '🔮', stats: '+190 DMG', cost: { wood: 40, stone: 40, ore: 30 } },
+    { id: 'heal', name: 'Health Salve', type: 'consumable', icon: '🧪', stats: '+45 Vitality', cost: { wood: 5, stone: 5, ore: 0 } },
+    { id: 'elixir', name: 'Full Elixir', type: 'consumable', icon: '🍷', stats: 'Full Healing', cost: { wood: 15, stone: 15, ore: 10 } }
 ];
 
-// MOBS CONFIG
-const MOBS_CONFIG = {
-    gerard:  { name: 'Gerard', spriteSrc: 'images/gerard.jpeg', hp: 100, speed: 2.8, radius: 20, size: 28, damage: 0.25, fallbackColor: '#ef4444' },
-    jason:   { name: 'Jason', spriteSrc: 'images/jason.jpeg', hp: 130, speed: 2.5, radius: 22, size: 30, damage: 0.35, fallbackColor: '#f97316' },
-    liuji:   { name: 'Liu Ji', spriteSrc: 'images/liu-ji.jpeg', hp: 220, speed: 1.8, radius: 25, size: 34, damage: 0.55, fallbackColor: '#dc2626' },
-    matthew: { name: 'Matthew', spriteSrc: 'images/matthew.jpeg', hp: 200, speed: 2.7, radius: 24, size: 32, damage: 0.45, fallbackColor: '#b91c1c' },
-    travia:  { name: 'Travia', spriteSrc: 'images/travia.jpeg', hp: 280, speed: 2.2, radius: 25, size: 36, damage: 0.60, fallbackColor: '#9333ea' },
-    xayven:  { name: 'Xayven', spriteSrc: 'images/xayven.jpeg', hp: 350, speed: 3.0, radius: 28, size: 40, damage: 0.75, fallbackColor: '#7e22ce' },
-    xuchen:  { name: 'Xuchen', spriteSrc: 'images/xuchen.jpeg', hp: 1250, speed: 1.5, radius: 40, size: 58, damage: 1.20, fallbackColor: '#a855f7', isBoss: true }
-};
-
-const loadedSprites = {};
-Object.keys(MOBS_CONFIG).forEach(key => {
-    const img = new Image();
-    img.src = MOBS_CONFIG[key].spriteSrc;
-    img.isLoaded = false;
-    img.onload = () => { img.isLoaded = true; };
-    img.onerror = () => { img.isLoaded = false; };
-    loadedSprites[key] = img;
-});
-
-const DIMENSIONS = {
-    overworld: {
-        id: 'overworld', name: 'OVERWORLD',
-        biomes: [
-            { name: 'Verdant Plains', bg: '#0b291a', grid: '#133e28' },
-            { name: 'Sunburnt Dunes', bg: '#2b1d0c', grid: '#3d2b14' },
-            { name: 'Frostbite Tundra', bg: '#0f2332', grid: '#173347' },
-            { name: 'Shadowwood Forest', bg: '#0f1d16', grid: '#182f24' }
-        ],
-        mobs: ['gerard', 'jason'], requiredShards: 0, nextDim: 'nether'
-    },
-    nether: {
-        id: 'nether', name: 'NETHER',
-        biomes: [
-            { name: 'Crimson Wastes', bg: '#2b0707', grid: '#400c0c' },
-            { name: 'Ash Valley', bg: '#17171a', grid: '#242429' },
-            { name: 'Basalt Delta', bg: '#1c1510', grid: '#2b211a' },
-            { name: 'Lava Ridges', bg: '#360a02', grid: '#4d1004' }
-        ],
-        mobs: ['liuji', 'matthew'], requiredShards: 5, nextDim: 'void'
-    },
-    void: {
-        id: 'void', name: 'THE VOID',
-        biomes: [
-            { name: 'Astral Abyss', bg: '#15092b', grid: '#231142' },
-            { name: 'Nebula Ridges', bg: '#1f0933', grid: '#30104e' },
-            { name: 'Ender Wastes', bg: '#0b0821', grid: '#141036' },
-            { name: 'Starfall Ruins', bg: '#100c2e', grid: '#1a1447' }
-        ],
-        mobs: ['travia', 'xayven'], requiredShards: 5, nextDim: null
-    }
-};
-
 let currentDim = 'overworld';
-let activeHotbarIndex = 0;
+let activeWeaponSlot = 0;
+let keys = {};
+let mousePos = { x: 0, y: 0 };
 
 let player = {
     x: HALF_WORLD, y: HALF_WORLD, radius: 18, speed: 5.2,
-    hp: 100, maxHp: 100, wood: 0, stone: 0, ore: 0,
+    hp: 100, maxHp: 100, baseMaxHp: 100, wood: 0, stone: 0, ore: 0,
     shards: { overworld: 0, nether: 0, void: 0 },
     unlockedDims: { overworld: true, nether: false, void: false },
-    craftedItems: {},
-    hasShardTracker: false,
-    hotbar: [
+    weaponHotbar: [
         { id: 'stick', name: 'Wooden Stick', type: 'weapon', weaponKey: 'stick', icon: '🪵', count: 1 },
-        null, null, null, null, null
+        null, null, null, null
     ],
+    consumableHotbar: [null, null, null],
+    inventory: [],
     ownedArmors: [],
     armorKey: null, armor: null,
     weaponKey: 'stick', weapon: WEAPONS.stick,
@@ -488,16 +315,17 @@ let player = {
 };
 
 let dimEntities = {
-    overworld: { resources: [], enemies: [], structures: [] },
-    nether: { resources: [], enemies: [], structures: [] },
-    void: { resources: [], enemies: [], structures: [] }
+    overworld: { resources: [], enemies: [] },
+    nether: { resources: [], enemies: [] },
+    void: { resources: [], enemies: [] }
 };
 
-let particles = [];
-let gameTime = 0;
+let draggedItem = null;
+let draggedSource = null;
 
+// INIT & SAVING
 function loadSavedData() {
-    const saved = localStorage.getItem('survival_realm_save');
+    const saved = localStorage.getItem('survival_realm_v3');
     if (saved) {
         try {
             const data = JSON.parse(saved);
@@ -506,23 +334,16 @@ function loadSavedData() {
             player.ore = data.ore || 0;
             player.shards = data.shards || { overworld: 0, nether: 0, void: 0 };
             player.unlockedDims = data.unlockedDims || { overworld: true, nether: false, void: false };
-            player.craftedItems = data.craftedItems || {};
-            player.hasShardTracker = data.hasShardTracker || false;
-            player.hotbar = data.hotbar || player.hotbar;
+            player.weaponHotbar = data.weaponHotbar || player.weaponHotbar;
+            player.consumableHotbar = data.consumableHotbar || player.consumableHotbar;
+            player.inventory = data.inventory || [];
             player.ownedArmors = data.ownedArmors || [];
-
-            if (data.weaponKey && WEAPONS[data.weaponKey]) {
-                player.weaponKey = data.weaponKey;
-                player.weapon = WEAPONS[data.weaponKey];
+            player.armorKey = data.armorKey || null;
+            if (player.armorKey && ARMORS[player.armorKey]) {
+                player.armor = ARMORS[player.armorKey];
+                player.maxHp = player.baseMaxHp + player.armor.hpBonus;
             }
-            if (data.armorKey && ARMORS[data.armorKey]) {
-                player.armorKey = data.armorKey;
-                player.armor = ARMORS[data.armorKey];
-            }
-            if (data.maxHp) player.maxHp = data.maxHp;
-            if (data.speed) player.speed = data.speed;
-            gameTime = data.gameTime || 0;
-        } catch (e) { console.error("Failed loading save:", e); }
+        } catch (e) { console.error(e); }
     }
 }
 
@@ -530,483 +351,364 @@ function saveData() {
     const data = {
         wood: player.wood, stone: player.stone, ore: player.ore,
         shards: player.shards, unlockedDims: player.unlockedDims,
-        craftedItems: player.craftedItems, weaponKey: player.weaponKey,
-        armorKey: player.armorKey, hasShardTracker: player.hasShardTracker,
-        hotbar: player.hotbar, ownedArmors: player.ownedArmors,
-        maxHp: player.maxHp, speed: player.speed, gameTime: gameTime
+        weaponHotbar: player.weaponHotbar, consumableHotbar: player.consumableHotbar,
+        inventory: player.inventory, ownedArmors: player.ownedArmors, armorKey: player.armorKey
     };
-    localStorage.setItem('survival_realm_save', JSON.stringify(data));
+    localStorage.setItem('survival_realm_v3', JSON.stringify(data));
 }
 
 function resetGameData() {
-    if (confirm("Reset all game progress and crafted items?")) {
-        localStorage.removeItem('survival_realm_save');
+    if (confirm("Are you SURE you want to fully reset ALL progress, inventory, and unlocked gear?")) {
+        localStorage.removeItem('survival_realm_v3');
         location.reload();
     }
 }
 
-function selectHotbarSlot(index) {
-    if (index < 0 || index >= 6) return;
-    activeHotbarIndex = index;
-    const item = player.hotbar[index];
+function showToast(title, msg) {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = 'glass-panel flex items-center gap-3 rounded-2xl px-4 py-3 shadow-2xl border-indigo-500/30';
+    toast.innerHTML = `<div><div class="text-xs font-bold text-indigo-300">${title}</div><div class="text-[11px] text-gray-300">${msg}</div></div>`;
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 2500);
+}
+
+// GENERATION & SPAWNING
+function generateDimension(dimKey) {
+    const res = [];
+    const count = dimKey === 'overworld' ? 300 : dimKey === 'nether' ? 250 : 200;
     
+    for (let i = 0; i < count; i++) {
+        let type = 'tree';
+        let r = Math.random();
+        if (dimKey === 'overworld') {
+            type = r < 0.5 ? 'tree' : r < 0.85 ? 'rock' : 'ore';
+        } else if (dimKey === 'nether') {
+            type = r < 0.4 ? 'rock' : r < 0.8 ? 'ore' : 'shard';
+        } else {
+            type = r < 0.3 ? 'rock' : r < 0.6 ? 'ore' : 'shard';
+        }
+
+        res.push({
+            id: i,
+            x: Math.random() * (WORLD_SIZE - 200) + 100,
+            y: Math.random() * (WORLD_SIZE - 200) + 100,
+            type: type,
+            hp: type === 'tree' ? 30 : type === 'rock' ? 50 : type === 'ore' ? 80 : 100,
+            radius: type === 'tree' ? 22 : 18
+        });
+    }
+
+    const enemies = [];
+    const eCount = dimKey === 'overworld' ? 40 : dimKey === 'nether' ? 65 : 85;
+    for (let i = 0; i < eCount; i++) {
+        enemies.push({
+            id: i,
+            x: Math.random() * (WORLD_SIZE - 200) + 100,
+            y: Math.random() * (WORLD_SIZE - 200) + 100,
+            hp: dimKey === 'overworld' ? 60 : dimKey === 'nether' ? 120 : 220,
+            maxHp: dimKey === 'overworld' ? 60 : dimKey === 'nether' ? 120 : 220,
+            speed: dimKey === 'overworld' ? 2.2 : 2.8,
+            damage: dimKey === 'overworld' ? 8 : 16,
+            radius: 16
+        });
+    }
+
+    dimEntities[dimKey] = { resources: res, enemies: enemies };
+}
+
+generateDimension('overworld');
+generateDimension('nether');
+generateDimension('void');
+
+// ACTION LOGIC
+function selectWeaponSlot(index) {
+    activeWeaponSlot = index;
+    const item = player.weaponHotbar[index];
     if (item && item.type === 'weapon' && WEAPONS[item.weaponKey]) {
         player.weaponKey = item.weaponKey;
         player.weapon = WEAPONS[item.weaponKey];
     }
-    
     updateHUD();
+}
+
+function useConsumable(slotIndex, isFromInventory = false) {
+    let item = isFromInventory ? player.inventory[slotIndex] : player.consumableHotbar[slotIndex];
+    if (!item || item.type !== 'consumable') return;
+
+    if (item.id === 'heal') {
+        player.hp = Math.min(player.maxHp, player.hp + 45);
+        showToast("🧪 Consumed Salve", "Restored +45 Vitality!");
+    } else if (item.id === 'elixir') {
+        player.hp = player.maxHp;
+        showToast("🍷 Consumed Elixir", "Fully Restored Vitality!");
+    }
+
+    item.count--;
+    if (item.count <= 0) {
+        if (isFromInventory) player.inventory.splice(slotIndex, 1);
+        else player.consumableHotbar[slotIndex] = null;
+    }
+
+    updateHUD();
+    saveData();
 }
 
 function cycleArmor() {
     if (player.ownedArmors.length === 0) {
-        showToast("🛡️ No Armor Available", "Craft armor pieces in the Crafting Matrix to equip!");
+        showToast("🛡️ No Armor Owned", "Craft armor in the Forge Matrix first!");
         return;
     }
 
     if (!player.armorKey) {
         player.armorKey = player.ownedArmors[0];
     } else {
-        const currIndex = player.ownedArmors.indexOf(player.armorKey);
-        if (currIndex >= player.ownedArmors.length - 1) {
-            player.armorKey = null; // Unequip
-        } else {
-            player.armorKey = player.ownedArmors[currIndex + 1];
-        }
+        const idx = player.ownedArmors.indexOf(player.armorKey);
+        player.armorKey = idx >= player.ownedArmors.length - 1 ? null : player.ownedArmors[idx + 1];
     }
 
     if (player.armorKey && ARMORS[player.armorKey]) {
         player.armor = ARMORS[player.armorKey];
-        showToast("🛡️ Armor Equipped", `Equipped ${player.armor.name}`);
+        player.maxHp = player.baseMaxHp + player.armor.hpBonus;
+        showToast("🛡️ Armor Equipped", `Equipped ${player.armor.name}!`);
     } else {
         player.armor = null;
-        showToast("🛡️ Armor Unequipped", "You are now wearing no outer armor.");
+        player.maxHp = player.baseMaxHp;
+        showToast("🛡️ Armor Unequipped", "Removed active armor.");
     }
 
+    player.hp = Math.min(player.hp, player.maxHp);
     updateHUD();
     saveData();
 }
 
+function switchDimension(dimKey) {
+    if (!player.unlockedDims[dimKey]) {
+        if (player.shards[currentDim] >= 5) {
+            player.unlockedDims[dimKey] = true;
+            showToast("🌀 Realm Portal Unlocked", `Entered the ${dimKey.toUpperCase()}!`);
+        } else {
+            showToast("🔒 Realm Locked", `Collect 5 Dimensional Shards to enter ${dimKey.toUpperCase()}!`);
+            return;
+        }
+    }
+    currentDim = dimKey;
+    document.querySelectorAll('.dim-btn').forEach(btn => btn.classList.add('opacity-60', 'bg-white/5'));
+    document.getElementById(`btn-${dimKey}`).classList.remove('opacity-60', 'bg-white/5');
+    document.getElementById(`btn-${dimKey}`).classList.add('bg-indigo-600');
+    updateHUD();
+}
+
+// DRAG & DROP
+function dragItem(e, source, index) {
+    draggedSource = { source, index };
+    if (source === 'weapon') draggedItem = player.weaponHotbar[index];
+    else if (source === 'consumable') draggedItem = player.consumableHotbar[index];
+    else if (source === 'inventory') draggedItem = player.inventory[index];
+}
+
+function allowDrop(e) { e.preventDefault(); }
+
+function dropItem(e, targetType, targetIndex) {
+    e.preventDefault();
+    if (!draggedItem || !draggedSource) return;
+
+    if (targetType === 'weapon' && draggedItem.type === 'consumable') {
+        showToast("⚠️ Invalid Drag", "Consumables cannot be placed in weapon slots!");
+        return;
+    }
+    if (targetType === 'consumable' && draggedItem.type !== 'consumable') {
+        showToast("⚠️ Invalid Drag", "Only consumables go into consumable slots!");
+        return;
+    }
+
+    let targetContainer = targetType === 'weapon' ? player.weaponHotbar : targetType === 'consumable' ? player.consumableHotbar : player.inventory;
+    let sourceContainer = draggedSource.source === 'weapon' ? player.weaponHotbar : draggedSource.source === 'consumable' ? player.consumableHotbar : player.inventory;
+
+    let temp = targetContainer[targetIndex];
+    targetContainer[targetIndex] = draggedItem;
+
+    if (draggedSource.source === 'inventory' && !temp) {
+        sourceContainer.splice(draggedSource.index, 1);
+    } else {
+        sourceContainer[draggedSource.index] = temp;
+    }
+
+    draggedItem = null;
+    draggedSource = null;
+    updateHUD();
+    saveData();
+}
+
+// UI RENDERING
 function updateHUD() {
     document.getElementById('wood-val').innerText = player.wood;
     document.getElementById('stone-val').innerText = player.stone;
     document.getElementById('ore-val').innerText = player.ore;
     document.getElementById('shard-val').innerText = `${player.shards[currentDim]}/5`;
     document.getElementById('weapon-val').innerText = player.weapon ? player.weapon.name : 'Wooden Stick';
-    document.getElementById('armor-val').innerText = player.armor ? player.armor.name : 'None';
-    document.getElementById('hp-text').innerText = `${Math.max(0, Math.ceil(player.hp))} / ${player.maxHp}`;
-    
-    document.getElementById('fs-wood').innerText = player.wood;
-    document.getElementById('fs-stone').innerText = player.stone;
-    document.getElementById('fs-ore').innerText = player.ore;
 
-    const pct = Math.max(0, (player.hp / player.maxHp) * 100);
-    document.getElementById('hp-bar').style.width = `${pct}%`;
-
-    // Render Hotbar Slots
-    const hotbarElem = document.getElementById('hotbar-container');
-    let hotbarHTML = '';
-    for (let i = 0; i < 6; i++) {
-        const item = player.hotbar[i];
-        const isActive = i === activeHotbarIndex;
-        hotbarHTML += `
-            <div onclick="selectHotbarSlot(${i})" class="hotbar-slot ${isActive ? 'active' : ''}">
-                <span class="hotbar-key">${i + 1}</span>
-                ${item ? `<span class="text-2xl">${item.icon}</span>` : ''}
-                ${item && item.count > 1 ? `<span class="hotbar-count">x${item.count}</span>` : ''}
-            </div>
-        `;
-    }
-    hotbarElem.innerHTML = hotbarHTML;
-
-    // Render Armor Slot UI
-    const armorIconElem = document.getElementById('armor-slot-icon');
     if (player.armor) {
-        armorIconElem.innerText = player.armor.icon;
+        document.getElementById('armor-val').innerText = player.armor.name;
+        document.getElementById('armor-buff-val').innerText = `Buffs: ${player.armor.desc}`;
     } else {
-        armorIconElem.innerText = '🛡️';
+        document.getElementById('armor-val').innerText = 'None';
+        document.getElementById('armor-buff-val').innerText = 'Buffs: No Active Protection';
     }
+
+    document.getElementById('hp-text').innerText = `${Math.ceil(player.hp)} / ${player.maxHp}`;
+    document.getElementById('hp-bar').style.width = `${Math.max(0, (player.hp / player.maxHp) * 100)}%`;
+
+    document.getElementById('weapon-hotbar').innerHTML = player.weaponHotbar.map((item, i) => `
+        <div onclick="selectWeaponSlot(${i})" ondragover="allowDrop(event)" ondrop="dropItem(event, 'weapon', ${i})" class="hotbar-slot ${i === activeWeaponSlot ? 'active' : ''}">
+            <span class="hotbar-key">${i + 1}</span>
+            ${item ? `<span draggable="true" ondragstart="dragItem(event, 'weapon', ${i})" class="text-2xl">${item.icon}</span>` : ''}
+        </div>
+    `).join('');
+
+    document.getElementById('consumable-hotbar').innerHTML = player.consumableHotbar.map((item, i) => `
+        <div onclick="useConsumable(${i})" ondragover="allowDrop(event)" ondrop="dropItem(event, 'consumable', ${i})" class="hotbar-slot !border-amber-500/30">
+            <span class="hotbar-key">${i + 6}</span>
+            ${item ? `
+                <span draggable="true" ondragstart="dragItem(event, 'consumable', ${i})" class="text-2xl">${item.icon}</span>${item.count > 1 ? `<span class="item-count">x${item.count}</span>` : ''}
+            ` : ''}
+        </div>
+    `).join('');
+
+    document.getElementById('armor-slot-icon').innerText = player.armor ? player.armor.icon : '🛡️';
 
     renderCraftingUI();
+    renderInventoryUI();
 }
 
 function renderCraftingUI() {
-    const compactContainer = document.getElementById('compact-craft-list');
-    const fullContainer = document.getElementById('fullscreen-craft-grid');
-
-    let compactHTML = '';
-    let fullHTML = '';
-
-    CRAFTABLES.forEach(item => {
-        const isCrafted = player.craftedItems[item.id] && !item.consumable;
+    document.getElementById('compact-craft-list').innerHTML = CRAFTABLES.map(item => {
         const canAfford = player.wood >= item.cost.wood && player.stone >= item.cost.stone && player.ore >= item.cost.ore;
-
-        let costStr = [];
-        if (item.cost.wood > 0) costStr.push(`${item.cost.wood}W`);
-        if (item.cost.stone > 0) costStr.push(`${item.cost.stone}S`);
-        if (item.cost.ore > 0) costStr.push(`${item.cost.ore}O`);
-        const costText = costStr.join(' • ');
-
-        compactHTML += `
-            <button onclick="craftItem('${item.id}')" ${isCrafted || !canAfford ? 'disabled' : ''}
-                class="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] p-2.5 text-left transition-all hover:bg-white/[0.1] active:scale-95 disabled:opacity-40 disabled:pointer-events-none">
+        return `
+            <button onclick="craftItem('${item.id}')" ${!canAfford ? 'disabled' : ''} class="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] p-2 text-left hover:bg-white/[0.1] disabled:opacity-40">
                 <div>
-                    <div class="text-xs font-bold text-indigo-300 flex items-center gap-1">
-                        <span>${item.icon}</span> ${item.name}
-                        ${isCrafted ? '<span class="text-[9px] bg-emerald-500/20 text-emerald-400 px-1 rounded">CRAFTED</span>' : ''}
-                    </div>
+                    <div class="text-xs font-bold text-indigo-300 flex items-center gap-1">${item.icon} ${item.name}</div>
                     <div class="text-[10px] text-gray-400">${item.stats}</div>
                 </div>
-                <div class="text-right text-[10px] font-mono font-semibold text-gray-300">${costText}</div>
+                <div class="text-right text-[10px] font-mono text-gray-300">${item.cost.wood}W • ${item.cost.stone}S • ${item.cost.ore}O</div>
             </button>
         `;
-
-        fullHTML += `
-            <div class="glass-panel flex flex-col justify-between rounded-2xl border border-white/10 p-4 transition-all hover:border-indigo-500/40">
-                <div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-2xl">${item.icon}</span>
-                        <span class="rounded-full bg-white/5 px-2.5 py-0.5 text-[10px] font-bold text-indigo-300 border border-white/10">${item.rarity}</span>
-                    </div>
-                    <h3 class="mt-2 font-display text-base font-bold text-white">${item.name}</h3>
-                    <p class="mt-1 text-xs text-gray-400 leading-relaxed">${item.desc}</p>
-                    
-                    <div class="mt-3 rounded-lg bg-black/40 p-2 text-xs font-semibold text-emerald-300 border border-white/5">
-                        ⚡ ${item.stats}
-                    </div>
-                </div>
-
-                <div class="mt-4 border-t border-white/10 pt-3 flex items-center justify-between">
-                    <div class="text-xs font-mono font-semibold text-gray-300">
-                        Cost: <span class="text-amber-200">${item.cost.wood}W</span> • <span class="text-slate-300">${item.cost.stone}S</span> • <span class="text-cyan-300">${item.cost.ore}O</span>
-                    </div>
-                    <button onclick="craftItem('${item.id}')" ${isCrafted || !canAfford ? 'disabled' : ''}
-                        class="rounded-xl bg-indigo-600 px-4 py-2 font-display text-xs font-bold text-white shadow-lg transition-all hover:bg-indigo-500 active:scale-95 disabled:opacity-40 disabled:pointer-events-none">
-                        ${isCrafted ? 'Crafted ✔' : 'Craft Item'}
-                    </button>
-                </div>
-            </div>
-        `;
-    });
-
-    compactContainer.innerHTML = compactHTML;
-    fullContainer.innerHTML = fullHTML;
+    }).join('');
 }
 
-function toggleFullscreenCrafting(show) {
-    const modal = document.getElementById('fullscreen-crafting');
-    if (show) {
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-    } else {
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-    }
-}
-
-window.addEventListener('keydown', e => {
-    if (e.key === 'Escape') toggleFullscreenCrafting(false);
-    if (['1','2','3','4','5','6'].includes(e.key)) {
-        selectHotbarSlot(parseInt(e.key) - 1);
-    }
-});
-
-function addItemToHotbar(itemDef) {
-    if (itemDef.type === 'armor') {
-        if (!player.ownedArmors.includes(itemDef.armorKey)) {
-            player.ownedArmors.push(itemDef.armorKey);
-        }
-        player.armorKey = itemDef.armorKey;
-        player.armor = ARMORS[itemDef.armorKey];
-        return;
-    }
-
-    // Try stacking existing item in hotbar first
-    let existingIndex = player.hotbar.findIndex(slot => slot && slot.id === itemDef.id);
-    if (existingIndex !== -1 && itemDef.consumable) {
-        player.hotbar[existingIndex].count++;
-        selectHotbarSlot(existingIndex);
-        return;
-    }
-
-    // Otherwise place in first empty hotbar slot
-    let emptyIndex = player.hotbar.findIndex(slot => slot === null);
-    if (emptyIndex !== -1) {
-        player.hotbar[emptyIndex] = {
-            id: itemDef.id,
-            name: itemDef.name,
-            type: itemDef.type,
-            weaponKey: itemDef.weaponKey,
-            icon: itemDef.icon,
-            count: 1,
-            apply: itemDef.apply
-        };
-        selectHotbarSlot(emptyIndex);
-    } else {
-        showToast("🎒 Hotbar Full", "Could not add item to hotbar.");
-    }
-}
-
-function craftItem(itemId) {
-    const item = CRAFTABLES.find(c => c.id === itemId);
+function craftItem(id) {
+    const item = CRAFTABLES.find(c => c.id === id);
     if (!item) return;
-
-    if (!item.consumable && player.craftedItems[item.id]) {
-        showToast("⚠️ Already Crafted", "You can only craft this equipment once!");
-        return;
-    }
 
     if (player.wood >= item.cost.wood && player.stone >= item.cost.stone && player.ore >= item.cost.ore) {
         player.wood -= item.cost.wood;
         player.stone -= item.cost.stone;
         player.ore -= item.cost.ore;
 
-        if (!item.consumable) player.craftedItems[item.id] = true;
+        if (item.type === 'armor') {
+            if (!player.ownedArmors.includes(item.armorKey)) player.ownedArmors.push(item.armorKey);
+            player.armorKey = item.armorKey;
+            player.armor = ARMORS[item.armorKey];
+            player.maxHp = player.baseMaxHp + player.armor.hpBonus;
+            showToast("🛡️ Armor Crafted", `Equipped ${item.name}!`);
+        } else {
+            addItemToStorage({ ...item, count: 1 });
+            showToast(`${item.icon} Crafted!`, `Created ${item.name}! Sent to Inventory.`);
+        }
 
-        addItemToHotbar(item);
-
-        if (item.apply) item.apply();
-
-        showToast(`${item.icon} Crafted!`, `Constructed ${item.name}!`);
         updateHUD();
         saveData();
+    }
+}
+
+function addItemToStorage(newItem) {
+    let existing = player.inventory.find(i => i.id === newItem.id);
+    if (existing && newItem.type === 'consumable') {
+        existing.count += (newItem.count || 1);
     } else {
-        showToast("❌ Insufficient Resources", "Gather more materials to forge this item.");
+        player.inventory.push(newItem);
     }
 }
 
-function useActiveHotbarItem() {
-    const item = player.hotbar[activeHotbarIndex];
-    if (!item) return false;
-
-    if (item.type === 'consumable') {
-        const itemDef = CRAFTABLES.find(c => c.id === item.id);
-        if (itemDef && itemDef.apply) {
-            itemDef.apply();
-            item.count--;
-            showToast(`${item.icon} Consumed`, `Used ${item.name}!`);
-            if (item.count <= 0) {
-                player.hotbar[activeHotbarIndex] = null;
-            }
-            updateHUD();
-            saveData();
-            return true;
-        }
-    }
-    return false;
+function toggleInventory(show) {
+    const modal = document.getElementById('inventory-modal');
+    if (show) modal.classList.replace('hidden', 'flex');
+    else modal.classList.replace('flex', 'hidden');
 }
 
-loadSavedData();
-
-setInterval(() => {
-    gameTime++;
-    const mins = Math.floor(gameTime / 60).toString().padStart(2, '0');
-    const secs = (gameTime % 60).toString().padStart(2, '0');
-    document.getElementById('time-val').innerText = `${mins}:${secs}`;
-    saveData();
-}, 1000);
-
-function initWorld() {
-    Object.keys(DIMENSIONS).forEach(dim => {
-        dimEntities[dim].resources = [];
-        dimEntities[dim].structures = [];
-        dimEntities[dim].enemies = [];
-
-        for (let i = 0; i < 320; i++) {
-            const types = ['tree', 'stone', 'ore'];
-            const type = types[Math.floor(Math.random() * types.length)];
-            dimEntities[dim].resources.push({
-                x: Math.random() * (WORLD_SIZE - 400) + 200,
-                y: Math.random() * (WORLD_SIZE - 400) + 200,
-                type: type,
-                hp: type === 'ore' ? 4 : type === 'stone' ? 3 : 2,
-                maxHp: type === 'ore' ? 4 : type === 'stone' ? 3 : 2,
-                scale: 1
-            });
-        }
-
-        let shardsRemaining = 5;
-        for (let i = 0; i < 25; i++) {
-            const containsShard = shardsRemaining > 0 && Math.random() < 0.4;
-            if (containsShard) shardsRemaining--;
-
-            dimEntities[dim].structures.push({
-                x: Math.random() * (WORLD_SIZE - 600) + 300,
-                y: Math.random() * (WORLD_SIZE - 600) + 300,
-                width: 120, height: 120,
-                hasChest: true, chestOpened: false, containsShard: containsShard
-            });
-        }
-
-        const mobKeys = DIMENSIONS[dim].mobs;
-        for (let i = 0; i < 50; i++) {
-            const mKey = mobKeys[Math.floor(Math.random() * mobKeys.length)];
-            const base = MOBS_CONFIG[mKey];
-            dimEntities[dim].enemies.push({
-                key: mKey, x: Math.random() * WORLD_SIZE, y: Math.random() * WORLD_SIZE,
-                hp: base.hp, maxHp: base.hp,
-                radius: base.radius, size: base.size,
-                speed: base.speed, damage: base.damage, name: base.name, hitFlash: 0,
-                isMoving: false, animTime: Math.random() * 100
-            });
-        }
-    });
+function renderInventoryUI() {
+    document.getElementById('inventory-grid').innerHTML = player.inventory.map((item, i) => `
+        <div onclick="${item.type === 'consumable' ? `useConsumable(${i}, true)` : ''}" ondragover="allowDrop(event)" ondrop="dropItem(event, 'inventory', ${i})" class="inv-slot border-indigo-500/20 flex-col">
+            <span draggable="true" ondragstart="dragItem(event, 'inventory', ${i})" class="text-2xl">${item.icon}</span>
+            ${item.count > 1 ? `<span class="item-count">x${item.count}</span>` : ''}
+        </div>
+    `).join('');
 }
 
-initWorld();
-updateHUD();
-
-const keys = {};
-let mouseX = canvas.width / 2, mouseY = canvas.height / 2;
-
-window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
-window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
-window.addEventListener('mousemove', e => {
-    mouseX = e.clientX;
-    mouseY = e.clientY;
+// LISTENERS & ATTACK LOGIC
+window.addEventListener('keydown', e => {
+    keys[e.key.toLowerCase()] = true;
+    if (e.key === 'Tab') { e.preventDefault(); toggleInventory(true); }
+    if (e.key === 'Escape') toggleInventory(false);
+    if (['1','2','3','4','5'].includes(e.key)) selectWeaponSlot(parseInt(e.key) - 1);
+    if (['6','7','8'].includes(e.key)) useConsumable(parseInt(e.key) - 6);
 });
 
-function switchDimension(dimName) {
-    if (!player.unlockedDims[dimName]) {
-        showToast("🔒 Portal Sealed!", `Collect 5 Shards in current realm to unlock ${DIMENSIONS[dimName].name}!`);
-        return;
+window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+window.addEventListener('mousemove', e => { mousePos = { x: e.clientX, y: e.clientY }; });
+
+window.addEventListener('mousedown', e => {
+    if (e.button === 0 && !player.isAttacking) {
+        player.isAttacking = true;
+        player.attackProgress = 0;
+        performAttack();
     }
-    if (currentDim === dimName) return;
-
-    currentDim = dimName;
-    document.querySelectorAll('.dim-btn').forEach(btn => {
-        btn.className = "dim-btn flex items-center gap-2 rounded-full px-5 py-2.5 font-display text-xs font-bold transition-all duration-200 bg-white/5 text-gray-400 border border-white/10 opacity-60 hover:opacity-100";
-    });
-
-    const activeBtn = document.getElementById(`btn-${dimName}`);
-    if (activeBtn) {
-        activeBtn.className = "dim-btn flex items-center gap-2 rounded-full px-5 py-2.5 font-display text-xs font-bold transition-all duration-200 bg-indigo-600 text-white shadow-[0_0_15px_rgba(79,70,229,0.5)]";
-    }
-
-    showToast("🌀 Realm Shift", `Warped into ${DIMENSIONS[dimName].name}`);
-    updateHUD();
-    saveData();
-}
-
-canvas.addEventListener('pointerdown', () => {
-    if (player.hp <= 0) return;
-
-    if (useActiveHotbarItem()) {
-        return; // Consumed item instead of attacking
-    }
-
-    player.isAttacking = true;
-    player.attackProgress = 0;
-
-    const currentData = dimEntities[currentDim];
-    const swingX = player.x + Math.cos(player.facingAngle) * player.weapon.range * 0.6;
-    const swingY = player.y + Math.sin(player.facingAngle) * player.weapon.range * 0.6;
-    createParticles(swingX, swingY, player.weapon.color, 8);
-
-    currentData.resources.forEach((res, index) => {
-        if (Math.hypot(res.x - player.x, res.y - player.y) <= player.weapon.range + 20) {
-            res.hp -= 1;
-            res.scale = 1.3;
-            const pColor = res.type === 'tree' ? '#34d399' : res.type === 'stone' ? '#9ca3af' : '#38bdf8';
-            createParticles(res.x, res.y, pColor, 5);
-
-            if (res.hp <= 0) {
-                if (res.type === 'tree') player.wood += Math.floor(Math.random() * 4) + 3;
-                if (res.type === 'stone') player.stone += Math.floor(Math.random() * 3) + 2;
-                if (res.type === 'ore') player.ore += Math.floor(Math.random() * 3) + 1;
-                currentData.resources.splice(index, 1);
-                updateHUD();
-                saveData();
-            }
-        }
-    });
-
-    currentData.structures.forEach(struct => {
-        if (struct.hasChest && !struct.chestOpened) {
-            if (Math.hypot(struct.x - player.x, struct.y - player.y) <= player.weapon.range + 30) {
-                struct.chestOpened = true;
-                player.wood += 20; player.stone += 20; player.ore += 15;
-
-                if (struct.containsShard && player.shards[currentDim] < 5) {
-                    player.shards[currentDim]++;
-                    showToast("🔮 PORTAL SHARD DISCOVERED!", `Collected (${player.shards[currentDim]}/5) Shards!`);
-
-                    if (player.shards[currentDim] >= 5) {
-                        const nextDim = DIMENSIONS[currentDim].nextDim;
-                        if (nextDim) {
-                            player.unlockedDims[nextDim] = true;
-                            showToast("🌟 PORTAL IGNITED!", `${DIMENSIONS[nextDim].name} IS UNLOCKED!`);
-                        }
-                    }
-                } else {
-                    showToast("🎁 Ancient Loot Chest", "+20 Wood, +20 Stone, +15 Ore acquired!");
-                }
-
-                createParticles(struct.x, struct.y, "#c084fc", 20);
-                updateHUD();
-                saveData();
-            }
-        }
-    });
-
-    currentData.enemies.forEach((enemy, index) => {
-        if (Math.hypot(enemy.x - player.x, enemy.y - player.y) <= player.weapon.range + enemy.radius) {
-            let isCrit = Math.random() < 0.25;
-            let dmg = isCrit ? Math.floor(player.weapon.damage * 1.5) : player.weapon.damage;
-
-            enemy.hp -= dmg;
-            enemy.hitFlash = 8;
-            const angle = Math.atan2(enemy.y - player.y, enemy.x - player.x);
-            enemy.x += Math.cos(angle) * 18;
-            enemy.y += Math.sin(angle) * 18;
-
-            createParticles(enemy.x, enemy.y, '#f87171', 8);
-
-            if (enemy.hp <= 0) {
-                createParticles(enemy.x, enemy.y, '#ef4444', 20);
-                currentData.enemies.splice(index, 1);
-                updateHUD();
-                saveData();
-            }
-        }
-    });
 });
 
-function createParticles(x, y, color, count) {
-    for (let i = 0; i < count; i++) {
-        particles.push({
-            x: x, y: y,
-            vx: (Math.random() - 0.5) * 6, vy: (Math.random() - 0.5) * 6,
-            color: color, radius: Math.random() * 3 + 2, alpha: 1
-        });
-    }
-}
+function performAttack() {
+    const activeData = dimEntities[currentDim];
+    const reach = player.weapon ? player.weapon.range : 60;
+    const dmg = player.weapon ? player.weapon.damage : 20;
 
-function triggerDamageFlash() {
-    const flashElem = document.getElementById('damage-flash');
-    flashElem.style.opacity = '1';
-    setTimeout(() => { flashElem.style.opacity = '0'; }, 150);
-}
-
-function respawnPlayer() {
-    player.hp = player.maxHp;
-    player.x = HALF_WORLD;
-    player.y = HALF_WORLD;
-    showToast("✨ REGENERATED", "Restored vitality at realm spawn point.");
-    updateHUD();
-}
-
-function update() {
-    if (player.hp <= 0) return;
-
-    if (player.isAttacking) {
-        player.attackProgress += ANIMATION_SETTINGS.weaponSwingSpeed;
-        if (player.attackProgress >= 1) {
-            player.attackProgress = 0;
-            player.isAttacking = false;
+    // Harvest Resources
+    activeData.resources.forEach((r, idx) => {
+        const dx = r.x - player.x;
+        const dy = r.y - player.y;
+        if (Math.hypot(dx, dy) <= reach + r.radius) {
+            r.hp -= dmg;
+            if (r.hp <= 0) {
+                if (r.type === 'tree') player.wood += 10;
+                else if (r.type === 'rock') player.stone += 10;
+                else if (r.type === 'ore') player.ore += 8;
+                else if (r.type === 'shard') player.shards[currentDim] = Math.min(5, player.shards[currentDim] + 1);
+                activeData.resources.splice(idx, 1);
+                updateHUD();
+                saveData();
+            }
         }
-    }
+    });
 
+    // Damage Enemies
+    activeData.enemies.forEach((e, idx) => {
+        const dx = e.x - player.x;
+        const dy = e.y - player.y;
+        if (Math.hypot(dx, dy) <= reach + e.radius) {
+            e.hp -= dmg;
+            if (e.hp <= 0) {
+                player.wood += 5;
+                player.stone += 5;
+                player.ore += 5;
+                activeData.enemies.splice(idx, 1);
+                updateHUD();
+                saveData();
+            }
+        }
+    });
+}
+
+// MAIN LOOP
+function gameLoop() {
+    // Movement Logic
     let dx = 0, dy = 0;
     if (keys['w'] || keys['arrowup']) dy -= 1;
     if (keys['s'] || keys['arrowdown']) dy += 1;
@@ -1014,384 +716,100 @@ function update() {
     if (keys['d'] || keys['arrowright']) dx += 1;
 
     if (dx !== 0 && dy !== 0) { dx *= 0.7071; dy *= 0.7071; }
-
     player.x = Math.max(player.radius, Math.min(WORLD_SIZE - player.radius, player.x + dx * player.speed));
     player.y = Math.max(player.radius, Math.min(WORLD_SIZE - player.radius, player.y + dy * player.speed));
 
-    const cameraX = player.x - canvas.width / 2;
-    const cameraY = player.y - canvas.height / 2;
-    player.facingAngle = Math.atan2((mouseY + cameraY) - player.y, (mouseX + cameraX) - player.x);
+    // Calculate facing angle
+    const screenCenterX = canvas.width / 2;
+    const screenCenterY = canvas.height / 2;
+    player.facingAngle = Math.atan2(mousePos.y - screenCenterY, mousePos.x - screenCenterX);
 
-    particles.forEach((p, i) => {
-        p.x += p.vx; p.y += p.vy; p.alpha -= 0.04;
-        if (p.alpha <= 0) particles.splice(i, 1);
-    });
+    // Enemy AI & Combat
+    const activeData = dimEntities[currentDim];
+    activeData.enemies.forEach(e => {
+        const edx = player.x - e.x;
+        const edy = player.y - e.y;
+        const dist = Math.hypot(edx, edy);
 
-    const currentData = dimEntities[currentDim];
-    currentData.resources.forEach(res => {
-        if (res.scale > 1) res.scale -= 0.05;
-    });
-
-    currentData.enemies.forEach(enemy => {
-        if (enemy.hitFlash > 0) enemy.hitFlash--;
-        enemy.animTime += 1;
-
-        const dist = Math.hypot(player.x - enemy.x, player.y - enemy.y);
-        if (dist < 500) {
-            enemy.isMoving = true;
-            const angle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
-            enemy.x += Math.cos(angle) * enemy.speed;
-            enemy.y += Math.sin(angle) * enemy.speed;
-        } else {
-            enemy.isMoving = false;
+        if (dist < 500 && dist > 0) {
+            e.x += (edx / dist) * e.speed;
+            e.y += (edy / dist) * e.speed;
         }
 
-        if (dist < player.radius + enemy.radius) {
-            player.hp -= enemy.damage;
-            triggerDamageFlash();
-            updateHUD();
-            if (player.hp <= 0) respawnPlayer();
-        }
-    });
-}
-
-function drawBiomeSquare(x, y, w, h, biome, camX, camY) {
-    const rx = x - camX, ry = y - camY;
-    if (rx + w < 0 || rx > canvas.width || ry + h < 0 || ry > canvas.height) return;
-    
-    ctx.fillStyle = biome.bg;
-    ctx.fillRect(rx, ry, w, h);
-
-    ctx.strokeStyle = biome.grid;
-    ctx.lineWidth = 1.5;
-    const step = 120;
-
-    const startX = Math.floor(Math.max(x, camX) / step) * step;
-    const endX = Math.min(x + w, camX + canvas.width);
-    const startY = Math.floor(Math.max(y, camY) / step) * step;
-    const endY = Math.min(y + h, camY + canvas.height);
-
-    for (let worldX = startX; worldX <= endX; worldX += step) {
-        const screenX = worldX - camX;
-        ctx.beginPath();
-        ctx.moveTo(screenX, Math.max(ry, 0));
-        ctx.lineTo(screenX, Math.min(ry + h, canvas.height));
-        ctx.stroke();
-    }
-
-    for (let worldY = startY; worldY <= endY; worldY += step) {
-        const screenY = worldY - camY;
-        ctx.beginPath();
-        ctx.moveTo(Math.max(rx, 0), screenY);
-        ctx.lineTo(Math.min(rx + w, canvas.width), screenY);
-        ctx.stroke();
-    }
-}
-
-function drawResource(res, rx, ry) {
-    ctx.save();
-    ctx.translate(rx, ry);
-    ctx.scale(res.scale, res.scale);
-
-    if (res.type === 'tree') {
-        ctx.fillStyle = 'rgba(0,0,0,0.25)';
-        ctx.beginPath(); ctx.ellipse(0, 18, 22, 10, 0, 0, Math.PI * 2); ctx.fill();
-
-        ctx.fillStyle = '#78350f'; ctx.fillRect(-5, -5, 10, 22);
-
-        ctx.fillStyle = '#047857'; ctx.beginPath(); ctx.arc(0, -12, 22, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = '#10b981'; ctx.beginPath(); ctx.arc(-6, -18, 14, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = '#34d399'; ctx.beginPath(); ctx.arc(4, -22, 10, 0, Math.PI * 2); ctx.fill();
-    } else if (res.type === 'stone') {
-        ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(0, 10, 18, 8, 0, 0, Math.PI * 2); ctx.fill();
-
-        ctx.fillStyle = '#64748b'; ctx.beginPath();
-        ctx.moveTo(-16, 8); ctx.lineTo(-20, -6); ctx.lineTo(-6, -18);
-        ctx.lineTo(14, -14); ctx.lineTo(20, 4); ctx.lineTo(8, 14); ctx.closePath(); ctx.fill();
-
-        ctx.fillStyle = '#94a3b8'; ctx.beginPath();
-        ctx.moveTo(-6, -18); ctx.lineTo(14, -14); ctx.lineTo(2, -2); ctx.lineTo(-12, -4); ctx.closePath(); ctx.fill();
-    } else if (res.type === 'ore') {
-        ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.beginPath(); ctx.ellipse(0, 10, 20, 8, 0, 0, Math.PI * 2); ctx.fill();
-
-        ctx.fillStyle = '#334155'; ctx.beginPath();
-        ctx.moveTo(-18, 6); ctx.lineTo(-14, -14); ctx.lineTo(10, -18);
-        ctx.lineTo(18, -2); ctx.lineTo(12, 12); ctx.lineTo(-10, 14); ctx.closePath(); ctx.fill();
-
-        ctx.fillStyle = '#06b6d4'; ctx.shadowColor = '#38bdf8'; ctx.shadowBlur = 10;
-        ctx.beginPath(); ctx.moveTo(-8, 2); ctx.lineTo(-2, -12); ctx.lineTo(4, 2); ctx.closePath(); ctx.fill();
-        ctx.beginPath(); ctx.moveTo(2, 0); ctx.lineTo(12, -10); ctx.lineTo(12, 4); ctx.closePath(); ctx.fill();
-        ctx.shadowBlur = 0;
-    }
-    ctx.restore();
-}
-
-function drawStructure(struct, cameraX, cameraY) {
-    const sx = struct.x - cameraX, sy = struct.y - cameraY;
-    if (sx < -150 || sx > canvas.width + 150 || sy < -150 || sy > canvas.height + 150) return;
-
-    ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
-    ctx.fillRect(sx - struct.width / 2, sy - struct.height / 2, struct.width, struct.height);
-    
-    ctx.strokeStyle = struct.containsShard && !struct.chestOpened ? '#c084fc' : '#475569';
-    ctx.lineWidth = 3;
-    ctx.strokeRect(sx - struct.width / 2, sy - struct.height / 2, struct.width, struct.height);
-
-    if (struct.hasChest) {
-        ctx.fillStyle = 'rgba(0,0,0,0.4)';
-        ctx.fillRect(sx - 14, sy - 10, 28, 24);
-
-        if (struct.chestOpened) {
-            ctx.fillStyle = '#475569'; ctx.fillRect(sx - 12, sy - 12, 24, 20);
-            ctx.fillStyle = '#1e293b'; ctx.fillRect(sx - 10, sy - 10, 20, 8);
-        } else {
-            ctx.fillStyle = struct.containsShard ? '#9333ea' : '#d97706';
-            ctx.fillRect(sx - 12, sy - 12, 24, 20);
-
-            ctx.fillStyle = struct.containsShard ? '#e9d5ff' : '#fef08a';
-            ctx.fillRect(sx - 3, sy - 4, 6, 8);
-        }
-    }
-}
-
-function drawShardTrackerOverlay(cameraX, cameraY) {
-    if (!player.hasShardTracker) return;
-
-    const currentData = dimEntities[currentDim];
-    let nearestStruct = null;
-    let minDist = Infinity;
-
-    currentData.structures.forEach(struct => {
-        if (struct.containsShard && !struct.chestOpened) {
-            const d = Math.hypot(struct.x - player.x, struct.y - player.y);
-            if (d < minDist) {
-                minDist = d;
-                nearestStruct = struct;
+        if (dist < player.radius + e.radius) {
+            player.hp -= e.damage / 60;
+            if (player.hp <= 0) {
+                alert("Game Over! Restarting survivor progress.");
+                player.hp = player.maxHp;
+                player.x = HALF_WORLD;
+                player.y = HALF_WORLD;
             }
+            updateHUD();
         }
     });
 
-    if (nearestStruct) {
-        const px = canvas.width / 2;
-        const py = canvas.height / 2;
-        const targetX = nearestStruct.x - cameraX;
-        const targetY = nearestStruct.y - cameraY;
-
-        const angle = Math.atan2(targetY - py, targetX - px);
-
-        ctx.save();
-        ctx.strokeStyle = 'rgba(192, 132, 252, 0.6)';
-        ctx.lineWidth = 2;
-        ctx.setLineDash([8, 8]);
-        ctx.beginPath();
-        ctx.moveTo(px, py);
-        ctx.lineTo(targetX, targetY);
-        ctx.stroke();
-        ctx.restore();
-
-        // Pointer Arrow near player
-        ctx.save();
-        ctx.translate(px + Math.cos(angle) * 60, py + Math.sin(angle) * 60);
-        ctx.rotate(angle);
-        ctx.fillStyle = '#c084fc';
-        ctx.beginPath();
-        ctx.moveTo(12, 0); ctx.lineTo(-8, -8); ctx.lineTo(-4, 0); ctx.lineTo(-8, 8);
-        ctx.closePath();
-        ctx.fill();
-        ctx.restore();
-
-        // Shard Distance Tag
-        ctx.font = 'bold 10px "Plus Jakarta Sans", sans-serif';
-        ctx.fillStyle = '#e9d5ff';
-        ctx.textAlign = 'center';
-        ctx.fillText(`SHARD REASON: ${Math.round(minDist / 10)}m`, px + Math.cos(angle) * 90, py + Math.sin(angle) * 90);
-    }
-}
-
-function draw() {
+    // CLEAR & DRAW SCENE
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const cameraX = player.x - canvas.width / 2;
-    const cameraY = player.y - canvas.height / 2;
 
-    const dimConfig = DIMENSIONS[currentDim];
-
-    // Terrain & Grid
-    drawBiomeSquare(0, 0, HALF_WORLD, HALF_WORLD, dimConfig.biomes[0], cameraX, cameraY);
-    drawBiomeSquare(HALF_WORLD, 0, HALF_WORLD, HALF_WORLD, dimConfig.biomes[1], cameraX, cameraY);
-    drawBiomeSquare(0, HALF_WORLD, HALF_WORLD, HALF_WORLD, dimConfig.biomes[2], cameraX, cameraY);
-    drawBiomeSquare(HALF_WORLD, HALF_WORLD, HALF_WORLD, HALF_WORLD, dimConfig.biomes[3], cameraX, cameraY);
-
-    const currentData = dimEntities[currentDim];
-
-    // Structures & Resources
-    currentData.structures.forEach(struct => drawStructure(struct, cameraX, cameraY));
-    currentData.resources.forEach(res => {
-        const rx = res.x - cameraX, ry = res.y - cameraY;
-        if (rx >= -40 && rx <= canvas.width + 40 && ry >= -40 && ry <= canvas.height + 40) {
-            drawResource(res, rx, ry);
-        }
-    });
-
-    // Shard Tracker Guidance Line
-    drawShardTrackerOverlay(cameraX, cameraY);
-
-    // Enemies
-    currentData.enemies.forEach(enemy => {
-        const ex = enemy.x - cameraX, ey = enemy.y - cameraY;
-        if (ex < -80 || ex > canvas.width + 80 || ey < -80 || ey > canvas.height + 80) return;
-
-        const sprite = loadedSprites[enemy.key];
-        const displaySize = enemy.size || enemy.radius;
-
-        let wobbleAngle = 0;
-        let bobY = 0;
-        if (enemy.isMoving) {
-            wobbleAngle = Math.sin(enemy.animTime * ANIMATION_SETTINGS.mobWalkWobbleSpeed) * ANIMATION_SETTINGS.mobWalkWobbleAmount;
-        } else {
-            bobY = Math.sin(enemy.animTime * ANIMATION_SETTINGS.mobIdleBobSpeed) * ANIMATION_SETTINGS.mobIdleBobAmount;
-        }
-
-        ctx.fillStyle = 'rgba(0,0,0,0.35)';
-        ctx.beginPath();
-        ctx.ellipse(ex, ey + displaySize * 0.8, displaySize * 0.8, displaySize * 0.35, 0, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.save();
-        ctx.translate(ex, ey + bobY);
-        ctx.rotate(wobbleAngle);
-
-        if (sprite && sprite.isLoaded) {
-            ctx.beginPath();
-            ctx.arc(0, 0, displaySize, 0, Math.PI * 2);
-            ctx.clip();
-            ctx.drawImage(sprite, -displaySize, -displaySize, displaySize * 2, displaySize * 2);
-
-            ctx.strokeStyle = enemy.hitFlash > 0 ? '#ffffff' : 'rgba(255,255,255,0.4)';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.arc(0, 0, displaySize, 0, Math.PI * 2);
-            ctx.stroke();
-        } else {
-            ctx.fillStyle = enemy.hitFlash > 0 ? '#ffffff' : MOBS_CONFIG[enemy.key].fallbackColor;
-            ctx.beginPath();
-            ctx.arc(0, 0, displaySize, 0, Math.PI * 2);
-            ctx.fill();
-        }
-        ctx.restore();
-
-        // Enemy HUD
-        ctx.font = 'bold 11px "Plus Jakarta Sans", sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillStyle = '#f3f4f6';
-        ctx.shadowColor = '#000000';
-        ctx.shadowBlur = 4;
-        ctx.fillText(enemy.name, ex, ey - displaySize - 14 + bobY);
-        ctx.shadowBlur = 0;
-
-        const barWidth = Math.max(36, displaySize * 1.6);
-        ctx.fillStyle = 'rgba(0,0,0,0.6)';
-        ctx.fillRect(ex - barWidth / 2, ey - displaySize - 9 + bobY, barWidth, 5);
-        ctx.fillStyle = '#ef4444';
-        ctx.fillRect(ex - barWidth / 2, ey - displaySize - 9 + bobY, (Math.max(0, enemy.hp) / enemy.maxHp) * barWidth, 5);
-    });
-
-    // Particles
-    particles.forEach(p => {
-        ctx.fillStyle = p.color;
-        ctx.globalAlpha = p.alpha;
-        ctx.beginPath();
-        ctx.arc(p.x - cameraX, p.y - cameraY, p.radius, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.globalAlpha = 1.0;
-    });
-
-    // Player Rendering
-    const px = canvas.width / 2, py = canvas.height / 2;
     ctx.save();
-    ctx.translate(px, py);
+    ctx.translate(canvas.width / 2 - player.x, canvas.height / 2 - player.y);
 
-    ctx.fillStyle = 'rgba(0,0,0,0.35)';
-    ctx.beginPath();
-    ctx.ellipse(0, 14, player.radius * 0.9, player.radius * 0.4, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Armor Visual Aura Ring
-    if (player.armor) {
-        ctx.strokeStyle = player.armor.color;
-        ctx.fillStyle = player.armor.auraColor;
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.arc(0, 0, player.radius + 6, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
+    // Background Grid
+    ctx.strokeStyle = currentDim === 'overworld' ? '#1e293b' : currentDim === 'nether' ? '#450a0a' : '#2e1065';
+    ctx.lineWidth = 2;
+    for (let x = 0; x < WORLD_SIZE; x += 200) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, WORLD_SIZE); ctx.stroke();
+    }
+    for (let y = 0; y < WORLD_SIZE; y += 200) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(WORLD_SIZE, y); ctx.stroke();
     }
 
+    // Render Resources
+    activeData.resources.forEach(r => {
+        ctx.fillStyle = r.type === 'tree' ? '#059669' : r.type === 'rock' ? '#64748b' : r.type === 'ore' ? '#06b6d4' : '#a855f7';
+        ctx.beginPath();
+        ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
+        ctx.fill();
+    });
+
+    // Render Enemies
+    activeData.enemies.forEach(e => {
+        ctx.fillStyle = '#ef4444';
+        ctx.beginPath();
+        ctx.arc(e.x, e.y, e.radius, 0, Math.PI * 2);
+        ctx.fill();
+    });
+
+    // Render Player
+    ctx.save();
+    ctx.translate(player.x, player.y);
     ctx.rotate(player.facingAngle);
 
-    let currentSwingOffset = 0;
+    // Weapon Swing Animation
     if (player.isAttacking) {
-        const halfArc = ANIMATION_SETTINGS.weaponSwingAngle / 2;
-        currentSwingOffset = -halfArc + (player.attackProgress * ANIMATION_SETTINGS.weaponSwingAngle);
-    }
-
-    ctx.save();
-    ctx.rotate(currentSwingOffset);
-
-    // Weapon
-    if (player.weapon) {
-        ctx.strokeStyle = player.weapon.color;
-        ctx.lineWidth = player.isAttacking ? 8 : 6;
-        ctx.lineCap = 'round';
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.lineTo(player.weapon.range, 0);
-        ctx.stroke();
-
-        if (player.isAttacking) {
-            ctx.fillStyle = player.weapon.color;
-            ctx.globalAlpha = 0.25;
-            ctx.beginPath();
-            ctx.moveTo(0, 0);
-            ctx.arc(0, 0, player.weapon.range, -ANIMATION_SETTINGS.weaponSwingAngle / 2, currentSwingOffset, false);
-            ctx.closePath();
-            ctx.fill();
-            ctx.globalAlpha = 1.0;
+        player.attackProgress += 0.2;
+        ctx.fillStyle = player.weapon ? player.weapon.color : '#fff';
+        ctx.fillRect(10, -5, player.weapon ? player.weapon.range : 50, 10);
+        if (player.attackProgress >= Math.PI) {
+            player.isAttacking = false;
+            player.attackProgress = 0;
         }
     }
-    ctx.restore();
 
-    // Player Core Body
+    // Body
     ctx.fillStyle = '#6366f1';
     ctx.beginPath();
     ctx.arc(0, 0, player.radius, 0, Math.PI * 2);
     ctx.fill();
-
-    ctx.strokeStyle = '#a5b4fc';
-    ctx.lineWidth = 3;
-    ctx.stroke();
-
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.arc(6, -5, 3.5, 0, Math.PI * 2);
-    ctx.arc(6, 5, 3.5, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.restore();
 
     ctx.restore();
 
-    // Minimap
-    minimapCtx.fillStyle = '#030712';
-    minimapCtx.fillRect(0, 0, 160, 160);
-    const mmScale = 160 / WORLD_SIZE;
-    minimapCtx.fillStyle = '#6366f1';
-    minimapCtx.fillRect(player.x * mmScale - 2, player.y * mmScale - 2, 5, 5);
-}
-
-function gameLoop() {
-    update();
-    draw();
     requestAnimationFrame(gameLoop);
 }
 
+loadSavedData();
+updateHUD();
 gameLoop();
 </script>
 </body>
