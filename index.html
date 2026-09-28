@@ -165,7 +165,7 @@
         </div>
     </div>
 
-    <!-- Equipped Gear HUD with Detailed Armor Buff Display -->
+    <!-- Equipped Gear HUD -->
     <div class="flex flex-col gap-1.5 rounded-xl border border-white/10 bg-black/40 p-2.5 text-xs">
         <div class="flex items-center justify-between">
             <span class="text-gray-400">Equipped Weapon</span>
@@ -183,9 +183,8 @@
     </div>
 </div>
 
-<!-- DUAL HOTBAR SYSTEM (Bottom) -->
+<!-- HOTBAR SYSTEM -->
 <div class="pointer-events-auto absolute bottom-5 left-1/2 z-30 flex -translate-x-1/2 items-center gap-3">
-    <!-- Weapon / Utility Hotbar -->
     <div class="glass-panel flex flex-col items-center gap-1 rounded-2xl p-2">
         <span class="text-[9px] font-extrabold tracking-widest text-indigo-300 uppercase">WEAPONS & TOOLS</span>
         <div id="weapon-hotbar" class="flex items-center gap-1.5"></div>
@@ -193,16 +192,14 @@
 
     <div class="h-10 w-0.5 bg-white/20"></div>
 
-    <!-- Consumables Hotbar -->
     <div class="glass-panel flex flex-col items-center gap-1 rounded-2xl p-2 border-amber-500/30">
         <span class="text-[9px] font-extrabold tracking-widest text-amber-300 uppercase">CONSUMABLES</span>
         <div id="consumable-hotbar" class="flex items-center gap-1.5"></div>
     </div>
 
-    <!-- Armor Slot -->
     <div class="glass-panel flex flex-col items-center gap-1 rounded-2xl p-2 border-emerald-500/30">
         <span class="text-[9px] font-extrabold tracking-widest text-emerald-300 uppercase">ARMOR</span>
-        <div id="armor-slot" onclick="cycleArmor()" class="hotbar-slot !border-emerald-500/50 hover:!border-emerald-400" title="Click to cycle equipped armor">
+        <div id="armor-slot" onclick="cycleArmor()" class="hotbar-slot !border-emerald-500/50 hover:!border-emerald-400" title="Click to cycle armor">
             <span class="hotbar-key">A</span>
             <span id="armor-slot-icon" class="text-2xl">🛡️</span>
         </div>
@@ -230,7 +227,7 @@
     <div id="compact-craft-list" class="flex flex-col gap-2 max-h-80 overflow-y-auto pr-1"></div>
 </div>
 
-<!-- LARGE UNLIMITED INVENTORY MODAL -->
+<!-- EXPANDED INVENTORY MODAL -->
 <div id="inventory-modal" class="glass-panel pointer-events-auto fixed inset-10 z-50 hidden flex-col rounded-3xl p-6 shadow-2xl backdrop-blur-2xl">
     <div class="flex items-center justify-between border-b border-white/10 pb-4">
         <div>
@@ -244,18 +241,19 @@
 
     <div class="mt-6 flex flex-1 gap-6 overflow-hidden">
         <div class="flex-1 overflow-y-auto pr-2">
-            <h3 class="mb-3 font-display text-xs font-bold tracking-wider text-indigo-300 uppercase">STORAGE VAULT (UNLIMITED ITEMS & STACKS)</h3>
+            <h3 class="mb-3 font-display text-xs font-bold tracking-wider text-indigo-300 uppercase">STORAGE VAULT</h3>
             <div id="inventory-grid" class="grid grid-cols-6 lg:grid-cols-8 gap-3"></div>
         </div>
     </div>
 </div>
 
 <script>
-// CONFIG & CONSTANTS
+// CANVAS SETUP & CONSTANTS
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const WORLD_SIZE = 8000;
 const HALF_WORLD = WORLD_SIZE / 2;
+const OFFSCREEN_SPAWN_DIST = 700;
 
 function resizeCanvas() {
     canvas.width = window.innerWidth;
@@ -265,10 +263,10 @@ resizeCanvas();
 window.addEventListener('resize', resizeCanvas);
 
 const WEAPONS = {
-    stick:  { id: 'stick', name: 'Wooden Stick', damage: 20, range: 65, color: '#9ca3af' },
-    spear:  { id: 'spear', name: 'Stone Spear', damage: 40, range: 90, color: '#34d399' },
+    stick:  { id: 'stick', name: 'Wooden Stick', damage: 20, range: 65, color: '#a3e635' },
+    spear:  { id: 'spear', name: 'Stone Spear', damage: 40, range: 90, color: '#cbd5e1' },
     hammer: { id: 'hammer', name: 'Ore Sledge', damage: 75, range: 75, color: '#38bdf8' },
-    blade:  { id: 'blade', name: 'Plasma Sword', damage: 120, range: 110, color: '#fbbf24' },
+    blade:  { id: 'blade', name: 'Plasma Sword', damage: 120, range: 110, color: '#facc15' },
     scythe: { id: 'scythe', name: 'Void Scythe', damage: 190, range: 130, color: '#c084fc' },
     bow:    { id: 'bow', name: 'Frostbite Bow', damage: 95, range: 140, color: '#60a5fa' }
 };
@@ -296,6 +294,7 @@ let currentDim = 'overworld';
 let activeWeaponSlot = 0;
 let keys = {};
 let mousePos = { x: 0, y: 0 };
+let tickCounter = 0;
 
 let player = {
     x: HALF_WORLD, y: HALF_WORLD, radius: 18, speed: 5.2,
@@ -323,7 +322,7 @@ let dimEntities = {
 let draggedItem = null;
 let draggedSource = null;
 
-// INIT & SAVING
+// LOAD / SAVE SYSTEM
 function loadSavedData() {
     const saved = localStorage.getItem('survival_realm_v3');
     if (saved) {
@@ -373,7 +372,20 @@ function showToast(title, msg) {
     setTimeout(() => toast.remove(), 2500);
 }
 
-// GENERATION & SPAWNING
+// SAFE OFFSCREEN GENERATION
+function getRandomOffscreenPosition() {
+    let x, y, dist;
+    let attempts = 0;
+    do {
+        x = Math.random() * (WORLD_SIZE - 200) + 100;
+        y = Math.random() * (WORLD_SIZE - 200) + 100;
+        dist = Math.hypot(x - player.x, y - player.y);
+        attempts++;
+    } while (dist < OFFSCREEN_SPAWN_DIST && attempts < 20);
+    return { x, y };
+}
+
+// GENERATE INITIAL WORLD
 function generateDimension(dimKey) {
     const res = [];
     const count = dimKey === 'overworld' ? 300 : dimKey === 'nether' ? 250 : 200;
@@ -395,7 +407,7 @@ function generateDimension(dimKey) {
             y: Math.random() * (WORLD_SIZE - 200) + 100,
             type: type,
             hp: type === 'tree' ? 30 : type === 'rock' ? 50 : type === 'ore' ? 80 : 100,
-            radius: type === 'tree' ? 22 : 18
+            radius: type === 'tree' ? 26 : 22
         });
     }
 
@@ -410,7 +422,8 @@ function generateDimension(dimKey) {
             maxHp: dimKey === 'overworld' ? 60 : dimKey === 'nether' ? 120 : 220,
             speed: dimKey === 'overworld' ? 2.2 : 2.8,
             damage: dimKey === 'overworld' ? 8 : 16,
-            radius: 16
+            radius: 18,
+            animOffset: Math.random() * 100
         });
     }
 
@@ -421,7 +434,59 @@ generateDimension('overworld');
 generateDimension('nether');
 generateDimension('void');
 
-// ACTION LOGIC
+// OFFSCREEN RESPAWN INTERVALS
+setInterval(() => {
+    ['overworld', 'nether', 'void'].forEach(dim => {
+        const resList = dimEntities[dim].resources;
+        const targetCount = dim === 'overworld' ? 300 : dim === 'nether' ? 250 : 200;
+
+        if (resList.length < targetCount) {
+            const pos = getRandomOffscreenPosition();
+            let type = 'tree';
+            let r = Math.random();
+            if (dim === 'overworld') {
+                type = r < 0.5 ? 'tree' : r < 0.85 ? 'rock' : 'ore';
+            } else if (dim === 'nether') {
+                type = r < 0.4 ? 'rock' : r < 0.8 ? 'ore' : 'shard';
+            } else {
+                type = r < 0.3 ? 'rock' : r < 0.6 ? 'ore' : 'shard';
+            }
+
+            resList.push({
+                id: Date.now() + Math.random(),
+                x: pos.x,
+                y: pos.y,
+                type: type,
+                hp: type === 'tree' ? 30 : type === 'rock' ? 50 : type === 'ore' ? 80 : 100,
+                radius: type === 'tree' ? 26 : 22
+            });
+        }
+    });
+}, 3000);
+
+setInterval(() => {
+    ['overworld', 'nether', 'void'].forEach(dim => {
+        const enemyList = dimEntities[dim].enemies;
+        const targetCount = dim === 'overworld' ? 40 : dim === 'nether' ? 65 : 85;
+
+        if (enemyList.length < targetCount) {
+            const pos = getRandomOffscreenPosition();
+            enemyList.push({
+                id: Date.now() + Math.random(),
+                x: pos.x,
+                y: pos.y,
+                hp: dim === 'overworld' ? 60 : dim === 'nether' ? 120 : 220,
+                maxHp: dim === 'overworld' ? 60 : dim === 'nether' ? 120 : 220,
+                speed: dim === 'overworld' ? 2.2 : 2.8,
+                damage: dim === 'overworld' ? 8 : 16,
+                radius: 18,
+                animOffset: Math.random() * 100
+            });
+        }
+    });
+}, 5000);
+
+// USER INTERACTIONS
 function selectWeaponSlot(index) {
     activeWeaponSlot = index;
     const item = player.weaponHotbar[index];
@@ -513,14 +578,8 @@ function dropItem(e, targetType, targetIndex) {
     e.preventDefault();
     if (!draggedItem || !draggedSource) return;
 
-    if (targetType === 'weapon' && draggedItem.type === 'consumable') {
-        showToast("⚠️ Invalid Drag", "Consumables cannot be placed in weapon slots!");
-        return;
-    }
-    if (targetType === 'consumable' && draggedItem.type !== 'consumable') {
-        showToast("⚠️ Invalid Drag", "Only consumables go into consumable slots!");
-        return;
-    }
+    if (targetType === 'weapon' && draggedItem.type === 'consumable') return;
+    if (targetType === 'consumable' && draggedItem.type !== 'consumable') return;
 
     let targetContainer = targetType === 'weapon' ? player.weaponHotbar : targetType === 'consumable' ? player.consumableHotbar : player.inventory;
     let sourceContainer = draggedSource.source === 'weapon' ? player.weaponHotbar : draggedSource.source === 'consumable' ? player.consumableHotbar : player.inventory;
@@ -645,7 +704,7 @@ function renderInventoryUI() {
     `).join('');
 }
 
-// LISTENERS & ATTACK LOGIC
+// LISTENERS & COMBAT
 window.addEventListener('keydown', e => {
     keys[e.key.toLowerCase()] = true;
     if (e.key === 'Tab') { e.preventDefault(); toggleInventory(true); }
@@ -671,7 +730,8 @@ function performAttack() {
     const dmg = player.weapon ? player.weapon.damage : 20;
 
     // Harvest Resources
-    activeData.resources.forEach((r, idx) => {
+    for (let i = activeData.resources.length - 1; i >= 0; i--) {
+        const r = activeData.resources[i];
         const dx = r.x - player.x;
         const dy = r.y - player.y;
         if (Math.hypot(dx, dy) <= reach + r.radius) {
@@ -681,15 +741,16 @@ function performAttack() {
                 else if (r.type === 'rock') player.stone += 10;
                 else if (r.type === 'ore') player.ore += 8;
                 else if (r.type === 'shard') player.shards[currentDim] = Math.min(5, player.shards[currentDim] + 1);
-                activeData.resources.splice(idx, 1);
+                activeData.resources.splice(i, 1);
                 updateHUD();
                 saveData();
             }
         }
-    });
+    }
 
     // Damage Enemies
-    activeData.enemies.forEach((e, idx) => {
+    for (let i = activeData.enemies.length - 1; i >= 0; i--) {
+        const e = activeData.enemies[i];
         const dx = e.x - player.x;
         const dy = e.y - player.y;
         if (Math.hypot(dx, dy) <= reach + e.radius) {
@@ -698,16 +759,208 @@ function performAttack() {
                 player.wood += 5;
                 player.stone += 5;
                 player.ore += 5;
-                activeData.enemies.splice(idx, 1);
+                activeData.enemies.splice(i, 1);
                 updateHUD();
                 saveData();
             }
         }
-    });
+    }
+}
+
+// PROCEDURAL SPRITE RENDERERS
+function drawTreeSprite(x, y, radius) {
+    ctx.save();
+    ctx.translate(x, y);
+    
+    // Shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.beginPath();
+    ctx.ellipse(0, 10, radius, radius * 0.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Trunk
+    ctx.fillStyle = '#78350f';
+    ctx.fillRect(-6, -8, 12, 16);
+
+    // Leaves / Canopy layers
+    ctx.fillStyle = '#15803d';
+    ctx.beginPath();
+    ctx.arc(0, -12, radius, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#22c55e';
+    ctx.beginPath();
+    ctx.arc(-5, -16, radius * 0.6, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+}
+
+function drawRockSprite(x, y, radius) {
+    ctx.save();
+    ctx.translate(x, y);
+
+    // Shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.beginPath();
+    ctx.ellipse(2, 6, radius, radius * 0.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Boulder facets
+    ctx.fillStyle = '#64748b';
+    ctx.beginPath();
+    ctx.moveTo(-radius, 0);
+    ctx.lineTo(-radius * 0.5, -radius);
+    ctx.lineTo(radius * 0.6, -radius * 0.8);
+    ctx.lineTo(radius, radius * 0.3);
+    ctx.lineTo(0, radius);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = '#94a3b8';
+    ctx.beginPath();
+    ctx.moveTo(-radius * 0.5, -radius);
+    ctx.lineTo(0, -radius * 0.2);
+    ctx.lineTo(radius * 0.6, -radius * 0.8);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.restore();
+}
+
+function drawOreSprite(x, y, radius) {
+    drawRockSprite(x, y, radius);
+    ctx.save();
+    ctx.translate(x, y);
+
+    // Glowing Crystals on rock
+    ctx.fillStyle = '#38bdf8';
+    ctx.shadowColor = '#0284c7';
+    ctx.shadowBlur = 8;
+
+    ctx.fillRect(-6, -8, 5, 10);
+    ctx.fillRect(2, -4, 6, 8);
+    ctx.fillRect(-2, 2, 4, 6);
+
+    ctx.restore();
+}
+
+function drawShardSprite(x, y, radius) {
+    ctx.save();
+    ctx.translate(x, y);
+
+    const floatY = Math.sin(tickCounter * 0.05) * 4;
+    ctx.translate(0, floatY);
+
+    ctx.fillStyle = '#c084fc';
+    ctx.shadowColor = '#a855f7';
+    ctx.shadowBlur = 12;
+
+    ctx.beginPath();
+    ctx.moveTo(0, -radius);
+    ctx.lineTo(radius * 0.7, 0);
+    ctx.lineTo(0, radius);
+    ctx.lineTo(-radius * 0.7, 0);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.restore();
+}
+
+function drawEnemySprite(e) {
+    ctx.save();
+    ctx.translate(e.x, e.y);
+
+    const legWiggle = Math.sin((tickCounter + e.animOffset) * 0.2) * 6;
+
+    // Legs
+    ctx.strokeStyle = '#991b1b';
+    ctx.lineWidth = 3;
+    for (let i = -1; i <= 1; i += 2) {
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(i * (e.radius + 10), -8 + legWiggle);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(i * (e.radius + 10), 8 - legWiggle);
+        ctx.stroke();
+    }
+
+    // Body
+    ctx.fillStyle = '#dc2626';
+    ctx.shadowColor = '#7f1d1d';
+    ctx.shadowBlur = 10;
+    ctx.beginPath();
+    ctx.arc(0, 0, e.radius, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Eyes
+    ctx.fillStyle = '#fef08a';
+    ctx.beginPath();
+    ctx.arc(-5, -4, 3, 0, Math.PI * 2);
+    ctx.arc(5, -4, 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Health Bar overhead
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+    ctx.fillRect(-18, -e.radius - 12, 36, 5);
+    ctx.fillStyle = '#ef4444';
+    ctx.fillRect(-18, -e.radius - 12, (e.hp / e.maxHp) * 36, 5);
+
+    ctx.restore();
+}
+
+function drawPlayerSprite() {
+    ctx.save();
+    ctx.translate(player.x, player.y);
+    ctx.rotate(player.facingAngle);
+
+    // Hands & Equipped Weapon Sprite
+    ctx.fillStyle = player.weapon ? player.weapon.color : '#fff';
+
+    if (player.isAttacking) {
+        ctx.save();
+        const swingAngle = (player.attackProgress - Math.PI / 2);
+        ctx.rotate(swingAngle);
+
+        // Weapon Arc Blade
+        ctx.fillStyle = player.weapon ? player.weapon.color : '#cbd5e1';
+        ctx.beginPath();
+        ctx.arc(0, 0, player.weapon ? player.weapon.range : 60, -0.6, 0.6);
+        ctx.lineTo(0, 0);
+        ctx.fill();
+
+        ctx.restore();
+    }
+
+    // Hands holding weapon
+    ctx.fillStyle = '#fcd34d';
+    ctx.beginPath();
+    ctx.arc(14, -8, 5, 0, Math.PI * 2);
+    ctx.arc(14, 8, 5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Body / Armor Visuals
+    ctx.fillStyle = player.armor ? '#10b981' : '#6366f1';
+    ctx.shadowColor = player.armor ? '#059669' : '#4f46e5';
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.arc(0, 0, player.radius, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Head Visor
+    ctx.fillStyle = '#38bdf8';
+    ctx.fillRect(2, -5, 8, 10);
+
+    ctx.restore();
 }
 
 // MAIN LOOP
 function gameLoop() {
+    tickCounter++;
+
     // Movement Logic
     let dx = 0, dy = 0;
     if (keys['w'] || keys['arrowup']) dy -= 1;
@@ -719,12 +972,12 @@ function gameLoop() {
     player.x = Math.max(player.radius, Math.min(WORLD_SIZE - player.radius, player.x + dx * player.speed));
     player.y = Math.max(player.radius, Math.min(WORLD_SIZE - player.radius, player.y + dy * player.speed));
 
-    // Calculate facing angle
+    // Facing Angle
     const screenCenterX = canvas.width / 2;
     const screenCenterY = canvas.height / 2;
     player.facingAngle = Math.atan2(mousePos.y - screenCenterY, mousePos.x - screenCenterX);
 
-    // Enemy AI & Combat
+    // Enemy AI
     const activeData = dimEntities[currentDim];
     activeData.enemies.forEach(e => {
         const edx = player.x - e.x;
@@ -739,7 +992,7 @@ function gameLoop() {
         if (dist < player.radius + e.radius) {
             player.hp -= e.damage / 60;
             if (player.hp <= 0) {
-                alert("Game Over! Restarting survivor progress.");
+                alert("Game Over! Progress reset to center of map.");
                 player.hp = player.maxHp;
                 player.x = HALF_WORLD;
                 player.y = HALF_WORLD;
@@ -748,13 +1001,21 @@ function gameLoop() {
         }
     });
 
-    // CLEAR & DRAW SCENE
+    if (player.isAttacking) {
+        player.attackProgress += 0.25;
+        if (player.attackProgress >= Math.PI) {
+            player.isAttacking = false;
+            player.attackProgress = 0;
+        }
+    }
+
+    // CANVAS DRAWING
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     ctx.save();
     ctx.translate(canvas.width / 2 - player.x, canvas.height / 2 - player.y);
 
-    // Background Grid
+    // Grid Floor
     ctx.strokeStyle = currentDim === 'overworld' ? '#1e293b' : currentDim === 'nether' ? '#450a0a' : '#2e1065';
     ctx.lineWidth = 2;
     for (let x = 0; x < WORLD_SIZE; x += 200) {
@@ -766,42 +1027,17 @@ function gameLoop() {
 
     // Render Resources
     activeData.resources.forEach(r => {
-        ctx.fillStyle = r.type === 'tree' ? '#059669' : r.type === 'rock' ? '#64748b' : r.type === 'ore' ? '#06b6d4' : '#a855f7';
-        ctx.beginPath();
-        ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
-        ctx.fill();
+        if (r.type === 'tree') drawTreeSprite(r.x, r.y, r.radius);
+        else if (r.type === 'rock') drawRockSprite(r.x, r.y, r.radius);
+        else if (r.type === 'ore') drawOreSprite(r.x, r.y, r.radius);
+        else if (r.type === 'shard') drawShardSprite(r.x, r.y, r.radius);
     });
 
-    // Render Enemies
-    activeData.enemies.forEach(e => {
-        ctx.fillStyle = '#ef4444';
-        ctx.beginPath();
-        ctx.arc(e.x, e.y, e.radius, 0, Math.PI * 2);
-        ctx.fill();
-    });
+    // Render Mobs
+    activeData.enemies.forEach(e => drawEnemySprite(e));
 
     // Render Player
-    ctx.save();
-    ctx.translate(player.x, player.y);
-    ctx.rotate(player.facingAngle);
-
-    // Weapon Swing Animation
-    if (player.isAttacking) {
-        player.attackProgress += 0.2;
-        ctx.fillStyle = player.weapon ? player.weapon.color : '#fff';
-        ctx.fillRect(10, -5, player.weapon ? player.weapon.range : 50, 10);
-        if (player.attackProgress >= Math.PI) {
-            player.isAttacking = false;
-            player.attackProgress = 0;
-        }
-    }
-
-    // Body
-    ctx.fillStyle = '#6366f1';
-    ctx.beginPath();
-    ctx.arc(0, 0, player.radius, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
+    drawPlayerSprite();
 
     ctx.restore();
 
