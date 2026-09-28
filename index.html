@@ -318,6 +318,26 @@ const RESOURCE_TYPES = {
     shard: { name: 'Void Crystal', emoji: '🔮', color: '#7e22ce', borderColor: '#c084fc' }
 };
 
+const ENEMY_IMAGE_PATHS = [
+    './images/gerard.jpeg',
+    './images/jason.jpeg',
+    './images/liu-ji.jpeg',
+    './images/matthew.jpeg',
+    './images/travia.jpeg',
+    './images/xayven.jpeg',
+    './images/xuchen.jpeg'
+];
+
+const enemyImages = ENEMY_IMAGE_PATHS.map(path => {
+    const img = new Image();
+    img.src = path;
+    return img;
+});
+
+function getRandomEnemyImage() {
+    return enemyImages[Math.floor(Math.random() * enemyImages.length)];
+}
+
 const MOB_TYPES = {
     overworld: { name: 'Goblin Scout', emoji: '👹', color: '#dc2626', borderColor: '#f87171' },
     nether:    { name: 'Fiery Demon', emoji: '😈', color: '#b91c1c', borderColor: '#fca5a5' },
@@ -426,7 +446,8 @@ function generateDimension(dimKey) {
             speed: dimKey === 'overworld' ? 2.2 : 2.8,
             damage: dimKey === 'overworld' ? 8 : 16,
             radius: 20,
-            animOffset: Math.random() * 100
+            animOffset: Math.random() * 100,
+            faceImage: getRandomEnemyImage()
         });
     }
 
@@ -484,7 +505,8 @@ setInterval(() => {
                 speed: dim === 'overworld' ? 2.2 : 2.8,
                 damage: dim === 'overworld' ? 8 : 16,
                 radius: 20,
-                animOffset: Math.random() * 100
+                animOffset: Math.random() * 100,
+                faceImage: getRandomEnemyImage()
             });
         }
     });
@@ -729,41 +751,40 @@ window.addEventListener('mousedown', e => {
 });
 
 function performAttack() {
-    const activeData = dimEntities[currentDim];
-    const reach = player.weapon ? player.weapon.range : 60;
-    const dmg = player.weapon ? player.weapon.damage : 20;
+    const currentWeapon = player.weapon || WEAPONS.stick;
+    const currentEnemies = dimEntities[currentDim].enemies;
+    const currentResources = dimEntities[currentDim].resources;
 
-    // Harvest Resources
-    for (let i = activeData.resources.length - 1; i >= 0; i--) {
-        const r = activeData.resources[i];
-        const dx = r.x - player.x;
-        const dy = r.y - player.y;
-        if (Math.hypot(dx, dy) <= reach + r.radius) {
-            r.hp -= dmg;
-            if (r.hp <= 0) {
-                if (r.type === 'tree') player.wood += 10;
-                else if (r.type === 'rock') player.stone += 10;
-                else if (r.type === 'ore') player.ore += 8;
-                else if (r.type === 'shard') player.shards[currentDim] = Math.min(5, player.shards[currentDim] + 1);
-                activeData.resources.splice(i, 1);
+    // Check hit against enemies
+    for (let i = currentEnemies.length - 1; i >= 0; i--) {
+        const enemy = currentEnemies[i];
+        const dist = Math.hypot(enemy.x - player.x, enemy.y - player.y);
+        if (dist <= currentWeapon.range + enemy.radius) {
+            enemy.hp -= currentWeapon.damage;
+            if (enemy.hp <= 0) {
+                currentEnemies.splice(i, 1);
+                // Drop resource on kill
+                player.wood += Math.floor(Math.random() * 3) + 1;
+                player.stone += Math.floor(Math.random() * 2);
                 updateHUD();
                 saveData();
             }
         }
     }
 
-    // Damage Enemies
-    for (let i = activeData.enemies.length - 1; i >= 0; i--) {
-        const e = activeData.enemies[i];
-        const dx = e.x - player.x;
-        const dy = e.y - player.y;
-        if (Math.hypot(dx, dy) <= reach + e.radius) {
-            e.hp -= dmg;
-            if (e.hp <= 0) {
-                player.wood += 5;
-                player.stone += 5;
-                player.ore += 5;
-                activeData.enemies.splice(i, 1);
+    // Check hit against resources
+    for (let i = currentResources.length - 1; i >= 0; i--) {
+        const res = currentResources[i];
+        const dist = Math.hypot(res.x - player.x, res.y - player.y);
+        if (dist <= currentWeapon.range + res.radius) {
+            res.hp -= currentWeapon.damage;
+            if (res.hp <= 0) {
+                if (res.type === 'tree') player.wood += 5;
+                else if (res.type === 'rock') player.stone += 5;
+                else if (res.type === 'ore') player.ore += 3;
+                else if (res.type === 'shard') player.shards[currentDim] = Math.min(5, player.shards[currentDim] + 1);
+
+                currentResources.splice(i, 1);
                 updateHUD();
                 saveData();
             }
@@ -771,189 +792,214 @@ function performAttack() {
     }
 }
 
-// RENDERING CIRCLE SPRITES WITH NAMES, HEALTHBARS, AND FACES
-function drawCircleEntity(x, y, radius, color, borderColor, emoji, name, hp, maxHp) {
-    ctx.save();
-    ctx.translate(x, y);
-
-    // 1. Circle Base Sprite
-    ctx.fillStyle = color;
-    ctx.strokeStyle = borderColor;
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.arc(0, 0, radius, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-
-    // 2. Center Face / Emoji Icon
-    ctx.font = `${radius * 1.1}px sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(emoji, 0, 2);
-
-    // 3. Name Tag on Top
-    ctx.font = 'bold 11px Plus Jakarta Sans, sans-serif';
-    ctx.fillStyle = '#ffffff';
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
-    ctx.shadowBlur = 4;
-    ctx.fillText(name, 0, -radius - 14);
-
-    // 4. Floating Overhead Healthbar
-    if (hp !== undefined && maxHp !== undefined) {
-        const barW = 36;
-        const barH = 5;
-        const barX = -barW / 2;
-        const barY = -radius - 8;
-
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        ctx.fillRect(barX, barY, barW, barH);
-
-        const healthRatio = Math.max(0, hp / maxHp);
-        ctx.fillStyle = healthRatio > 0.5 ? '#22c55e' : healthRatio > 0.25 ? '#eab308' : '#ef4444';
-        ctx.fillRect(barX, barY, barW * healthRatio, barH);
-    }
-
-    ctx.restore();
-}
-
-// MAIN GAME LOOP
-function gameLoop() {
+// GAME LOOP & MOVEMENT
+function update() {
     tickCounter++;
 
-    // Movement Logic
-    let dx = 0, dy = 0;
+    // Player Movement
+    let dx = 0;
+    let dy = 0;
     if (keys['w'] || keys['arrowup']) dy -= 1;
     if (keys['s'] || keys['arrowdown']) dy += 1;
     if (keys['a'] || keys['arrowleft']) dx -= 1;
     if (keys['d'] || keys['arrowright']) dx += 1;
 
-    if (dx !== 0 && dy !== 0) { dx *= 0.7071; dy *= 0.7071; }
+    if (dx !== 0 && dy !== 0) {
+        dx *= 0.7071;
+        dy *= 0.7071;
+    }
+
     player.x = Math.max(player.radius, Math.min(WORLD_SIZE - player.radius, player.x + dx * player.speed));
     player.y = Math.max(player.radius, Math.min(WORLD_SIZE - player.radius, player.y + dy * player.speed));
 
-    // Calculate facing angle relative to screen center
+    // Player facing direction towards cursor
     const screenCenterX = canvas.width / 2;
     const screenCenterY = canvas.height / 2;
     player.facingAngle = Math.atan2(mousePos.y - screenCenterY, mousePos.x - screenCenterX);
 
-    // Enemy Movement & AI Logic
-    const activeData = dimEntities[currentDim];
-    activeData.enemies.forEach(e => {
-        const edx = player.x - e.x;
-        const edy = player.y - e.y;
-        const dist = Math.hypot(edx, edy);
-
-        if (dist < 500 && dist > 0) {
-            e.x += (edx / dist) * e.speed;
-            e.y += (edy / dist) * e.speed;
-        }
-
-        if (dist < player.radius + e.radius) {
-            player.hp -= e.damage / 60;
-            if (player.hp <= 0) {
-                alert("Game Over! Respawning at map center.");
-                player.hp = player.maxHp;
-                player.x = HALF_WORLD;
-                player.y = HALF_WORLD;
-            }
-            updateHUD();
-        }
-    });
-
-    // Weapon Swing Animation Progress
+    // Update attack animation
     if (player.isAttacking) {
         player.attackAngle += 0.25;
         if (player.attackAngle >= Math.PI / 3) {
             player.isAttacking = false;
-            player.attackAngle = 0;
         }
     }
 
-    // CLEAR & DRAW CANVAS
+    // Update Enemies
+    const currentEnemies = dimEntities[currentDim].enemies;
+    currentEnemies.forEach(enemy => {
+        const angle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
+        enemy.x += Math.cos(angle) * enemy.speed;
+        enemy.y += Math.sin(angle) * enemy.speed;
+
+        // Collision with player
+        const dist = Math.hypot(player.x - enemy.x, player.y - enemy.y);
+        if (dist < player.radius + enemy.radius) {
+            player.hp -= enemy.damage / 60; // DPS scaled frame by frame
+            if (player.hp <= 0) {
+                player.hp = player.maxHp;
+                player.x = HALF_WORLD;
+                player.y = HALF_WORLD;
+                showToast("☠️ You Died!", "Respawned at world center.");
+            }
+            updateHUD();
+        }
+    });
+}
+
+function render() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    // Camera offset
+    const camX = canvas.width / 2 - player.x;
+    const camY = canvas.height / 2 - player.y;
+
     ctx.save();
-    ctx.translate(canvas.width / 2 - player.x, canvas.height / 2 - player.y);
+    ctx.translate(camX, camY);
 
-    // Grid Floor Background
-    ctx.strokeStyle = currentDim === 'overworld' ? '#1e293b' : currentDim === 'nether' ? '#450a0a' : '#2e1065';
-    ctx.lineWidth = 2;
-    for (let x = 0; x < WORLD_SIZE; x += 200) {
-        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, WORLD_SIZE); ctx.stroke();
+    // Draw Grid / Background
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+    ctx.lineWidth = 1;
+    const gridSize = 100;
+    const startX = Math.floor((player.x - canvas.width / 2) / gridSize) * gridSize;
+    const endX = startX + canvas.width + gridSize * 2;
+    const startY = Math.floor((player.y - canvas.height / 2) / gridSize) * gridSize;
+    const endY = startY + canvas.height + gridSize * 2;
+
+    for (let x = startX; x < endX; x += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(x, startY);
+        ctx.lineTo(x, endY);
+        ctx.stroke();
     }
-    for (let y = 0; y < WORLD_SIZE; y += 200) {
-        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(WORLD_SIZE, y); ctx.stroke();
+    for (let y = startY; y < endY; y += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(startX, y);
+        ctx.lineTo(endX, y);
+        ctx.stroke();
     }
 
-    // Render Circle Resources
-    activeData.resources.forEach(r => {
-        const spec = RESOURCE_TYPES[r.type];
-        drawCircleEntity(r.x, r.y, r.radius, spec.color, spec.borderColor, spec.emoji, spec.name, r.hp, r.maxHp);
-    });
-
-    // Render Animated Mob Circles
-    activeData.enemies.forEach(e => {
-        const spec = MOB_TYPES[currentDim];
-        
-        // FUNNY MOB WALKING ANIMATION (Bopping / Squashing)
-        const walkBounce = Math.sin((tickCounter + e.animOffset) * 0.25) * 4;
-        const scaleBounce = 1 + Math.sin((tickCounter + e.animOffset) * 0.25) * 0.08;
-
+    // Render Resources
+    const currentResources = dimEntities[currentDim].resources;
+    currentResources.forEach(res => {
+        const resDef = RESOURCE_TYPES[res.type];
         ctx.save();
-        ctx.translate(e.x, e.y + walkBounce);
-        ctx.scale(scaleBounce, 1 / scaleBounce);
+        ctx.translate(res.x, res.y);
 
-        drawCircleEntity(0, 0, e.radius, spec.color, spec.borderColor, spec.emoji, spec.name, e.hp, e.maxHp);
+        // Body Circle
+        ctx.beginPath();
+        ctx.arc(0, 0, res.radius, 0, Math.PI * 2);
+        ctx.fillStyle = resDef.color;
+        ctx.fill();
+        ctx.strokeStyle = resDef.borderColor;
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        // Icon
+        ctx.font = '16px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(resDef.emoji, 0, 0);
+
+        // Health Bar
+        if (res.hp < res.maxHp) {
+            ctx.fillStyle = 'rgba(0,0,0,0.6)';
+            ctx.fillRect(-20, -res.radius - 12, 40, 5);
+            ctx.fillStyle = '#22c55e';
+            ctx.fillRect(-20, -res.radius - 12, (res.hp / res.maxHp) * 40, 5);
+        }
+
         ctx.restore();
     });
 
-    // Render Player Circle & Original Swinging Sword
+    // Render Simplified Enemies (Circles with Face Images)
+    const currentEnemies = dimEntities[currentDim].enemies;
+    const mobDef = MOB_TYPES[currentDim];
+    currentEnemies.forEach(enemy => {
+        ctx.save();
+        ctx.translate(enemy.x, enemy.y);
+
+        // Outer Glow / Border Ring
+        ctx.beginPath();
+        ctx.arc(0, 0, enemy.radius + 2, 0, Math.PI * 2);
+        ctx.fillStyle = mobDef.borderColor;
+        ctx.fill();
+
+        // Circular Face Image Clipping
+        ctx.beginPath();
+        ctx.arc(0, 0, enemy.radius, 0, Math.PI * 2);
+        ctx.clip();
+
+        if (enemy.faceImage && enemy.faceImage.complete && enemy.faceImage.naturalWidth !== 0) {
+            ctx.drawImage(
+                enemy.faceImage,
+                -enemy.radius,
+                -enemy.radius,
+                enemy.radius * 2,
+                enemy.radius * 2
+            );
+        } else {
+            // Fallback avatar color & emoji if image is missing/loading
+            ctx.fillStyle = mobDef.color;
+            ctx.fillRect(-enemy.radius, -enemy.radius, enemy.radius * 2, enemy.radius * 2);
+
+            ctx.font = '16px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(mobDef.emoji, 0, 0);
+        }
+
+        ctx.restore();
+
+        // Enemy Health Bar (drawn unclipped)
+        ctx.save();
+        ctx.translate(enemy.x, enemy.y);
+        if (enemy.hp < enemy.maxHp) {
+            ctx.fillStyle = 'rgba(0,0,0,0.6)';
+            ctx.fillRect(-20, -enemy.radius - 12, 40, 5);
+            ctx.fillStyle = '#ef4444';
+            ctx.fillRect(-20, -enemy.radius - 12, (enemy.hp / enemy.maxHp) * 40, 5);
+        }
+        ctx.restore();
+    });
+
+    // Render Player
     ctx.save();
     ctx.translate(player.x, player.y);
-    ctx.rotate(player.facingAngle);
 
-    // SWINGING WEAPON ANIMATION
-    ctx.save();
-    ctx.rotate(player.isAttacking ? player.attackAngle : 0);
-    ctx.fillStyle = player.weapon ? player.weapon.color : '#a3e635';
-    ctx.shadowColor = player.weapon ? player.weapon.color : '#a3e635';
-    ctx.shadowBlur = player.isAttacking ? 15 : 0;
-
-    // Draw Weapon Blade
-    const wLength = player.weapon ? player.weapon.range : 60;
-    ctx.fillRect(15, -4, wLength, 8);
-    ctx.restore();
-
-    // Player Body Circle
-    ctx.fillStyle = player.armor ? '#10b981' : '#6366f1';
-    ctx.strokeStyle = player.armor ? '#34d399' : '#818cf8';
-    ctx.lineWidth = 4;
+    // Player Circle
     ctx.beginPath();
     ctx.arc(0, 0, player.radius, 0, Math.PI * 2);
+    ctx.fillStyle = '#6366f1';
     ctx.fill();
+    ctx.strokeStyle = '#818cf8';
+    ctx.lineWidth = 3;
     ctx.stroke();
 
-    // Player Face
-    ctx.font = '22px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('🤠', 0, 2);
+    // Weapon Swing Arc / Weapon Render
+    const activeWeapon = player.weapon || WEAPONS.stick;
+    ctx.save();
+    ctx.rotate(player.facingAngle + (player.isAttacking ? player.attackAngle : 0));
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(activeWeapon.range, 0);
+    ctx.strokeStyle = activeWeapon.color;
+    ctx.lineWidth = player.isAttacking ? 6 : 3;
+    ctx.stroke();
+    ctx.restore();
 
     ctx.restore();
 
-    // Player Overhead Name Tag
-    ctx.font = 'bold 12px Plus Jakarta Sans, sans-serif';
-    ctx.fillStyle = '#60a5fa';
-    ctx.textAlign = 'center';
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
-    ctx.shadowBlur = 4;
-    ctx.fillText('Survivor (You)', player.x, player.y - player.radius - 12);
+    ctx.restore(); // Restore camera
+}
 
-    ctx.restore();
-
+function gameLoop() {
+    update();
+    render();
     requestAnimationFrame(gameLoop);
 }
 
+// INITIALIZATION
 loadSavedData();
 updateHUD();
 gameLoop();
