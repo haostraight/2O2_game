@@ -42,7 +42,7 @@
         }
 
         .glass-panel {
-            background: rgba(15, 23, 42, 0.75);
+            background: rgba(15, 23, 42, 0.85);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
             border: 1px solid rgba(255, 255, 255, 0.12);
@@ -63,7 +63,7 @@
             z-index: 5;
         }
 
-        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.5); border-radius: 99px; }
         ::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.5); border-radius: 99px; }
         ::-webkit-scrollbar-thumb:hover { background: rgba(129, 140, 248, 0.8); }
@@ -90,6 +90,7 @@
 
 <div id="toast-container" class="pointer-events-none absolute top-6 left-1/2 z-30 flex -translate-x-1/2 flex-col items-center gap-2"></div>
 
+<!-- HUD STATS -->
 <div id="stats-hud" class="glass-panel glass-panel-glow pointer-events-auto absolute top-5 left-5 z-20 w-80 rounded-2xl p-4 transition-all duration-300">
     <div class="mb-3 flex items-center justify-between border-b border-white/10 pb-2">
         <div class="flex items-center gap-2">
@@ -126,17 +127,17 @@
 
     <!-- Resource Grid -->
     <div class="mb-3 grid grid-cols-4 gap-1.5 text-center">
-        <div class="rounded-lg border border-white/5 bg-white/[0.03] p-1.5 transition-colors hover:bg-white/[0.08]">
+        <div class="rounded-lg border border-white/5 bg-white/[0.03] p-1.5">
             <div class="text-base">🪵</div>
             <div id="wood-val" class="font-display text-xs font-bold text-amber-200">0</div>
             <div class="text-[9px] font-medium text-gray-400 uppercase">Wood</div>
         </div>
-        <div class="rounded-lg border border-white/5 bg-white/[0.03] p-1.5 transition-colors hover:bg-white/[0.08]">
+        <div class="rounded-lg border border-white/5 bg-white/[0.03] p-1.5">
             <div class="text-base">🪨</div>
             <div id="stone-val" class="font-display text-xs font-bold text-slate-300">0</div>
             <div class="text-[9px] font-medium text-gray-400 uppercase">Stone</div>
         </div>
-        <div class="rounded-lg border border-white/5 bg-white/[0.03] p-1.5 transition-colors hover:bg-white/[0.08]">
+        <div class="rounded-lg border border-white/5 bg-white/[0.03] p-1.5">
             <div class="text-base">💎</div>
             <div id="ore-val" class="font-display text-xs font-bold text-cyan-300">0</div>
             <div class="text-[9px] font-medium text-gray-400 uppercase">Ore</div>
@@ -150,7 +151,7 @@
 
     <!-- Equipped Weapon -->
     <div class="flex items-center justify-between rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-xs">
-        <span class="text-gray-400">Weapon</span>
+        <span class="text-gray-400">Equipped Weapon</span>
         <span id="weapon-val" class="font-bold text-gray-200">Wooden Stick</span>
     </div>
 </div>
@@ -168,56 +169,49 @@
     </button>
 </div>
 
-<!-- Crafting Panel -->
-<div id="crafting-panel" class="glass-panel pointer-events-auto absolute top-5 right-5 z-20 w-72 rounded-2xl p-4 shadow-2xl transition-all">
+<!-- Compact Crafting Side Panel -->
+<div id="crafting-panel" class="glass-panel pointer-events-auto absolute top-5 right-5 z-20 w-80 rounded-2xl p-4 shadow-2xl transition-all">
     <div class="mb-3 flex items-center justify-between border-b border-white/10 pb-2">
         <div class="flex items-center gap-2">
             <span class="text-sm">⚒️</span>
             <span class="font-display text-xs font-bold tracking-wider text-gray-200 uppercase">CRAFTING MATRIX</span>
         </div>
-        <button onclick="resetGameData()" class="text-[10px] font-semibold text-rose-400 hover:text-rose-300 underline">Reset Save</button>
+        <div class="flex items-center gap-2">
+            <button onclick="toggleFullscreenCrafting(true)" title="Expand Fullscreen" class="rounded-lg bg-indigo-600/30 px-2 py-1 text-[11px] font-bold text-indigo-300 hover:bg-indigo-600/50 border border-indigo-400/30">
+                ⛶ Fullscreen
+            </button>
+            <button onclick="resetGameData()" class="text-[10px] font-semibold text-rose-400 hover:text-rose-300 underline">Reset</button>
+        </div>
     </div>
 
-    <div class="flex flex-col gap-2 max-h-80 overflow-y-auto pr-1">
-        <button id="craft-spear" onclick="craftItem('spear')" class="craft-btn flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] p-2.5 text-left transition-all hover:bg-white/[0.1] active:scale-95 disabled:opacity-40 disabled:pointer-events-none">
-            <div>
-                <div class="text-xs font-bold text-emerald-400">🗡️ Stone Spear</div>
-                <div class="text-[10px] text-gray-400">+40 Damage • Long Reach</div>
-            </div>
-            <div class="text-right text-[10px] font-mono font-semibold text-gray-300">10W • 10S</div>
-        </button>
+    <!-- Scrollable Mini Craft List -->
+    <div id="compact-craft-list" class="flex flex-col gap-2 max-h-80 overflow-y-auto pr-1">
+        <!-- Rendered via JS -->
+    </div>
+</div>
 
-        <button id="craft-hammer" onclick="craftItem('hammer')" class="craft-btn flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] p-2.5 text-left transition-all hover:bg-white/[0.1] active:scale-95 disabled:opacity-40 disabled:pointer-events-none">
-            <div>
-                <div class="text-xs font-bold text-sky-400">🔨 Ore Sledge</div>
-                <div class="text-[10px] text-gray-400">+75 Damage • Heavy Hit</div>
+<!-- Fullscreen Crafting Overlay Grid -->
+<div id="fullscreen-crafting" class="glass-panel pointer-events-auto fixed inset-6 z-50 hidden flex-col rounded-3xl p-6 shadow-2xl backdrop-blur-2xl">
+    <div class="flex items-center justify-between border-b border-white/10 pb-4">
+        <div>
+            <h2 class="font-display text-2xl font-extrabold tracking-wide text-white">⚒️ FORGE & CRAFTING WORKSTATION</h2>
+            <p class="text-xs text-gray-400">Construct unique equipment, armors, and consumables to survive multi-dimensional threats.</p>
+        </div>
+        <div class="flex items-center gap-4">
+            <div class="flex items-center gap-3 rounded-2xl bg-black/40 px-4 py-2 border border-white/10 text-xs">
+                <span>🪵 <strong id="fs-wood" class="text-amber-200">0</strong></span>
+                <span>🪨 <strong id="fs-stone" class="text-slate-300">0</strong></span>
+                <span>💎 <strong id="fs-ore" class="text-cyan-300">0</strong></span>
             </div>
-            <div class="text-right text-[10px] font-mono font-semibold text-gray-300">15W • 20O</div>
-        </button>
+            <button onclick="toggleFullscreenCrafting(false)" class="rounded-xl bg-rose-600/30 px-4 py-2 font-display text-xs font-bold text-rose-200 border border-rose-500/40 hover:bg-rose-600/50">
+                ✖ Close [ESC]
+            </button>
+        </div>
+    </div>
 
-        <button id="craft-blade" onclick="craftItem('blade')" class="craft-btn flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] p-2.5 text-left transition-all hover:bg-white/[0.1] active:scale-95 disabled:opacity-40 disabled:pointer-events-none">
-            <div>
-                <div class="text-xs font-bold text-amber-400">⚡ Plasma Sword</div>
-                <div class="text-[10px] text-gray-400">+120 Damage • Rapid Arc</div>
-            </div>
-            <div class="text-right text-[10px] font-mono font-semibold text-gray-300">25W • 25S • 15O</div>
-        </button>
-
-        <button id="craft-scythe" onclick="craftItem('scythe')" class="craft-btn flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] p-2.5 text-left transition-all hover:bg-white/[0.1] active:scale-95 disabled:opacity-40 disabled:pointer-events-none">
-            <div>
-                <div class="text-xs font-bold text-purple-400">🔮 Void Scythe</div>
-                <div class="text-[10px] text-gray-400">+190 Damage • Void Cleave</div>
-            </div>
-            <div class="text-right text-[10px] font-mono font-semibold text-gray-300">40W • 40S • 30O</div>
-        </button>
-
-        <button id="craft-heal" onclick="craftItem('heal')" class="craft-btn flex items-center justify-between rounded-xl border border-emerald-500/30 bg-emerald-950/20 p-2.5 text-left transition-all hover:bg-emerald-900/30 active:scale-95 disabled:opacity-40 disabled:pointer-events-none">
-            <div>
-                <div class="text-xs font-bold text-emerald-300">🧪 Health Salve</div>
-                <div class="text-[10px] text-emerald-400/80">Restore +45 HP</div>
-            </div>
-            <div class="text-right text-[10px] font-mono font-semibold text-emerald-200">5W • 5S</div>
-        </button>
+    <!-- Crafting Grid -->
+    <div id="fullscreen-craft-grid" class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto pr-2 flex-1">
+        <!-- Rendered via JS -->
     </div>
 </div>
 
@@ -228,15 +222,14 @@
 <script>
 // ==========================================
 // ANIMATION & TWEAK CONFIGURATION
-// Easily adjust values here to change feel
 // ==========================================
 const ANIMATION_SETTINGS = {
-    weaponSwingAngle: Math.PI / 2, // Total arc angle of swing (90 degrees)
-    weaponSwingSpeed: 0.15,        // Attack swing speed (0 to 1 per frame)
-    mobWalkWobbleSpeed: 0.015,     // Frequency of mob walk wobble
-    mobWalkWobbleAmount: 0.25,     // Max tilt angle (radians) during mob walk
-    mobIdleBobSpeed: 0.005,        // Idle bounce speed
-    mobIdleBobAmount: 3            // Idle bounce amplitude (pixels)
+    weaponSwingAngle: Math.PI / 2, // 90 degree arc
+    weaponSwingSpeed: 0.15,
+    mobWalkWobbleSpeed: 0.015,
+    mobWalkWobbleAmount: 0.25,
+    mobIdleBobSpeed: 0.005,
+    mobIdleBobAmount: 3
 };
 
 const canvas = document.getElementById('gameCanvas');
@@ -254,20 +247,87 @@ window.addEventListener('resize', resizeCanvas);
 const WORLD_SIZE = 8000;
 const HALF_WORLD = WORLD_SIZE / 2;
 
+// WEAPONS DEFINITION
 const WEAPONS = {
-    stick:  { id: 'stick', name: 'Wooden Stick', damage: 20, range: 65, rarity: 'Common', color: '#9ca3af' },
-    spear:  { id: 'spear', name: 'Stone Spear', damage: 40, range: 90, rarity: 'Uncommon', color: '#34d399' },
-    hammer: { id: 'hammer', name: 'Ore Sledge', damage: 75, range: 75, rarity: 'Rare', color: '#38bdf8' },
-    blade:  { id: 'blade', name: 'Plasma Sword', damage: 120, range: 110, rarity: 'Legendary', color: '#fbbf24' },
-    scythe: { id: 'scythe', name: 'Void Scythe', damage: 190, range: 130, rarity: 'Mythic', color: '#c084fc' }
+    stick:  { id: 'stick', name: 'Wooden Stick', damage: 20, range: 65, color: '#9ca3af' },
+    spear:  { id: 'spear', name: 'Stone Spear', damage: 40, range: 90, color: '#34d399' },
+    hammer: { id: 'hammer', name: 'Ore Sledge', damage: 75, range: 75, color: '#38bdf8' },
+    blade:  { id: 'blade', name: 'Plasma Sword', damage: 120, range: 110, color: '#fbbf24' },
+    scythe: { id: 'scythe', name: 'Void Scythe', damage: 190, range: 130, color: '#c084fc' },
+    bow:    { id: 'bow', name: 'Frostbite Bow', damage: 95, range: 140, color: '#60a5fa' },
+    shield: { id: 'shield', name: 'Nether Core Aegis', damage: 140, range: 85, color: '#f97316' }
 };
 
-// MOBS CONFIG: Added 'size' parameter distinct from 'radius' (hitbox)
+// FULL EXPANDED CRAFTABLE ITEMS CATALOG
+const CRAFTABLES = [
+    {
+        id: 'spear', name: 'Stone Spear', type: 'weapon', weaponKey: 'spear',
+        icon: '🗡️', rarity: 'Uncommon', desc: 'Crafted from sharpened stone. Long reach attack.',
+        stats: '+40 Damage • 90 Range', cost: { wood: 10, stone: 10, ore: 0 },
+        consumable: false
+    },
+    {
+        id: 'hammer', name: 'Ore Sledge', type: 'weapon', weaponKey: 'hammer',
+        icon: '🔨', rarity: 'Rare', desc: 'Heavy blunt sledge that smashes armor.',
+        stats: '+75 Damage • High Impact', cost: { wood: 15, stone: 0, ore: 20 },
+        consumable: false
+    },
+    {
+        id: 'bow', name: 'Frostbite Bow', type: 'weapon', weaponKey: 'bow',
+        icon: '🏹', rarity: 'Rare', desc: 'Long-range weapon infused with icy tundra essence.',
+        stats: '+95 Damage • 140 Range', cost: { wood: 30, stone: 15, ore: 10 },
+        consumable: false
+    },
+    {
+        id: 'shield', name: 'Nether Core Aegis', type: 'weapon', weaponKey: 'shield',
+        icon: '🛡️', rarity: 'Epic', desc: 'Forged from lava-infused minerals to deliver heavy sweeping attacks.',
+        stats: '+140 Damage • High Defense', cost: { wood: 20, stone: 35, ore: 25 },
+        consumable: false
+    },
+    {
+        id: 'blade', name: 'Plasma Sword', type: 'weapon', weaponKey: 'blade',
+        icon: '⚡', rarity: 'Legendary', desc: 'High-tech sword slicing through reality with dynamic arcs.',
+        stats: '+120 Damage • 110 Range', cost: { wood: 25, stone: 25, ore: 15 },
+        consumable: false
+    },
+    {
+        id: 'scythe', name: 'Void Scythe', type: 'weapon', weaponKey: 'scythe',
+        icon: '🔮', rarity: 'Mythic', desc: 'An ancient relic capable of cleaving void matter.',
+        stats: '+190 Damage • 130 Cleave Arc', cost: { wood: 40, stone: 40, ore: 30 },
+        consumable: false
+    },
+    {
+        id: 'boots', name: 'Swift Boots', type: 'stat',
+        icon: '🥾', rarity: 'Uncommon', desc: 'Lightweight boots that permanently boost movement speed.',
+        stats: '+20% Speed Increase', cost: { wood: 15, stone: 5, ore: 5 },
+        consumable: false, apply: () => { player.speed += 1.2; }
+    },
+    {
+        id: 'armor', name: 'Shadow Cloak', type: 'stat',
+        icon: '🧥', rarity: 'Epic', desc: 'Hardened armor increasing total survivor maximum vitality.',
+        stats: '+50 Max HP Bonus', cost: { wood: 25, stone: 30, ore: 20 },
+        consumable: false, apply: () => { player.maxHp += 50; player.hp += 50; }
+    },
+    {
+        id: 'heal', name: 'Health Salve', type: 'consumable',
+        icon: '🧪', rarity: 'Common', desc: 'A soothing concoction restoring lost health points.',
+        stats: '+45 Vitality Restored', cost: { wood: 5, stone: 5, ore: 0 },
+        consumable: true, apply: () => { player.hp = Math.min(player.maxHp, player.hp + 45); }
+    },
+    {
+        id: 'elixir', name: 'Full Recovery Elixir', type: 'consumable',
+        icon: '🍷', rarity: 'Rare', desc: 'A potent elixir fully restoring player vitality.',
+        stats: 'Restores 100% Health', cost: { wood: 15, stone: 15, ore: 10 },
+        consumable: true, apply: () => { player.hp = player.maxHp; }
+    }
+];
+
+// MOBS CONFIG (Radius = Hitbox, Size = Visual Sprite Appearance)
 const MOBS_CONFIG = {
-    gerard:  { name: 'Gerard', spriteSrc: 'images/gerard.jpeg', hp: 100, speed: 2.8, radius: 20, size: 30, damage: 0.25, fallbackColor: '#ef4444' },
-    jason:   { name: 'Jason', spriteSrc: 'images/jason.jpeg', hp: 130, speed: 2.5, radius: 22, size: 32, damage: 0.35, fallbackColor: '#f97316' },
-    liuji:   { name: 'Liu Ji', spriteSrc: 'images/liu-ji.jpeg', hp: 220, speed: 1.8, radius: 25, size: 38, damage: 0.55, fallbackColor: '#dc2626' },
-    matthew: { name: 'Matthew', spriteSrc: 'images/matthew.jpeg', hp: 200, speed: 2.7, radius: 24, size: 36, damage: 0.45, fallbackColor: '#b91c1c' },
+    gerard:  { name: 'Gerard', spriteSrc: 'images/gerard.jpeg', hp: 100, speed: 2.8, radius: 20, size: 28, damage: 0.25, fallbackColor: '#ef4444' },
+    jason:   { name: 'Jason', spriteSrc: 'images/jason.jpeg', hp: 130, speed: 2.5, radius: 22, size: 30, damage: 0.35, fallbackColor: '#f97316' },
+    liuji:   { name: 'Liu Ji', spriteSrc: 'images/liu-ji.jpeg', hp: 220, speed: 1.8, radius: 25, size: 34, damage: 0.55, fallbackColor: '#dc2626' },
+    matthew: { name: 'Matthew', spriteSrc: 'images/matthew.jpeg', hp: 200, speed: 2.7, radius: 24, size: 32, damage: 0.45, fallbackColor: '#b91c1c' },
     travia:  { name: 'Travia', spriteSrc: 'images/travia.jpeg', hp: 280, speed: 2.2, radius: 25, size: 36, damage: 0.60, fallbackColor: '#9333ea' },
     xayven:  { name: 'Xayven', spriteSrc: 'images/xayven.jpeg', hp: 350, speed: 3.0, radius: 28, size: 40, damage: 0.75, fallbackColor: '#7e22ce' },
     xuchen:  { name: 'Xuchen', spriteSrc: 'images/xuchen.jpeg', hp: 1250, speed: 1.5, radius: 40, size: 58, damage: 1.20, fallbackColor: '#a855f7', isBoss: true }
@@ -322,6 +382,7 @@ let player = {
     hp: 100, maxHp: 100, wood: 0, stone: 0, ore: 0,
     shards: { overworld: 0, nether: 0, void: 0 },
     unlockedDims: { overworld: true, nether: false, void: false },
+    craftedItems: {}, // Tracks items crafted (one-time crafts)
     weaponKey: 'stick', weapon: WEAPONS.stick,
     facingAngle: 0, isAttacking: false, attackProgress: 0
 };
@@ -345,10 +406,13 @@ function loadSavedData() {
             player.ore = data.ore || 0;
             player.shards = data.shards || { overworld: 0, nether: 0, void: 0 };
             player.unlockedDims = data.unlockedDims || { overworld: true, nether: false, void: false };
+            player.craftedItems = data.craftedItems || {};
             if (data.weaponKey && WEAPONS[data.weaponKey]) {
                 player.weaponKey = data.weaponKey;
                 player.weapon = WEAPONS[data.weaponKey];
             }
+            if (data.maxHp) player.maxHp = data.maxHp;
+            if (data.speed) player.speed = data.speed;
             gameTime = data.gameTime || 0;
         } catch (e) { console.error("Failed loading save:", e); }
     }
@@ -358,13 +422,14 @@ function saveData() {
     const data = {
         wood: player.wood, stone: player.stone, ore: player.ore,
         shards: player.shards, unlockedDims: player.unlockedDims,
-        weaponKey: player.weaponKey, gameTime: gameTime
+        craftedItems: player.craftedItems, weaponKey: player.weaponKey,
+        maxHp: player.maxHp, speed: player.speed, gameTime: gameTime
     };
     localStorage.setItem('survival_realm_save', JSON.stringify(data));
 }
 
 function resetGameData() {
-    if (confirm("Reset all game progress?")) {
+    if (confirm("Reset all game progress and crafted items?")) {
         localStorage.removeItem('survival_realm_save');
         location.reload();
     }
@@ -378,6 +443,10 @@ function updateHUD() {
     document.getElementById('weapon-val').innerText = player.weapon.name;
     document.getElementById('hp-text').innerText = `${Math.max(0, Math.ceil(player.hp))} / ${player.maxHp}`;
     
+    document.getElementById('fs-wood').innerText = player.wood;
+    document.getElementById('fs-stone').innerText = player.stone;
+    document.getElementById('fs-ore').innerText = player.ore;
+
     const pct = Math.max(0, (player.hp / player.maxHp) * 100);
     document.getElementById('hp-bar').style.width = `${pct}%`;
 
@@ -388,7 +457,90 @@ function updateHUD() {
             btn.style.opacity = '1';
         }
     });
+
+    renderCraftingUI();
 }
+
+function renderCraftingUI() {
+    const compactContainer = document.getElementById('compact-craft-list');
+    const fullContainer = document.getElementById('fullscreen-craft-grid');
+
+    let compactHTML = '';
+    let fullHTML = '';
+
+    CRAFTABLES.forEach(item => {
+        const isCrafted = player.craftedItems[item.id] && !item.consumable;
+        const canAfford = player.wood >= item.cost.wood && player.stone >= item.cost.stone && player.ore >= item.cost.ore;
+
+        // Cost String
+        let costStr = [];
+        if (item.cost.wood > 0) costStr.push(`${item.cost.wood}W`);
+        if (item.cost.stone > 0) costStr.push(`${item.cost.stone}S`);
+        if (item.cost.ore > 0) costStr.push(`${item.cost.ore}O`);
+        const costText = costStr.join(' • ');
+
+        // Compact Entry
+        compactHTML += `
+            <button onclick="craftItem('${item.id}')" ${isCrafted || !canAfford ? 'disabled' : ''}
+                class="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] p-2.5 text-left transition-all hover:bg-white/[0.1] active:scale-95 disabled:opacity-40 disabled:pointer-events-none">
+                <div>
+                    <div class="text-xs font-bold text-indigo-300 flex items-center gap-1">
+                        <span>${item.icon}</span> ${item.name}
+                        ${isCrafted ? '<span class="text-[9px] bg-emerald-500/20 text-emerald-400 px-1 rounded">CRAFTED</span>' : ''}
+                    </div>
+                    <div class="text-[10px] text-gray-400">${item.stats}</div>
+                </div>
+                <div class="text-right text-[10px] font-mono font-semibold text-gray-300">${costText}</div>
+            </button>
+        `;
+
+        // Fullscreen Entry
+        fullHTML += `
+            <div class="glass-panel flex flex-col justify-between rounded-2xl border border-white/10 p-4 transition-all hover:border-indigo-500/40">
+                <div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-2xl">${item.icon}</span>
+                        <span class="rounded-full bg-white/5 px-2.5 py-0.5 text-[10px] font-bold text-indigo-300 border border-white/10">${item.rarity}</span>
+                    </div>
+                    <h3 class="mt-2 font-display text-base font-bold text-white">${item.name}</h3>
+                    <p class="mt-1 text-xs text-gray-400 leading-relaxed">${item.desc}</p>
+                    
+                    <div class="mt-3 rounded-lg bg-black/40 p-2 text-xs font-semibold text-emerald-300 border border-white/5">
+                        ⚡ ${item.stats}
+                    </div>
+                </div>
+
+                <div class="mt-4 border-t border-white/10 pt-3 flex items-center justify-between">
+                    <div class="text-xs font-mono font-semibold text-gray-300">
+                        Cost: <span class="text-amber-200">${item.cost.wood}W</span> • <span class="text-slate-300">${item.cost.stone}S</span> • <span class="text-cyan-300">${item.cost.ore}O</span>
+                    </div>
+                    <button onclick="craftItem('${item.id}')" ${isCrafted || !canAfford ? 'disabled' : ''}
+                        class="rounded-xl bg-indigo-600 px-4 py-2 font-display text-xs font-bold text-white shadow-lg transition-all hover:bg-indigo-500 active:scale-95 disabled:opacity-40 disabled:pointer-events-none">
+                        ${isCrafted ? 'Crafted ✔' : 'Craft Item'}
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+
+    compactContainer.innerHTML = compactHTML;
+    fullContainer.innerHTML = fullHTML;
+}
+
+function toggleFullscreenCrafting(show) {
+    const modal = document.getElementById('fullscreen-crafting');
+    if (show) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    } else {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+}
+
+window.addEventListener('keydown', e => {
+    if (e.key === 'Escape') toggleFullscreenCrafting(false);
+});
 
 function showToast(title, desc) {
     const container = document.getElementById('toast-container');
@@ -448,7 +600,7 @@ function initWorld() {
             dimEntities[dim].enemies.push({
                 key: mKey, x: Math.random() * WORLD_SIZE, y: Math.random() * WORLD_SIZE,
                 hp: base.hp, maxHp: base.hp,
-                radius: base.radius, size: base.size, // Radius = Hitbox, Size = Appearance
+                radius: base.radius, size: base.size,
                 speed: base.speed, damage: base.damage, name: base.name, hitFlash: 0,
                 isMoving: false, animTime: Math.random() * 100
             });
@@ -491,38 +643,42 @@ function switchDimension(dimName) {
     saveData();
 }
 
-function craftItem(itemKey) {
-    if (itemKey === 'spear' && player.wood >= 10 && player.stone >= 10) {
-        player.wood -= 10; player.stone -= 10;
-        player.weaponKey = 'spear'; player.weapon = WEAPONS.spear;
-        showToast("🗡️ Weapon Crafted", "Equipped Stone Spear!");
-    } else if (itemKey === 'hammer' && player.wood >= 15 && player.ore >= 20) {
-        player.wood -= 15; player.ore -= 20;
-        player.weaponKey = 'hammer'; player.weapon = WEAPONS.hammer;
-        showToast("🔨 Weapon Crafted", "Equipped Ore Sledge!");
-    } else if (itemKey === 'blade' && player.wood >= 25 && player.stone >= 25 && player.ore >= 15) {
-        player.wood -= 25; player.stone -= 25; player.ore -= 15;
-        player.weaponKey = 'blade'; player.weapon = WEAPONS.blade;
-        showToast("⚡ Weapon Crafted", "Equipped Plasma Sword!");
-    } else if (itemKey === 'scythe' && player.wood >= 40 && player.stone >= 40 && player.ore >= 30) {
-        player.wood -= 40; player.stone -= 40; player.ore -= 30;
-        player.weaponKey = 'scythe'; player.weapon = WEAPONS.scythe;
-        showToast("🔮 Weapon Crafted", "Equipped Void Scythe!");
-    } else if (itemKey === 'heal' && player.wood >= 5 && player.stone >= 5) {
-        player.wood -= 5; player.stone -= 5;
-        player.hp = Math.min(player.maxHp, player.hp + 45);
-        showToast("🧪 Vitality Restored", "Gained +45 HP!");
-    } else {
-        showToast("❌ Missing Resources", "Gather resources to craft this item.");
+function craftItem(itemId) {
+    const item = CRAFTABLES.find(c => c.id === itemId);
+    if (!item) return;
+
+    // Check if non-consumable item has already been crafted
+    if (!item.consumable && player.craftedItems[item.id]) {
+        showToast("⚠️ Already Crafted", "You can only craft this equipment once!");
+        return;
     }
-    updateHUD();
-    saveData();
+
+    // Check resources
+    if (player.wood >= item.cost.wood && player.stone >= item.cost.stone && player.ore >= item.cost.ore) {
+        player.wood -= item.cost.wood;
+        player.stone -= item.cost.stone;
+        player.ore -= item.cost.ore;
+
+        if (!item.consumable) player.craftedItems[item.id] = true;
+
+        if (item.type === 'weapon' && item.weaponKey && WEAPONS[item.weaponKey]) {
+            player.weaponKey = item.weaponKey;
+            player.weapon = WEAPONS[item.weaponKey];
+        }
+
+        if (item.apply) item.apply();
+
+        showToast(`${item.icon} Crafted!`, `Constructed ${item.name}!`);
+        updateHUD();
+        saveData();
+    } else {
+        showToast("❌ Insufficient Resources", "Gather more materials to forge this item.");
+    }
 }
 
 canvas.addEventListener('pointerdown', () => {
     if (player.hp <= 0) return;
 
-    // Trigger swing animation cycle
     player.isAttacking = true;
     player.attackProgress = 0;
 
@@ -578,7 +734,6 @@ canvas.addEventListener('pointerdown', () => {
     });
 
     currentData.enemies.forEach((enemy, index) => {
-        // Hitbox collision uses enemy.radius
         if (Math.hypot(enemy.x - player.x, enemy.y - player.y) <= player.weapon.range + enemy.radius) {
             let isCrit = Math.random() < 0.25;
             let dmg = isCrit ? Math.floor(player.weapon.damage * 1.5) : player.weapon.damage;
@@ -628,7 +783,6 @@ function respawnPlayer() {
 function update() {
     if (player.hp <= 0) return;
 
-    // Advance attack swing animation
     if (player.isAttacking) {
         player.attackProgress += ANIMATION_SETTINGS.weaponSwingSpeed;
         if (player.attackProgress >= 1) {
@@ -676,7 +830,6 @@ function update() {
             enemy.isMoving = false;
         }
 
-        // Damage detection using hitbox radius
         if (dist < player.radius + enemy.radius) {
             player.hp -= enemy.damage;
             triggerDamageFlash();
@@ -822,7 +975,7 @@ function draw() {
 
     const dimConfig = DIMENSIONS[currentDim];
 
-    // Terrain & World Grid
+    // Terrain & Grid
     drawBiomeSquare(0, 0, HALF_WORLD, HALF_WORLD, dimConfig.biomes[0], cameraX, cameraY);
     drawBiomeSquare(HALF_WORLD, 0, HALF_WORLD, HALF_WORLD, dimConfig.biomes[1], cameraX, cameraY);
     drawBiomeSquare(0, HALF_WORLD, HALF_WORLD, HALF_WORLD, dimConfig.biomes[2], cameraX, cameraY);
@@ -830,10 +983,8 @@ function draw() {
 
     const currentData = dimEntities[currentDim];
 
-    // Structures
+    // Structures & Resources
     currentData.structures.forEach(struct => drawStructure(struct, cameraX, cameraY));
-
-    // Resources
     currentData.resources.forEach(res => {
         const rx = res.x - cameraX, ry = res.y - cameraY;
         if (rx >= -40 && rx <= canvas.width + 40 && ry >= -40 && ry <= canvas.height + 40) {
@@ -841,15 +992,14 @@ function draw() {
         }
     });
 
-    // Enemies with Walk Wobble & Size Scaling
+    // Enemies (Render using size parameter)
     currentData.enemies.forEach(enemy => {
         const ex = enemy.x - cameraX, ey = enemy.y - cameraY;
         if (ex < -80 || ex > canvas.width + 80 || ey < -80 || ey > canvas.height + 80) return;
 
         const sprite = loadedSprites[enemy.key];
-        const displaySize = enemy.size || enemy.radius; // Uses size for visual appearance
+        const displaySize = enemy.size || enemy.radius;
 
-        // Calculate wobble/bobbing animation offsets
         let wobbleAngle = 0;
         let bobY = 0;
         if (enemy.isMoving) {
@@ -858,7 +1008,6 @@ function draw() {
             bobY = Math.sin(enemy.animTime * ANIMATION_SETTINGS.mobIdleBobSpeed) * ANIMATION_SETTINGS.mobIdleBobAmount;
         }
 
-        // Shadow
         ctx.fillStyle = 'rgba(0,0,0,0.35)';
         ctx.beginPath();
         ctx.ellipse(ex, ey + displaySize * 0.8, displaySize * 0.8, displaySize * 0.35, 0, 0, Math.PI * 2);
@@ -887,7 +1036,7 @@ function draw() {
         }
         ctx.restore();
 
-        // Enemy Name
+        // Enemy HUD
         ctx.font = 'bold 11px "Plus Jakarta Sans", sans-serif';
         ctx.textAlign = 'center';
         ctx.fillStyle = '#f3f4f6';
@@ -896,7 +1045,6 @@ function draw() {
         ctx.fillText(enemy.name, ex, ey - displaySize - 14 + bobY);
         ctx.shadowBlur = 0;
 
-        // Health Bar
         const barWidth = Math.max(36, displaySize * 1.6);
         ctx.fillStyle = 'rgba(0,0,0,0.6)';
         ctx.fillRect(ex - barWidth / 2, ey - displaySize - 9 + bobY, barWidth, 5);
@@ -914,12 +1062,11 @@ function draw() {
         ctx.globalAlpha = 1.0;
     });
 
-    // Player & Weapon Swing Animation
+    // Player Rendering
     const px = canvas.width / 2, py = canvas.height / 2;
     ctx.save();
     ctx.translate(px, py);
 
-    // Player Shadow
     ctx.fillStyle = 'rgba(0,0,0,0.35)';
     ctx.beginPath();
     ctx.ellipse(0, 14, player.radius * 0.9, player.radius * 0.4, 0, 0, Math.PI * 2);
@@ -927,7 +1074,6 @@ function draw() {
 
     ctx.rotate(player.facingAngle);
 
-    // Dynamic weapon swing calculation
     let currentSwingOffset = 0;
     if (player.isAttacking) {
         const halfArc = ANIMATION_SETTINGS.weaponSwingAngle / 2;
@@ -937,7 +1083,7 @@ function draw() {
     ctx.save();
     ctx.rotate(currentSwingOffset);
 
-    // Draw Weapon
+    // Weapon
     ctx.strokeStyle = player.weapon.color;
     ctx.lineWidth = player.isAttacking ? 8 : 6;
     ctx.lineCap = 'round';
@@ -946,7 +1092,6 @@ function draw() {
     ctx.lineTo(player.weapon.range, 0);
     ctx.stroke();
 
-    // Weapon Swing Arc Trail Effect
     if (player.isAttacking) {
         ctx.fillStyle = player.weapon.color;
         ctx.globalAlpha = 0.25;
@@ -959,7 +1104,7 @@ function draw() {
     }
     ctx.restore();
 
-    // Player Body
+    // Player Circle
     ctx.fillStyle = '#6366f1';
     ctx.beginPath();
     ctx.arc(0, 0, player.radius, 0, Math.PI * 2);
@@ -969,7 +1114,6 @@ function draw() {
     ctx.lineWidth = 3;
     ctx.stroke();
 
-    // Player Eyes
     ctx.fillStyle = '#ffffff';
     ctx.beginPath();
     ctx.arc(6, -5, 3.5, 0, Math.PI * 2);
