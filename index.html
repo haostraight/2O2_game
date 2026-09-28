@@ -110,6 +110,11 @@
 <canvas id="gameCanvas"></canvas>
 <div id="toast-container" class="pointer-events-none absolute top-6 left-1/2 z-30 flex -translate-x-1/2 flex-col items-center gap-2"></div>
 
+<!-- CHEST INTERACTION PROMPT -->
+<div id="chest-prompt" class="pointer-events-none fixed bottom-28 left-1/2 z-30 hidden -translate-x-1/2 rounded-full border border-amber-400/40 bg-slate-900/90 px-5 py-2 text-xs font-bold text-amber-300 shadow-2xl backdrop-blur-md">
+    📦 Press <span class="rounded bg-amber-500/20 px-2 py-0.5 text-white border border-amber-400/50">[E]</span> to Open Loot Chest
+</div>
+
 <!-- STATUS HUD -->
 <div id="stats-hud" class="glass-panel glass-panel-glow pointer-events-auto absolute top-5 left-5 z-20 w-80 rounded-2xl p-4">
     <div class="mb-3 flex items-center justify-between border-b border-white/10 pb-2">
@@ -241,7 +246,7 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d', { alpha: false });
 const WORLD_SIZE = 8000;
 const HALF_WORLD = WORLD_SIZE / 2;
-const OFFSCREEN_SPAWN_DIST = 700;
+const OFFSCREEN_SPAWN_DIST = 800;
 
 function resizeCanvas() {
     canvas.width = window.innerWidth;
@@ -282,6 +287,7 @@ let currentDim = 'overworld';
 let activeWeaponSlot = 0;
 let keys = {};
 let mousePos = { x: 0, y: 0 };
+let nearbyChest = null;
 
 let player = {
     x: HALF_WORLD, y: HALF_WORLD, radius: 20, speed: 5.2,
@@ -301,9 +307,9 @@ let player = {
 };
 
 let dimEntities = {
-    overworld: { resources: [], enemies: [] },
-    nether: { resources: [], enemies: [] },
-    void: { resources: [], enemies: [] }
+    overworld: { resources: [], enemies: [], chests: [] },
+    nether: { resources: [], enemies: [], chests: [] },
+    void: { resources: [], enemies: [], chests: [] }
 };
 
 let draggedItem = null;
@@ -391,6 +397,7 @@ function showToast(title, msg) {
     setTimeout(() => toast.remove(), 2500);
 }
 
+// Smart off-screen calculation guaranteeing entities spawn out of view[cite: 1]
 function getRandomOffscreenPosition() {
     let x, y, dist;
     let attempts = 0;
@@ -399,7 +406,7 @@ function getRandomOffscreenPosition() {
         y = Math.random() * (WORLD_SIZE - 200) + 100;
         dist = Math.hypot(x - player.x, y - player.y);
         attempts++;
-    } while (dist < OFFSCREEN_SPAWN_DIST && attempts < 20);
+    } while (dist < OFFSCREEN_SPAWN_DIST && attempts < 30);
     return { x, y };
 }
 
@@ -447,13 +454,26 @@ function generateDimension(dimKey) {
         });
     }
 
-    dimEntities[dimKey] = { resources: res, enemies: enemies };
+    const chests = [];
+    const chestCount = dimKey === 'overworld' ? 20 : dimKey === 'nether' ? 25 : 30;
+    for (let i = 0; i < chestCount; i++) {
+        chests.push({
+            id: i,
+            x: Math.random() * (WORLD_SIZE - 200) + 100,
+            y: Math.random() * (WORLD_SIZE - 200) + 100,
+            radius: 24,
+            opened: false
+        });
+    }
+
+    dimEntities[dimKey] = { resources: res, enemies: enemies, chests: chests };
 }
 
 generateDimension('overworld');
 generateDimension('nether');
 generateDimension('void');
 
+// OFF-SCREEN RESPAWN LOOP FOR RESOURCES & CHESTS[cite: 1]
 setInterval(() => {
     ['overworld', 'nether', 'void'].forEach(dim => {
         const resList = dimEntities[dim].resources;
@@ -481,9 +501,23 @@ setInterval(() => {
                 radius: 22
             });
         }
-    });
-}, 3000);
 
+        const chestList = dimEntities[dim].chests;
+        const targetChests = dim === 'overworld' ? 20 : dim === 'nether' ? 25 : 30;
+        if (chestList.length < targetChests) {
+            const pos = getRandomOffscreenPosition();
+            chestList.push({
+                id: Date.now() + Math.random(),
+                x: pos.x,
+                y: pos.y,
+                radius: 24,
+                opened: false
+            });
+        }
+    });
+}, 2500);
+
+// OFF-SCREEN RESPAWN LOOP FOR MOBS[cite: 1]
 setInterval(() => {
     ['overworld', 'nether', 'void'].forEach(dim => {
         const enemyList = dimEntities[dim].enemies;
@@ -506,7 +540,7 @@ setInterval(() => {
             });
         }
     });
-}, 5000);
+}, 4000);
 
 function selectWeaponSlot(index) {
     activeWeaponSlot = index;
@@ -583,6 +617,41 @@ function switchDimension(dimKey) {
     document.getElementById(`btn-${dimKey}`).classList.remove('opacity-60', 'bg-white/5');
     document.getElementById(`btn-${dimKey}`).classList.add('bg-indigo-600');
     updateHUD();
+}
+
+function openChest(chest) {
+    if (!chest || chest.opened) return;
+    chest.opened = true;
+
+    const wGain = Math.floor(Math.random() * 25) + 15;
+    const sGain = Math.floor(Math.random() * 20) + 10;
+    const oGain = Math.floor(Math.random() * 15) + 5;
+
+    player.wood += wGain;
+    player.stone += sGain;
+    player.ore += oGain;
+
+    // Rare Loot Drop Probability
+    let bonusMessage = "";
+    if (Math.random() < 0.45) {
+        const healItem = CRAFTABLES.find(c => c.id === 'heal');
+        addItemToStorage({ ...healItem, count: 2 });
+        bonusMessage = " + 2x Health Salves!";
+    } else if (Math.random() < 0.2) {
+        const elixirItem = CRAFTABLES.find(c => c.id === 'elixir');
+        addItemToStorage({ ...elixirItem, count: 1 });
+        bonusMessage = " + 1x Full Elixir!";
+    }
+
+    showToast("📦 Chest Opened!", `Found +${wGain} Wood, +${sGain} Stone, +${oGain} Ore${bonusMessage}`);
+
+    // Remove chest after claiming
+    const chests = dimEntities[currentDim].chests;
+    const idx = chests.indexOf(chest);
+    if (idx !== -1) chests.splice(idx, 1);
+
+    updateHUD();
+    saveData();
 }
 
 function dragItem(e, source, index) {
@@ -731,6 +800,7 @@ window.addEventListener('keydown', e => {
     keys[e.key.toLowerCase()] = true;
     if (e.key === 'Tab') { e.preventDefault(); toggleInventory(true); }
     if (e.key === 'Escape') toggleInventory(false);
+    if (e.key.toLowerCase() === 'e' && nearbyChest) openChest(nearbyChest);
     if (['1','2','3','4','5'].includes(e.key)) selectWeaponSlot(parseInt(e.key) - 1);
     if (['6','7','8'].includes(e.key)) useConsumable(parseInt(e.key) - 6);
 });
@@ -739,10 +809,16 @@ window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
 window.addEventListener('mousemove', e => { mousePos = { x: e.clientX, y: e.clientY }; });
 
 window.addEventListener('mousedown', e => {
-    if (e.button === 0 && !player.isAttacking) {
-        player.isAttacking = true;
-        player.attackAngle = -Math.PI / 3;
-        performAttack();
+    if (e.button === 0) {
+        if (nearbyChest) {
+            openChest(nearbyChest);
+            return;
+        }
+        if (!player.isAttacking) {
+            player.isAttacking = true;
+            player.attackAngle = -Math.PI / 3;
+            performAttack();
+        }
     }
 });
 
@@ -793,7 +869,7 @@ function performAttack() {
     }
 }
 
-// HIGH-PERFORMANCE FIXED STEP GAME TICK
+// FIXED GAME TICK
 let lastTime = performance.now();
 const deltaStep = 1000 / 60;
 let accum = 0;
@@ -824,6 +900,21 @@ function update(dt) {
             player.isAttacking = false;
         }
     }
+
+    // Check for nearby chest proximity
+    nearbyChest = null;
+    const currentChests = dimEntities[currentDim].chests;
+    for (let chest of currentChests) {
+        const dist = Math.hypot(chest.x - player.x, chest.y - player.y);
+        if (dist <= player.radius + chest.radius + 30) {
+            nearbyChest = chest;
+            break;
+        }
+    }
+
+    const chestPrompt = document.getElementById('chest-prompt');
+    if (nearbyChest) chestPrompt.classList.remove('hidden');
+    else chestPrompt.classList.add('hidden');
 
     const currentEnemies = dimEntities[currentDim].enemies;
     let tookDamage = false;
@@ -874,7 +965,7 @@ function render() {
     ctx.save();
     ctx.translate(camX, camY);
 
-    // Optimized Background Grid Render
+    // Background Grid
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
     ctx.lineWidth = 1;
     const gridSize = 100;
@@ -894,7 +985,7 @@ function render() {
     }
     ctx.stroke();
 
-    // Render Resources (With Spatial Culling)
+    // Render Resources
     const currentResources = dimEntities[currentDim].resources;
     for (let i = 0; i < currentResources.length; i++) {
         const res = currentResources[i];
@@ -922,7 +1013,26 @@ function render() {
         }
     }
 
-    // Render Enemies (With Spatial Culling)
+    // Render Chest Structures
+    const currentChests = dimEntities[currentDim].chests;
+    for (let chest of currentChests) {
+        if (chest.x < viewLeft || chest.x > viewRight || chest.y < viewTop || chest.y > viewBottom) continue;
+
+        ctx.beginPath();
+        ctx.arc(chest.x, chest.y, chest.radius, 0, Math.PI * 2);
+        ctx.fillStyle = '#854d0e';
+        ctx.fill();
+        ctx.strokeStyle = '#facc15';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        ctx.font = '18px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('📦', chest.x, chest.y);
+    }
+
+    // Render Enemies
     const currentEnemies = dimEntities[currentDim].enemies;
     const mobDef = MOB_TYPES[currentDim];
     
@@ -981,7 +1091,7 @@ function render() {
     ctx.lineWidth = 3;
     ctx.stroke();
 
-    // Weapon Swing Arc / Weapon Render
+    // Weapon Render
     const activeWeapon = player.weapon || WEAPONS.stick;
     ctx.save();
     ctx.translate(player.x, player.y);
