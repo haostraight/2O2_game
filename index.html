@@ -3,72 +3,140 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Survival Realm</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Survival Realm: Advanced</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&display=swap');
+
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-        body { background: #0c0d12; color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; }
+        body { background: #07090e; color: #f3f4f6; font-family: 'Plus Jakarta Sans', sans-serif; overflow: hidden; }
         
-        #gameCanvas { display: block; width: 100vw; height: 100vh; background: #111; cursor: crosshair; }
+        #gameCanvas { display: block; width: 100vw; height: 100vh; background: #0a0d14; cursor: crosshair; }
 
-        /* Biome Toast Pop-up */
+        /* Modern Biome Toast */
         #biome-toast {
-            position: absolute; top: 8%; left: 50%; transform: translate(-50%, -50%);
-            font-size: 22px; font-weight: 800; letter-spacing: 3px; color: #fff;
-            text-shadow: 0 4px 12px rgba(0,0,0,0.8); background: rgba(15, 18, 25, 0.88);
-            padding: 12px 28px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.25);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5); opacity: 0;
-            transition: opacity 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), transform 0.4s ease; pointer-events: none;
+            position: absolute; top: 7%; left: 50%; transform: translate(-50%, -50%) scale(0.9);
+            font-size: 18px; font-weight: 800; letter-spacing: 2px; color: #ffffff;
+            background: rgba(13, 17, 23, 0.75); border: 1px solid rgba(255, 255, 255, 0.18);
+            padding: 12px 26px; border-radius: 99px; backdrop-filter: blur(12px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.2);
+            opacity: 0; transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); pointer-events: none;
+            display: flex; align-items: center; gap: 10px;
         }
-        #biome-toast.show { opacity: 1; transform: translate(-50%, -10%); }
+        #biome-toast.show { opacity: 1; transform: translate(-50%, 0) scale(1); }
 
-        /* Stats HUD */
+        /* Sleek Stats HUD Panel */
         #stats-hud {
-            position: absolute; top: 20px; left: 20px; background: rgba(18, 22, 32, 0.88);
-            padding: 14px 20px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.15);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.4); font-size: 14px; backdrop-filter: blur(8px); pointer-events: none;
+            position: absolute; top: 20px; left: 20px;
+            background: rgba(13, 17, 23, 0.7); border: 1px solid rgba(255, 255, 255, 0.12);
+            padding: 16px; border-radius: 16px; backdrop-filter: blur(16px);
+            box-shadow: 0 16px 32px rgba(0,0,0,0.5); width: 280px; pointer-events: none;
         }
-        .stat-bar { margin: 5px 0; font-weight: 600; display: flex; align-items: center; gap: 8px; }
-        .rarity-Common { color: #d1d5db; font-weight: 700; }
-        .rarity-Uncommon { color: #22c55e; font-weight: 700; }
-        .rarity-Rare { color: #3b82f6; font-weight: 700; }
-        .rarity-Legendary { color: #f97316; font-weight: 700; }
+        
+        .hud-header { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: #9ca3af; margin-bottom: 10px; }
+        
+        /* Health Bar Container */
+        .hp-bar-outer {
+            width: 100%; height: 12px; background: rgba(255, 255, 255, 0.08);
+            border-radius: 6px; overflow: hidden; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.05);
+        }
+        .hp-bar-inner {
+            height: 100%; width: 100%; background: linear-gradient(90deg, #ef4444, #f87171);
+            border-radius: 6px; transition: width 0.2s ease;
+        }
 
-        /* Crafting Panel */
+        .resource-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+        .res-card {
+            background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 8px 6px; border-radius: 10px; text-align: center; font-size: 12px; font-weight: 700;
+        }
+        .res-card small { display: block; font-size: 10px; color: #9ca3af; font-weight: 500; margin-top: 2px; }
+
+        .weapon-card {
+            display: flex; align-items: center; justify-content: space-between;
+            background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 10px 12px; border-radius: 10px; font-size: 13px; font-weight: 700;
+        }
+        .rarity-Common { color: #d1d5db; }
+        .rarity-Uncommon { color: #4ade80; }
+        .rarity-Rare { color: #60a5fa; }
+        .rarity-Legendary { color: #fb923c; }
+
+        /* Crafting Panel UI */
         #crafting-panel {
-            position: absolute; bottom: 20px; left: 20px; background: rgba(18, 22, 32, 0.88);
-            border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 14px; padding: 14px; max-width: 320px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.4); backdrop-filter: blur(8px);
+            position: absolute; bottom: 20px; left: 20px;
+            background: rgba(13, 17, 23, 0.7); border: 1px solid rgba(255, 255, 255, 0.12);
+            padding: 16px; border-radius: 16px; backdrop-filter: blur(16px);
+            box-shadow: 0 16px 32px rgba(0,0,0,0.5); width: 310px;
         }
-        #crafting-panel h3 { margin-bottom: 10px; font-size: 14px; color: #fbbf24; text-transform: uppercase; letter-spacing: 1px; }
+        
         .craft-btn {
-            display: flex; justify-content: space-between; align-items: center;
-            width: 100%; margin: 6px 0; padding: 8px 12px; background: rgba(255, 255, 255, 0.06);
-            color: #f3f4f6; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; cursor: pointer;
-            font-size: 12px; font-weight: 600; font-family: inherit; transition: all 0.2s ease;
+            display: flex; align-items: center; justify-content: space-between;
+            width: 100%; margin: 6px 0; padding: 10px 12px;
+            background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px; color: #f3f4f6; font-family: inherit; font-size: 12px; font-weight: 700;
+            cursor: pointer; transition: all 0.2s ease;
         }
-        .craft-btn:hover { background: rgba(251, 191, 36, 0.2); border-color: #fbbf24; transform: translateY(-1px); }
+        .craft-btn:hover {
+            background: rgba(255, 255, 255, 0.12); border-color: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+        .craft-reqs { font-size: 11px; color: #9ca3af; font-weight: 500; }
+
+        /* Controls Tip Overlay */
+        #controls-tip {
+            position: absolute; bottom: 20px; right: 20px;
+            background: rgba(13, 17, 23, 0.6); border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 10px 16px; border-radius: 99px; backdrop-filter: blur(12px);
+            font-size: 11px; font-weight: 600; color: #9ca3af; pointer-events: none;
+        }
     </style>
 </head>
 <body>
 
 <canvas id="gameCanvas"></canvas>
 
-<div id="biome-toast">DISCOVERED: PLAINS</div>
+<div id="biome-toast"><span id="toast-icon">🌲</span><span id="toast-text">DISCOVERED: PLAINS</span></div>
 
 <div id="stats-hud">
-    <div class="stat-bar">❤️ HP: <span id="hp-val">100</span></div>
-    <div class="stat-bar">🪵 Wood: <span id="wood-val">0</span> | 🪨 Stone: <span id="stone-val">0</span> | 💎 Ore: <span id="ore-val">0</span></div>
-    <div class="stat-bar">⚔️ Weapon: <span id="weapon-val" class="rarity-Common">Wooden Stick (Common)</span></div>
-    <div style="font-size: 11px; color: #9ca3af; margin-top: 6px;">[WASD] Move | [Click] Attack & Mine</div>
+    <div class="hud-header">Vitals & Supplies</div>
+    <div class="hp-bar-outer"><div id="hp-bar" class="hp-bar-inner"></div></div>
+    
+    <div class="resource-grid">
+        <div class="res-card">🪵 <span id="wood-val">0</span><small>Wood</small></div>
+        <div class="res-card">🪨 <span id="stone-val">0</span><small>Stone</small></div>
+        <div class="res-card">💎 <span id="ore-val">0</span><small>Ore</small></div>
+    </div>
+
+    <div class="weapon-card">
+        <span>Equipped</span>
+        <span id="weapon-val" class="rarity-Common">Wooden Stick</span>
+    </div>
 </div>
 
 <div id="crafting-panel">
-    <h3>Crafting Bench</h3>
-    <button class="craft-btn" onclick="craftItem('spear')"><span>🗡️ Stone Spear</span><small>10W 10S</small></button>
-    <button class="craft-btn" onclick="craftItem('hammer')"><span>🔨 Ore Sledge</span><small>15W 20O</small></button>
-    <button class="craft-btn" onclick="craftItem('blade')"><span>⚡ Plasma Sword</span><small>20W 20S 15O</small></button>
-    <button class="craft-btn" onclick="craftItem('heal')"><span>🧪 Healing Salve</span><small>5W 5S</small></button>
+    <div class="hud-header">Crafting Workbench</div>
+    <button class="craft-btn" onclick="craftItem('spear')">
+        <span>🗡️ Stone Spear</span>
+        <span class="craft-reqs">10W 10S</span>
+    </button>
+    <button class="craft-btn" onclick="craftItem('hammer')">
+        <span>🔨 Ore Sledge</span>
+        <span class="craft-reqs">15W 20O</span>
+    </button>
+    <button class="craft-btn" onclick="craftItem('blade')">
+        <span>⚡ Plasma Sword</span>
+        <span class="craft-reqs">20W 20S 15O</span>
+    </button>
+    <button class="craft-btn" onclick="craftItem('heal')">
+        <span>🧪 Healing Salve</span>
+        <span class="craft-reqs">5W 5S</span>
+    </button>
 </div>
+
+<div id="controls-tip">[WASD] Movement | [Left Click] Aim & Mine/Attack</div>
 
 <script>
 const canvas = document.getElementById('gameCanvas');
@@ -82,35 +150,35 @@ resizeCanvas();
 window.addEventListener('resize', resizeCanvas);
 
 // CONFIGURATION
-const WORLD_SIZE = 3600;
+const WORLD_SIZE = 3800;
 const HALF_WORLD = WORLD_SIZE / 2;
 
 const WEAPONS = {
-    stick:  { name: 'Wooden Stick', damage: 15, range: 55, rarity: 'Common', color: '#d1d5db', type: 'blunt' },
-    spear:  { name: 'Stone Spear', damage: 32, range: 80, rarity: 'Uncommon', color: '#22c55e', type: 'pierce' },
-    hammer: { name: 'Ore Sledge', damage: 60, range: 65, rarity: 'Rare', color: '#3b82f6', type: 'heavy' },
-    blade:  { name: 'Plasma Sword', damage: 100, range: 95, rarity: 'Legendary', color: '#f97316', type: 'magic' }
+    stick:  { name: 'Wooden Stick', damage: 18, range: 60, rarity: 'Common', color: '#a3a3a3' },
+    spear:  { name: 'Stone Spear', damage: 36, range: 85, rarity: 'Uncommon', color: '#4ade80' },
+    hammer: { name: 'Ore Sledge', damage: 68, range: 70, rarity: 'Rare', color: '#60a5fa' },
+    blade:  { name: 'Plasma Sword', damage: 110, range: 105, rarity: 'Legendary', color: '#fb923c' }
 };
 
 const BIOMES = {
-    TOP_LEFT:     { name: 'VERDANT FORESTS', bg: '#234a31', accent: '#1b3825' },
-    TOP_RIGHT:    { name: 'GOLDEN DESERT', bg: '#c29b38', accent: '#a3802b' },
-    BOTTOM_LEFT:  { name: 'FROST PEAKS', bg: '#7197a8', accent: '#587a8a' },
-    BOTTOM_RIGHT: { name: 'CORRUPTED LANDS', bg: '#3b1c48', accent: '#2a1334' }
+    TOP_LEFT:     { name: 'VERDANT WILDWOOD', bg: '#1c3323', accent: '#14251a', icon: '🌲' },
+    TOP_RIGHT:    { name: 'SUNSCORCH DUNES', bg: '#8c6d27', accent: '#69511c', icon: '🏜️' },
+    BOTTOM_LEFT:  { name: 'FROSTBITE TUNDRA', bg: '#3a5a68', accent: '#2a424d', icon: '❄️' },
+    BOTTOM_RIGHT: { name: 'ABYSSAL WASTES', bg: '#2f1238', accent: '#210c28', icon: '🔮' }
 };
 
 // PLAYER STATE
 let player = {
     x: HALF_WORLD, y: HALF_WORLD,
-    radius: 18, speed: 4.2, hp: 100, maxHp: 100,
+    radius: 18, speed: 4.5, hp: 100, maxHp: 100,
     wood: 0, stone: 0, ore: 0,
     weapon: WEAPONS.stick, currentBiome: '',
     facingAngle: 0, isAttacking: false, attackProgress: 0
 };
 
-// INPUT REGISTRATION
+// INPUTS
 const keys = {};
-let mouseX = 0, mouseY = 0;
+let mouseX = canvas.width / 2, mouseY = canvas.height / 2;
 
 window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
 window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
@@ -119,62 +187,65 @@ window.addEventListener('mousemove', e => {
     mouseY = e.clientY;
 });
 
-// GAME ENTITIES
+// ENTITIES & PARTICLES
 let resources = [];
 let enemies = [];
 let particles = [];
+let ambientSporeParticles = [];
 let floatingTexts = [];
 
-// GENERATE DECORATIVE TILES FOR TERRAIN
-const terrainDetails = [];
-for (let i = 0; i < 350; i++) {
-    terrainDetails.push({
+// ENVIRONMENT PARTICLES (Spore/Dust Effect)
+for (let i = 0; i < 90; i++) {
+    ambientSporeParticles.push({
         x: Math.random() * WORLD_SIZE,
         y: Math.random() * WORLD_SIZE,
-        size: Math.random() * 8 + 4
+        radius: Math.random() * 2 + 1,
+        alpha: Math.random() * 0.5 + 0.2,
+        vx: (Math.random() - 0.5) * 0.3,
+        vy: (Math.random() - 0.5) * 0.3
     });
 }
 
 // SPAWN RESOURCES
-for (let i = 0; i < 220; i++) {
+for (let i = 0; i < 240; i++) {
     const types = ['tree', 'stone', 'ore'];
     const type = types[Math.floor(Math.random() * types.length)];
     resources.push({
         x: Math.random() * (WORLD_SIZE - 200) + 100,
         y: Math.random() * (WORLD_SIZE - 200) + 100,
         type: type,
-        hp: type === 'ore' ? 3 : type === 'stone' ? 2 : 1,
-        variation: Math.floor(Math.random() * 3)
+        hp: type === 'ore' ? 4 : type === 'stone' ? 3 : 2,
+        maxHp: type === 'ore' ? 4 : type === 'stone' ? 3 : 2,
+        seed: Math.random() * 100
     });
 }
 
 // SPAWN ENEMIES
-for (let i = 0; i < 35; i++) {
+for (let i = 0; i < 40; i++) {
     let ex = Math.random() * WORLD_SIZE;
     let ey = Math.random() * WORLD_SIZE;
-    if (Math.hypot(ex - player.x, ey - player.y) > 400) {
-        enemies.push({ x: ex, y: ey, hp: 50, maxHp: 50, radius: 16, speed: 2.1, pulse: Math.random() * Math.PI });
+    if (Math.hypot(ex - player.x, ey - player.y) > 450) {
+        enemies.push({ x: ex, y: ey, hp: 60, maxHp: 60, radius: 18, speed: 2.2, phase: Math.random() * 10 });
     }
 }
 
-// ATTACK & HARVEST MECHANIC
+// ATTACK MECHANIC
 canvas.addEventListener('pointerdown', () => {
     if (player.hp <= 0) return;
 
     player.isAttacking = true;
     player.attackProgress = 0;
 
-    // Particle burst at weapon swing location
-    const swingX = player.x + Math.cos(player.facingAngle) * player.weapon.range * 0.7;
-    const swingY = player.y + Math.sin(player.facingAngle) * player.weapon.range * 0.7;
-    
+    const swingX = player.x + Math.cos(player.facingAngle) * player.weapon.range * 0.6;
+    const swingY = player.y + Math.sin(player.facingAngle) * player.weapon.range * 0.6;
     createParticles(swingX, swingY, player.weapon.color, 12);
 
     // Harvest Resources
     resources.forEach((res, index) => {
         if (Math.hypot(res.x - player.x, res.y - player.y) <= player.weapon.range + 20) {
             res.hp -= 1;
-            createParticles(res.x, res.y, res.type === 'tree' ? '#2d6a4f' : res.type === 'stone' ? '#9ca3af' : '#00ffff', 8);
+            const pColor = res.type === 'tree' ? '#4ade80' : res.type === 'stone' ? '#9ca3af' : '#38bdf8';
+            createParticles(res.x, res.y, pColor, 8);
             spawnFloatingText(res.x, res.y, "-1", "#fbbf24");
 
             if (res.hp <= 0) {
@@ -187,21 +258,24 @@ canvas.addEventListener('pointerdown', () => {
         }
     });
 
-    // Damage Enemies
+    // Hit Enemies
     enemies.forEach((enemy, index) => {
-        if (Math.hypot(enemy.x - player.x, enemy.y - player.y) <= player.weapon.range + enemy.radius + 10) {
-            enemy.hp -= player.weapon.damage;
+        if (Math.hypot(enemy.x - player.x, enemy.y - player.y) <= player.weapon.range + enemy.radius) {
+            let isCrit = Math.random() < 0.25;
+            let dmg = isCrit ? Math.floor(player.weapon.damage * 1.5) : player.weapon.damage;
+            
+            enemy.hp -= dmg;
             
             // Knockback
             const angle = Math.atan2(enemy.y - player.y, enemy.x - player.x);
-            enemy.x += Math.cos(angle) * 45;
-            enemy.y += Math.sin(angle) * 45;
+            enemy.x += Math.cos(angle) * 50;
+            enemy.y += Math.sin(angle) * 50;
 
-            createParticles(enemy.x, enemy.y, '#ef4444', 10);
-            spawnFloatingText(enemy.x, enemy.y, `-${player.weapon.damage}`, "#ef4444");
+            createParticles(enemy.x, enemy.y, '#f87171', 12);
+            spawnFloatingText(enemy.x, enemy.y, isCrit ? `CRIT -${dmg}` : `-${dmg}`, isCrit ? "#facc15" : "#f87171");
 
             if (enemy.hp <= 0) {
-                createParticles(enemy.x, enemy.y, '#f87171', 20);
+                createParticles(enemy.x, enemy.y, '#ef4444', 22);
                 enemies.splice(index, 1);
             }
         }
@@ -212,12 +286,11 @@ function createParticles(x, y, color, count) {
     for (let i = 0; i < count; i++) {
         particles.push({
             x: x, y: y,
-            vx: (Math.random() - 0.5) * 8,
-            vy: (Math.random() - 0.5) * 8,
+            vx: (Math.random() - 0.5) * 9,
+            vy: (Math.random() - 0.5) * 9,
             color: color,
-            radius: Math.random() * 4 + 2,
-            alpha: 1,
-            life: Math.random() * 20 + 10
+            radius: Math.random() * 3 + 2,
+            alpha: 1
         });
     }
 }
@@ -241,41 +314,48 @@ function update() {
     player.x = Math.max(player.radius, Math.min(WORLD_SIZE - player.radius, player.x + dx * player.speed));
     player.y = Math.max(player.radius, Math.min(WORLD_SIZE - player.radius, player.y + dy * player.speed));
 
-    // Player Direction Angle to Mouse
+    // Facing Angle
     const cameraX = player.x - canvas.width / 2;
     const cameraY = player.y - canvas.height / 2;
     player.facingAngle = Math.atan2((mouseY + cameraY) - player.y, (mouseX + cameraX) - player.x);
 
-    // Weapon Swing Animation Progress
+    // Swing Progress
     if (player.isAttacking) {
-        player.attackProgress += 0.15;
+        player.attackProgress += 0.16;
         if (player.attackProgress >= 1) {
             player.isAttacking = false;
             player.attackProgress = 0;
         }
     }
 
-    // Biome Check
-    let biome = BIOMES.TOP_LEFT.name;
-    if (player.x >= HALF_WORLD && player.y < HALF_WORLD) biome = BIOMES.TOP_RIGHT.name;
-    else if (player.x < HALF_WORLD && player.y >= HALF_WORLD) biome = BIOMES.BOTTOM_LEFT.name;
-    else if (player.x >= HALF_WORLD && player.y >= HALF_WORLD) biome = BIOMES.BOTTOM_RIGHT.name;
+    // Biomes & Toast Check
+    let biome = BIOMES.TOP_LEFT;
+    if (player.x >= HALF_WORLD && player.y < HALF_WORLD) biome = BIOMES.TOP_RIGHT;
+    else if (player.x < HALF_WORLD && player.y >= HALF_WORLD) biome = BIOMES.BOTTOM_LEFT;
+    else if (player.x >= HALF_WORLD && player.y >= HALF_WORLD) biome = BIOMES.BOTTOM_RIGHT;
 
-    if (player.currentBiome !== biome) {
-        player.currentBiome = biome;
-        showToast("ENTERED: " + biome);
+    if (player.currentBiome !== biome.name) {
+        player.currentBiome = biome.name;
+        showToast(biome.icon, "ENTERED: " + biome.name);
     }
 
-    // Particles Update
+    // Update Particles
     particles.forEach((p, i) => {
         p.x += p.vx; p.y += p.vy;
         p.alpha -= 0.04;
         if (p.alpha <= 0) particles.splice(i, 1);
     });
 
-    // Enemy AI & Attack
+    // Update Spore Dust
+    ambientSporeParticles.forEach(sp => {
+        sp.x += sp.vx; sp.y += sp.vy;
+        if (sp.x < 0) sp.x = WORLD_SIZE; if (sp.x > WORLD_SIZE) sp.x = 0;
+        if (sp.y < 0) sp.y = WORLD_SIZE; if (sp.y > WORLD_SIZE) sp.y = 0;
+    });
+
+    // Enemy AI & Hit Check
     enemies.forEach(enemy => {
-        enemy.pulse += 0.05;
+        enemy.phase += 0.05;
         const dist = Math.hypot(player.x - enemy.x, player.y - enemy.y);
         if (dist < 480) {
             const angle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
@@ -284,9 +364,9 @@ function update() {
         }
 
         if (dist < player.radius + enemy.radius) {
-            player.hp -= 0.3;
+            player.hp -= 0.35;
             updateHUD();
-            if (player.hp <= 0) showToast("GAME OVER! Refresh to Restart.");
+            if (player.hp <= 0) showToast("☠️", "YOU PERISHED! Refresh Page.");
         }
     });
 }
@@ -297,129 +377,126 @@ function draw() {
     const cameraX = player.x - canvas.width / 2;
     const cameraY = player.y - canvas.height / 2;
 
-    // Draw Biomes
-    ctx.fillStyle = BIOMES.TOP_LEFT.bg;
-    ctx.fillRect(0 - cameraX, 0 - cameraY, HALF_WORLD, HALF_WORLD);
+    // Draw Biome Terrains
+    drawBiomeSquare(0, 0, HALF_WORLD, HALF_WORLD, BIOMES.TOP_LEFT, cameraX, cameraY);
+    drawBiomeSquare(HALF_WORLD, 0, HALF_WORLD, HALF_WORLD, BIOMES.TOP_RIGHT, cameraX, cameraY);
+    drawBiomeSquare(0, HALF_WORLD, HALF_WORLD, HALF_WORLD, BIOMES.BOTTOM_LEFT, cameraX, cameraY);
+    drawBiomeSquare(HALF_WORLD, HALF_WORLD, HALF_WORLD, HALF_WORLD, BIOMES.BOTTOM_RIGHT, cameraX, cameraY);
 
-    ctx.fillStyle = BIOMES.TOP_RIGHT.bg;
-    ctx.fillRect(HALF_WORLD - cameraX, 0 - cameraY, HALF_WORLD, HALF_WORLD);
-
-    ctx.fillStyle = BIOMES.BOTTOM_LEFT.bg;
-    ctx.fillRect(0 - cameraX, HALF_WORLD - cameraY, HALF_WORLD, HALF_WORLD);
-
-    ctx.fillStyle = BIOMES.BOTTOM_RIGHT.bg;
-    ctx.fillRect(HALF_WORLD - cameraX, HALF_WORLD - cameraY, HALF_WORLD, HALF_WORLD);
-
-    // Draw Decorative Terrain Texture Features
-    terrainDetails.forEach(t => {
-        ctx.fillStyle = "rgba(0, 0, 0, 0.08)";
-        ctx.beginPath();
-        ctx.arc(t.x - cameraX, t.y - cameraY, t.size, 0, Math.PI * 2);
-        ctx.fill();
+    // Draw Ambient Spores
+    ctx.fillStyle = "#ffffff";
+    ambientSporeParticles.forEach(sp => {
+        ctx.globalAlpha = sp.alpha;
+        ctx.beginPath(); ctx.arc(sp.x - cameraX, sp.y - cameraY, sp.radius, 0, Math.PI * 2); ctx.fill();
     });
+    ctx.globalAlpha = 1.0;
 
-    // Draw Detailed Resources
+    // Draw Aim Line
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([6, 6]);
+    ctx.beginPath();
+    ctx.moveTo(canvas.width / 2, canvas.height / 2);
+    ctx.lineTo(mouseX, mouseY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Draw Resources
     resources.forEach(res => {
         const rx = res.x - cameraX;
         const ry = res.y - cameraY;
 
+        // Shadow
+        ctx.fillStyle = "rgba(0,0,0,0.3)";
+        ctx.beginPath(); ctx.ellipse(rx, ry + 12, 16, 6, 0, 0, Math.PI * 2); ctx.fill();
+
         if (res.type === 'tree') {
-            // Shadow
-            ctx.fillStyle = "rgba(0,0,0,0.25)";
-            ctx.beginPath(); ctx.ellipse(rx, ry + 12, 16, 6, 0, 0, Math.PI * 2); ctx.fill();
-            // Trunk
-            ctx.fillStyle = "#5c3d2e";
-            ctx.fillRect(rx - 5, ry - 4, 10, 16);
-            // Foliage Layers
-            ctx.fillStyle = "#1b4332";
-            ctx.beginPath(); ctx.arc(rx, ry - 12, 18, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = "#2d6a4f";
-            ctx.beginPath(); ctx.arc(rx - 4, ry - 16, 12, 0, Math.PI * 2); ctx.fill();
+            // Detailed Oak/Pine Tree
+            ctx.fillStyle = "#523a28"; ctx.fillRect(rx - 5, ry - 4, 10, 16);
+            ctx.fillStyle = "#15803d"; ctx.beginPath(); ctx.arc(rx, ry - 14, 18, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = "#22c55e"; ctx.beginPath(); ctx.arc(rx - 4, ry - 18, 12, 0, Math.PI * 2); ctx.fill();
         } else if (res.type === 'stone') {
-            // Shadow
-            ctx.fillStyle = "rgba(0,0,0,0.25)";
-            ctx.beginPath(); ctx.ellipse(rx, ry + 8, 14, 5, 0, 0, Math.PI * 2); ctx.fill();
-            // Rock Body
-            ctx.fillStyle = "#6b7280";
-            ctx.beginPath(); ctx.arc(rx, ry, 14, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = "#9ca3af";
-            ctx.beginPath(); ctx.arc(rx - 3, ry - 3, 8, 0, Math.PI * 2); ctx.fill();
+            // Detailed Rock
+            ctx.fillStyle = "#4b5563"; ctx.beginPath(); ctx.arc(rx, ry, 14, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = "#9ca3af"; ctx.beginPath(); ctx.arc(rx - 3, ry - 3, 8, 0, Math.PI * 2); ctx.fill();
         } else if (res.type === 'ore') {
-            // Shadow
-            ctx.fillStyle = "rgba(0,0,0,0.25)";
-            ctx.beginPath(); ctx.ellipse(rx, ry + 8, 12, 4, 0, 0, Math.PI * 2); ctx.fill();
-            // Ore Crystals
-            ctx.fillStyle = "#4b5563";
-            ctx.beginPath(); ctx.arc(rx, ry, 12, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = "#00ffff";
-            ctx.beginPath(); ctx.arc(rx - 2, ry - 2, 6, 0, Math.PI * 2); ctx.fill();
+            // Glowing Ore Crystal
+            ctx.fillStyle = "#374151"; ctx.beginPath(); ctx.arc(rx, ry, 13, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = "#38bdf8"; ctx.beginPath(); ctx.arc(rx - 2, ry - 2, 7, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = "#f0f9ff"; ctx.beginPath(); ctx.arc(rx - 3, ry - 3, 3, 0, Math.PI * 2); ctx.fill();
         }
     });
 
-    // Draw Detailed Enemies (Slime / Goblin hybrid)
-    enemies.forEach(enemy => {
-        const ex = enemy.x - cameraX;
-        const ey = enemy.y - cameraY;
-        const pSize = Math.sin(enemy.pulse) * 1.5;
+    // Draw Enemies (Slimes/Monsters)
+    enemies.forEach(e => {
+        const ex = e.x - cameraX;
+        const ey = e.y - cameraY;
+        const pulse = Math.sin(e.phase) * 2;
 
-        // Enemy Shadow
-        ctx.fillStyle = "rgba(0,0,0,0.3)";
-        ctx.beginPath(); ctx.ellipse(ex, ey + 12, 14, 5, 0, 0, Math.PI * 2); ctx.fill();
+        // Shadow
+        ctx.fillStyle = "rgba(0,0,0,0.35)";
+        ctx.beginPath(); ctx.ellipse(ex, ey + 14, 15, 5, 0, 0, Math.PI * 2); ctx.fill();
 
-        // Enemy Body
+        // Monster Body
         ctx.fillStyle = "#dc2626";
-        ctx.beginPath(); ctx.arc(ex, ey, enemy.radius + pSize, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(ex, ey, e.radius + pulse, 0, Math.PI * 2); ctx.fill();
 
-        // Glowing Eyes
+        // Eyes & Glow
         ctx.fillStyle = "#fef08a";
-        ctx.beginPath(); ctx.arc(ex - 4, ey - 3, 3, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(ex + 4, ey - 3, 3, 0, Math.PI * 2); ctx.fill();
-        
-        // Pupil
-        ctx.fillStyle = "#000";
-        ctx.beginPath(); ctx.arc(ex - 4, ey - 3, 1.5, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(ex + 4, ey - 3, 1.5, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(ex - 5, ey - 3, 3.5, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(ex + 5, ey - 3, 3.5, 0, Math.PI * 2); ctx.fill();
+
+        // Enemy Health Bar Above Head
+        if (e.hp < e.maxHp) {
+            ctx.fillStyle = "rgba(0,0,0,0.5)";
+            ctx.fillRect(ex - 16, ey - 28, 32, 5);
+            ctx.fillStyle = "#ef4444";
+            ctx.fillRect(ex - 16, ey - 28, (e.hp / e.maxHp) * 32, 5);
+        }
     });
 
-    // Draw Player Character
+    // Draw Player Character (Knight Sprite)
     const px = canvas.width / 2;
     const py = canvas.height / 2;
 
     // Player Shadow
-    ctx.fillStyle = "rgba(0,0,0,0.35)";
+    ctx.fillStyle = "rgba(0,0,0,0.4)";
     ctx.beginPath(); ctx.ellipse(px, py + 14, 16, 6, 0, 0, Math.PI * 2); ctx.fill();
 
-    // Body/Tunic
-    ctx.fillStyle = "#0284c7";
+    // Body Armor
+    ctx.fillStyle = "#2563eb";
     ctx.beginPath(); ctx.arc(px, py, player.radius, 0, Math.PI * 2); ctx.fill();
 
-    // Head/Skin Tone
-    ctx.fillStyle = "#fde047";
-    ctx.beginPath(); ctx.arc(px, py - 2, player.radius * 0.6, 0, Math.PI * 2); ctx.fill();
+    // Helmet Visor Overlay
+    ctx.fillStyle = "#1e293b";
+    ctx.beginPath(); ctx.arc(px, py - 1, player.radius * 0.65, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#38bdf8";
+    ctx.fillRect(px - 5, py - 3, 10, 3);
 
-    // Eyes pointing towards cursor
-    const eyeOffset = 3;
-    const eyeX = px + Math.cos(player.facingAngle) * eyeOffset;
-    const eyeY = py + Math.sin(player.facingAngle) * eyeOffset - 2;
-    ctx.fillStyle = "#0f172a";
-    ctx.beginPath(); ctx.arc(eyeX - 2, eyeY, 2, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.arc(eyeX + 2, eyeY, 2, 0, Math.PI * 2); ctx.fill();
-
-    // Weapon Swing Animation
+    // Animated Weapon Swing Arc
     ctx.save();
     ctx.translate(px, py);
     let swingAngle = player.facingAngle;
     if (player.isAttacking) {
-        swingAngle += Math.sin(player.attackProgress * Math.PI) * 1.2 - 0.6;
+        swingAngle += Math.sin(player.attackProgress * Math.PI) * 1.5 - 0.75;
+        
+        // Attack Swing Trail
+        ctx.strokeStyle = player.weapon.color;
+        ctx.lineWidth = 3;
+        ctx.globalAlpha = 0.6;
+        ctx.beginPath();
+        ctx.arc(0, 0, player.weapon.range * 0.8, player.facingAngle - 0.8, player.facingAngle + 0.8);
+        ctx.stroke();
+        ctx.globalAlpha = 1.0;
     }
     ctx.rotate(swingAngle);
 
-    // Draw Equipped Weapon
+    // Weapon Blade/Stick Sprite
     ctx.fillStyle = player.weapon.color;
-    ctx.fillRect(10, -3, player.weapon.range * 0.6, 6);
+    ctx.fillRect(12, -3, player.weapon.range * 0.55, 6);
     ctx.restore();
 
-    // Draw Particles
+    // Render Hit Particles
     particles.forEach(p => {
         ctx.fillStyle = p.color;
         ctx.globalAlpha = p.alpha;
@@ -427,36 +504,65 @@ function draw() {
         ctx.globalAlpha = 1.0;
     });
 
-    // Floating Text
+    // Floating Combat Text
     floatingTexts.forEach((ft, i) => {
         ctx.fillStyle = ft.color;
         ctx.globalAlpha = ft.alpha;
-        ctx.font = "800 16px sans-serif";
+        ctx.font = "800 15px 'Plus Jakarta Sans', sans-serif";
         ctx.fillText(ft.text, ft.x - cameraX, ft.y - cameraY);
         ctx.globalAlpha = 1.0;
-        ft.y -= 0.8; ft.alpha -= 0.03;
+        ft.y -= 0.8; ft.alpha -= 0.035;
         if (ft.alpha <= 0) floatingTexts.splice(i, 1);
     });
 
+    // Vignette Screen Edge Effect
+    const gradient = ctx.createRadialGradient(canvas.width/2, canvas.height/2, canvas.width * 0.3, canvas.width/2, canvas.height/2, canvas.width * 0.7);
+    gradient.addColorStop(0, 'rgba(0,0,0,0)');
+    gradient.addColorStop(1, 'rgba(0,0,0,0.65)');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
     // Minimap Rendering
-    const mapSize = 140;
+    drawMinimap(cameraX, cameraY);
+}
+
+function drawBiomeSquare(x, y, w, h, biome, camX, camY) {
+    const rx = x - camX;
+    const ry = y - camY;
+    
+    ctx.fillStyle = biome.bg;
+    ctx.fillRect(rx, ry, w, h);
+
+    // Subtle Grid Pattern Detail
+    ctx.strokeStyle = biome.accent;
+    ctx.lineWidth = 2;
+    for (let gx = x; gx < x + w; gx += 120) {
+        ctx.beginPath(); ctx.moveTo(gx - camX, ry); ctx.lineTo(gx - camX, ry + h); ctx.stroke();
+    }
+    for (let gy = y; gy < y + h; gy += 120) {
+        ctx.beginPath(); ctx.moveTo(rx, gy - camY); ctx.lineTo(rx + w, gy - camY); ctx.stroke();
+    }
+}
+
+function drawMinimap() {
+    const mapSize = 130;
     const mapX = canvas.width - mapSize - 20;
     const mapY = 20;
     const scale = mapSize / WORLD_SIZE;
 
-    ctx.fillStyle = "rgba(15, 23, 42, 0.9)";
+    ctx.fillStyle = "rgba(13, 17, 23, 0.85)";
     ctx.fillRect(mapX, mapY, mapSize, mapSize);
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
+    ctx.lineWidth = 1.5;
     ctx.strokeRect(mapX, mapY, mapSize, mapSize);
 
     // Player Dot
     ctx.fillStyle = "#38bdf8";
-    ctx.beginPath(); ctx.arc(mapX + player.x * scale, mapY + player.y * scale, 3.5, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(mapX + player.x * scale, mapY + player.y * scale, 3, 0, Math.PI * 2); ctx.fill();
 
-    // Enemy Dots
-    ctx.fillStyle = "#ef4444";
-    enemies.forEach(e => { ctx.fillRect(mapX + e.x * scale, mapY + e.y * scale, 2.5, 2.5); });
+    // Enemies Dots
+    ctx.fillStyle = "#f87171";
+    enemies.forEach(e => { ctx.fillRect(mapX + e.x * scale, mapY + e.y * scale, 2, 2); });
 }
 
 function loop() {
@@ -466,38 +572,39 @@ function loop() {
 }
 
 function updateHUD() {
-    document.getElementById('hp-val').innerText = Math.max(0, Math.floor(player.hp));
+    document.getElementById('hp-bar').style.width = `${Math.max(0, (player.hp / player.maxHp) * 100)}%`;
     document.getElementById('wood-val').innerText = player.wood;
     document.getElementById('stone-val').innerText = player.stone;
     document.getElementById('ore-val').innerText = player.ore;
     
     let wElem = document.getElementById('weapon-val');
-    wElem.innerText = `${player.weapon.name} (${player.weapon.rarity})`;
+    wElem.innerText = player.weapon.name;
     wElem.className = `rarity-${player.weapon.rarity}`;
 }
 
-function showToast(msg) {
+function showToast(icon, msg) {
     const toast = document.getElementById('biome-toast');
-    toast.innerText = msg;
+    document.getElementById('toast-icon').innerText = icon;
+    document.getElementById('toast-text').innerText = msg;
     toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 2200);
+    setTimeout(() => toast.classList.remove('show'), 2400);
 }
 
 function craftItem(type) {
     if (type === 'spear' && player.wood >= 10 && player.stone >= 10) {
         player.wood -= 10; player.stone -= 10; player.weapon = WEAPONS.spear;
-        showToast("CRAFTED: Stone Spear!");
+        showToast("🗡️", "CRAFTED: Stone Spear!");
     } else if (type === 'hammer' && player.wood >= 15 && player.ore >= 20) {
         player.wood -= 15; player.ore -= 20; player.weapon = WEAPONS.hammer;
-        showToast("CRAFTED: Ore Sledge!");
+        showToast("🔨", "CRAFTED: Ore Sledge!");
     } else if (type === 'blade' && player.wood >= 20 && player.stone >= 20 && player.ore >= 15) {
         player.wood -= 20; player.stone -= 20; player.ore -= 15; player.weapon = WEAPONS.blade;
-        showToast("CRAFTED: Plasma Sword!");
+        showToast("⚡", "CRAFTED: Plasma Sword!");
     } else if (type === 'heal' && player.wood >= 5 && player.stone >= 5) {
-        player.wood -= 5; player.stone -= 5; player.hp = Math.min(100, player.hp + 40);
-        showToast("HEALED +40 HP!");
+        player.wood -= 5; player.stone -= 5; player.hp = Math.min(100, player.hp + 45);
+        showToast("🧪", "RECOVERED +45 HP!");
     } else {
-        showToast("NOT ENOUGH RESOURCES!");
+        showToast("⚠️", "NOT ENOUGH MATERIALS!");
     }
     updateHUD();
 }
