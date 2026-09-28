@@ -53,16 +53,6 @@
             box-shadow: 0 0 30px rgba(99, 102, 241, 0.2), 0 20px 50px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.2);
         }
 
-        #damage-flash {
-            position: absolute;
-            inset: 0;
-            background: radial-gradient(circle, rgba(239, 68, 68, 0) 30%, rgba(239, 68, 68, 0.65) 100%);
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.15s ease-out;
-            z-index: 5;
-        }
-
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.5); border-radius: 99px; }
         ::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.5); border-radius: 99px; }
@@ -118,8 +108,6 @@
 <body class="relative min-h-screen select-none overflow-hidden bg-gray-950 font-sans text-gray-100">
 
 <canvas id="gameCanvas"></canvas>
-<div id="damage-flash"></div>
-
 <div id="toast-container" class="pointer-events-none absolute top-6 left-1/2 z-30 flex -translate-x-1/2 flex-col items-center gap-2"></div>
 
 <!-- STATUS HUD -->
@@ -183,7 +171,7 @@
     </div>
 </div>
 
-<!-- HOTBAR SYSTEM -->
+<!-- DUAL HOTBAR SYSTEM -->
 <div class="pointer-events-auto absolute bottom-5 left-1/2 z-30 flex -translate-x-1/2 items-center gap-3">
     <div class="glass-panel flex flex-col items-center gap-1 rounded-2xl p-2">
         <span class="text-[9px] font-extrabold tracking-widest text-indigo-300 uppercase">WEAPONS & TOOLS</span>
@@ -297,7 +285,7 @@ let mousePos = { x: 0, y: 0 };
 let tickCounter = 0;
 
 let player = {
-    x: HALF_WORLD, y: HALF_WORLD, radius: 18, speed: 5.2,
+    x: HALF_WORLD, y: HALF_WORLD, radius: 20, speed: 5.2,
     hp: 100, maxHp: 100, baseMaxHp: 100, wood: 0, stone: 0, ore: 0,
     shards: { overworld: 0, nether: 0, void: 0 },
     unlockedDims: { overworld: true, nether: false, void: false },
@@ -310,7 +298,7 @@ let player = {
     ownedArmors: [],
     armorKey: null, armor: null,
     weaponKey: 'stick', weapon: WEAPONS.stick,
-    facingAngle: 0, isAttacking: false, attackProgress: 0
+    facingAngle: 0, isAttacking: false, attackAngle: 0
 };
 
 let dimEntities = {
@@ -321,6 +309,20 @@ let dimEntities = {
 
 let draggedItem = null;
 let draggedSource = null;
+
+// MOB & RESOURCE DESIGN DEFINITIONS (Circles with Faces and Names)
+const RESOURCE_TYPES = {
+    tree:  { name: 'Ancient Oak', emoji: '🌳', color: '#15803d', borderColor: '#22c55e' },
+    rock:  { name: 'Granite Ore', emoji: '🪨', color: '#475569', borderColor: '#94a3b8' },
+    ore:   { name: 'Crystal Vein', emoji: '💎', color: '#0284c7', borderColor: '#38bdf8' },
+    shard: { name: 'Void Crystal', emoji: '🔮', color: '#7e22ce', borderColor: '#c084fc' }
+};
+
+const MOB_TYPES = {
+    overworld: { name: 'Goblin Scout', emoji: '👹', color: '#dc2626', borderColor: '#f87171' },
+    nether:    { name: 'Fiery Demon', emoji: '😈', color: '#b91c1c', borderColor: '#fca5a5' },
+    void:      { name: 'Void Stalker', emoji: '👾', color: '#581c87', borderColor: '#e9d5ff' }
+};
 
 // LOAD / SAVE SYSTEM
 function loadSavedData() {
@@ -385,7 +387,7 @@ function getRandomOffscreenPosition() {
     return { x, y };
 }
 
-// GENERATE INITIAL WORLD
+// GENERATE DIMENSIONS
 function generateDimension(dimKey) {
     const res = [];
     const count = dimKey === 'overworld' ? 300 : dimKey === 'nether' ? 250 : 200;
@@ -407,7 +409,8 @@ function generateDimension(dimKey) {
             y: Math.random() * (WORLD_SIZE - 200) + 100,
             type: type,
             hp: type === 'tree' ? 30 : type === 'rock' ? 50 : type === 'ore' ? 80 : 100,
-            radius: type === 'tree' ? 26 : 22
+            maxHp: type === 'tree' ? 30 : type === 'rock' ? 50 : type === 'ore' ? 80 : 100,
+            radius: 22
         });
     }
 
@@ -422,7 +425,7 @@ function generateDimension(dimKey) {
             maxHp: dimKey === 'overworld' ? 60 : dimKey === 'nether' ? 120 : 220,
             speed: dimKey === 'overworld' ? 2.2 : 2.8,
             damage: dimKey === 'overworld' ? 8 : 16,
-            radius: 18,
+            radius: 20,
             animOffset: Math.random() * 100
         });
     }
@@ -458,7 +461,8 @@ setInterval(() => {
                 y: pos.y,
                 type: type,
                 hp: type === 'tree' ? 30 : type === 'rock' ? 50 : type === 'ore' ? 80 : 100,
-                radius: type === 'tree' ? 26 : 22
+                maxHp: type === 'tree' ? 30 : type === 'rock' ? 50 : type === 'ore' ? 80 : 100,
+                radius: 22
             });
         }
     });
@@ -479,14 +483,14 @@ setInterval(() => {
                 maxHp: dim === 'overworld' ? 60 : dim === 'nether' ? 120 : 220,
                 speed: dim === 'overworld' ? 2.2 : 2.8,
                 damage: dim === 'overworld' ? 8 : 16,
-                radius: 18,
+                radius: 20,
                 animOffset: Math.random() * 100
             });
         }
     });
 }, 5000);
 
-// USER INTERACTIONS
+// CONTROLS & HUD
 function selectWeaponSlot(index) {
     activeWeaponSlot = index;
     const item = player.weaponHotbar[index];
@@ -704,7 +708,7 @@ function renderInventoryUI() {
     `).join('');
 }
 
-// LISTENERS & COMBAT
+// LISTENERS & ATTACK TRIGGER
 window.addEventListener('keydown', e => {
     keys[e.key.toLowerCase()] = true;
     if (e.key === 'Tab') { e.preventDefault(); toggleInventory(true); }
@@ -719,7 +723,7 @@ window.addEventListener('mousemove', e => { mousePos = { x: e.clientX, y: e.clie
 window.addEventListener('mousedown', e => {
     if (e.button === 0 && !player.isAttacking) {
         player.isAttacking = true;
-        player.attackProgress = 0;
+        player.attackAngle = -Math.PI / 3; // Starts swing arc
         performAttack();
     }
 });
@@ -767,197 +771,52 @@ function performAttack() {
     }
 }
 
-// PROCEDURAL SPRITE RENDERERS
-function drawTreeSprite(x, y, radius) {
-    ctx.save();
-    ctx.translate(x, y);
-    
-    // Shadow
-    ctx.fillStyle = 'rgba(0,0,0,0.3)';
-    ctx.beginPath();
-    ctx.ellipse(0, 10, radius, radius * 0.5, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Trunk
-    ctx.fillStyle = '#78350f';
-    ctx.fillRect(-6, -8, 12, 16);
-
-    // Leaves / Canopy layers
-    ctx.fillStyle = '#15803d';
-    ctx.beginPath();
-    ctx.arc(0, -12, radius, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.fillStyle = '#22c55e';
-    ctx.beginPath();
-    ctx.arc(-5, -16, radius * 0.6, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.restore();
-}
-
-function drawRockSprite(x, y, radius) {
+// RENDERING CIRCLE SPRITES WITH NAMES, HEALTHBARS, AND FACES
+function drawCircleEntity(x, y, radius, color, borderColor, emoji, name, hp, maxHp) {
     ctx.save();
     ctx.translate(x, y);
 
-    // Shadow
-    ctx.fillStyle = 'rgba(0,0,0,0.35)';
-    ctx.beginPath();
-    ctx.ellipse(2, 6, radius, radius * 0.5, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Boulder facets
-    ctx.fillStyle = '#64748b';
-    ctx.beginPath();
-    ctx.moveTo(-radius, 0);
-    ctx.lineTo(-radius * 0.5, -radius);
-    ctx.lineTo(radius * 0.6, -radius * 0.8);
-    ctx.lineTo(radius, radius * 0.3);
-    ctx.lineTo(0, radius);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.fillStyle = '#94a3b8';
-    ctx.beginPath();
-    ctx.moveTo(-radius * 0.5, -radius);
-    ctx.lineTo(0, -radius * 0.2);
-    ctx.lineTo(radius * 0.6, -radius * 0.8);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.restore();
-}
-
-function drawOreSprite(x, y, radius) {
-    drawRockSprite(x, y, radius);
-    ctx.save();
-    ctx.translate(x, y);
-
-    // Glowing Crystals on rock
-    ctx.fillStyle = '#38bdf8';
-    ctx.shadowColor = '#0284c7';
-    ctx.shadowBlur = 8;
-
-    ctx.fillRect(-6, -8, 5, 10);
-    ctx.fillRect(2, -4, 6, 8);
-    ctx.fillRect(-2, 2, 4, 6);
-
-    ctx.restore();
-}
-
-function drawShardSprite(x, y, radius) {
-    ctx.save();
-    ctx.translate(x, y);
-
-    const floatY = Math.sin(tickCounter * 0.05) * 4;
-    ctx.translate(0, floatY);
-
-    ctx.fillStyle = '#c084fc';
-    ctx.shadowColor = '#a855f7';
-    ctx.shadowBlur = 12;
-
-    ctx.beginPath();
-    ctx.moveTo(0, -radius);
-    ctx.lineTo(radius * 0.7, 0);
-    ctx.lineTo(0, radius);
-    ctx.lineTo(-radius * 0.7, 0);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.restore();
-}
-
-function drawEnemySprite(e) {
-    ctx.save();
-    ctx.translate(e.x, e.y);
-
-    const legWiggle = Math.sin((tickCounter + e.animOffset) * 0.2) * 6;
-
-    // Legs
-    ctx.strokeStyle = '#991b1b';
+    // 1. Circle Base Sprite
+    ctx.fillStyle = color;
+    ctx.strokeStyle = borderColor;
     ctx.lineWidth = 3;
-    for (let i = -1; i <= 1; i += 2) {
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.lineTo(i * (e.radius + 10), -8 + legWiggle);
-        ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(0, 0, radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
 
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.lineTo(i * (e.radius + 10), 8 - legWiggle);
-        ctx.stroke();
+    // 2. Center Face / Emoji Icon
+    ctx.font = `${radius * 1.1}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(emoji, 0, 2);
+
+    // 3. Name Tag on Top
+    ctx.font = 'bold 11px Plus Jakarta Sans, sans-serif';
+    ctx.fillStyle = '#ffffff';
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+    ctx.shadowBlur = 4;
+    ctx.fillText(name, 0, -radius - 14);
+
+    // 4. Floating Overhead Healthbar
+    if (hp !== undefined && maxHp !== undefined) {
+        const barW = 36;
+        const barH = 5;
+        const barX = -barW / 2;
+        const barY = -radius - 8;
+
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(barX, barY, barW, barH);
+
+        const healthRatio = Math.max(0, hp / maxHp);
+        ctx.fillStyle = healthRatio > 0.5 ? '#22c55e' : healthRatio > 0.25 ? '#eab308' : '#ef4444';
+        ctx.fillRect(barX, barY, barW * healthRatio, barH);
     }
-
-    // Body
-    ctx.fillStyle = '#dc2626';
-    ctx.shadowColor = '#7f1d1d';
-    ctx.shadowBlur = 10;
-    ctx.beginPath();
-    ctx.arc(0, 0, e.radius, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Eyes
-    ctx.fillStyle = '#fef08a';
-    ctx.beginPath();
-    ctx.arc(-5, -4, 3, 0, Math.PI * 2);
-    ctx.arc(5, -4, 3, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Health Bar overhead
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-    ctx.fillRect(-18, -e.radius - 12, 36, 5);
-    ctx.fillStyle = '#ef4444';
-    ctx.fillRect(-18, -e.radius - 12, (e.hp / e.maxHp) * 36, 5);
 
     ctx.restore();
 }
 
-function drawPlayerSprite() {
-    ctx.save();
-    ctx.translate(player.x, player.y);
-    ctx.rotate(player.facingAngle);
-
-    // Hands & Equipped Weapon Sprite
-    ctx.fillStyle = player.weapon ? player.weapon.color : '#fff';
-
-    if (player.isAttacking) {
-        ctx.save();
-        const swingAngle = (player.attackProgress - Math.PI / 2);
-        ctx.rotate(swingAngle);
-
-        // Weapon Arc Blade
-        ctx.fillStyle = player.weapon ? player.weapon.color : '#cbd5e1';
-        ctx.beginPath();
-        ctx.arc(0, 0, player.weapon ? player.weapon.range : 60, -0.6, 0.6);
-        ctx.lineTo(0, 0);
-        ctx.fill();
-
-        ctx.restore();
-    }
-
-    // Hands holding weapon
-    ctx.fillStyle = '#fcd34d';
-    ctx.beginPath();
-    ctx.arc(14, -8, 5, 0, Math.PI * 2);
-    ctx.arc(14, 8, 5, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Body / Armor Visuals
-    ctx.fillStyle = player.armor ? '#10b981' : '#6366f1';
-    ctx.shadowColor = player.armor ? '#059669' : '#4f46e5';
-    ctx.shadowBlur = 8;
-    ctx.beginPath();
-    ctx.arc(0, 0, player.radius, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Head Visor
-    ctx.fillStyle = '#38bdf8';
-    ctx.fillRect(2, -5, 8, 10);
-
-    ctx.restore();
-}
-
-// MAIN LOOP
+// MAIN GAME LOOP
 function gameLoop() {
     tickCounter++;
 
@@ -972,12 +831,12 @@ function gameLoop() {
     player.x = Math.max(player.radius, Math.min(WORLD_SIZE - player.radius, player.x + dx * player.speed));
     player.y = Math.max(player.radius, Math.min(WORLD_SIZE - player.radius, player.y + dy * player.speed));
 
-    // Facing Angle
+    // Calculate facing angle relative to screen center
     const screenCenterX = canvas.width / 2;
     const screenCenterY = canvas.height / 2;
     player.facingAngle = Math.atan2(mousePos.y - screenCenterY, mousePos.x - screenCenterX);
 
-    // Enemy AI
+    // Enemy Movement & AI Logic
     const activeData = dimEntities[currentDim];
     activeData.enemies.forEach(e => {
         const edx = player.x - e.x;
@@ -992,7 +851,7 @@ function gameLoop() {
         if (dist < player.radius + e.radius) {
             player.hp -= e.damage / 60;
             if (player.hp <= 0) {
-                alert("Game Over! Progress reset to center of map.");
+                alert("Game Over! Respawning at map center.");
                 player.hp = player.maxHp;
                 player.x = HALF_WORLD;
                 player.y = HALF_WORLD;
@@ -1001,21 +860,22 @@ function gameLoop() {
         }
     });
 
+    // Weapon Swing Animation Progress
     if (player.isAttacking) {
-        player.attackProgress += 0.25;
-        if (player.attackProgress >= Math.PI) {
+        player.attackAngle += 0.25;
+        if (player.attackAngle >= Math.PI / 3) {
             player.isAttacking = false;
-            player.attackProgress = 0;
+            player.attackAngle = 0;
         }
     }
 
-    // CANVAS DRAWING
+    // CLEAR & DRAW CANVAS
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     ctx.save();
     ctx.translate(canvas.width / 2 - player.x, canvas.height / 2 - player.y);
 
-    // Grid Floor
+    // Grid Floor Background
     ctx.strokeStyle = currentDim === 'overworld' ? '#1e293b' : currentDim === 'nether' ? '#450a0a' : '#2e1065';
     ctx.lineWidth = 2;
     for (let x = 0; x < WORLD_SIZE; x += 200) {
@@ -1025,19 +885,69 @@ function gameLoop() {
         ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(WORLD_SIZE, y); ctx.stroke();
     }
 
-    // Render Resources
+    // Render Circle Resources
     activeData.resources.forEach(r => {
-        if (r.type === 'tree') drawTreeSprite(r.x, r.y, r.radius);
-        else if (r.type === 'rock') drawRockSprite(r.x, r.y, r.radius);
-        else if (r.type === 'ore') drawOreSprite(r.x, r.y, r.radius);
-        else if (r.type === 'shard') drawShardSprite(r.x, r.y, r.radius);
+        const spec = RESOURCE_TYPES[r.type];
+        drawCircleEntity(r.x, r.y, r.radius, spec.color, spec.borderColor, spec.emoji, spec.name, r.hp, r.maxHp);
     });
 
-    // Render Mobs
-    activeData.enemies.forEach(e => drawEnemySprite(e));
+    // Render Animated Mob Circles
+    activeData.enemies.forEach(e => {
+        const spec = MOB_TYPES[currentDim];
+        
+        // FUNNY MOB WALKING ANIMATION (Bopping / Squashing)
+        const walkBounce = Math.sin((tickCounter + e.animOffset) * 0.25) * 4;
+        const scaleBounce = 1 + Math.sin((tickCounter + e.animOffset) * 0.25) * 0.08;
 
-    // Render Player
-    drawPlayerSprite();
+        ctx.save();
+        ctx.translate(e.x, e.y + walkBounce);
+        ctx.scale(scaleBounce, 1 / scaleBounce);
+
+        drawCircleEntity(0, 0, e.radius, spec.color, spec.borderColor, spec.emoji, spec.name, e.hp, e.maxHp);
+        ctx.restore();
+    });
+
+    // Render Player Circle & Original Swinging Sword
+    ctx.save();
+    ctx.translate(player.x, player.y);
+    ctx.rotate(player.facingAngle);
+
+    // SWINGING WEAPON ANIMATION
+    ctx.save();
+    ctx.rotate(player.isAttacking ? player.attackAngle : 0);
+    ctx.fillStyle = player.weapon ? player.weapon.color : '#a3e635';
+    ctx.shadowColor = player.weapon ? player.weapon.color : '#a3e635';
+    ctx.shadowBlur = player.isAttacking ? 15 : 0;
+
+    // Draw Weapon Blade
+    const wLength = player.weapon ? player.weapon.range : 60;
+    ctx.fillRect(15, -4, wLength, 8);
+    ctx.restore();
+
+    // Player Body Circle
+    ctx.fillStyle = player.armor ? '#10b981' : '#6366f1';
+    ctx.strokeStyle = player.armor ? '#34d399' : '#818cf8';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(0, 0, player.radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Player Face
+    ctx.font = '22px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('🤠', 0, 2);
+
+    ctx.restore();
+
+    // Player Overhead Name Tag
+    ctx.font = 'bold 12px Plus Jakarta Sans, sans-serif';
+    ctx.fillStyle = '#60a5fa';
+    ctx.textAlign = 'center';
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+    ctx.shadowBlur = 4;
+    ctx.fillText('Survivor (You)', player.x, player.y - player.radius - 12);
 
     ctx.restore();
 
