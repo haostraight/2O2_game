@@ -238,7 +238,7 @@
 <script>
 // CANVAS SETUP & CONSTANTS
 const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
+const ctx = canvas.getContext('2d', { alpha: false });
 const WORLD_SIZE = 8000;
 const HALF_WORLD = WORLD_SIZE / 2;
 const OFFSCREEN_SPAWN_DIST = 700;
@@ -282,7 +282,6 @@ let currentDim = 'overworld';
 let activeWeaponSlot = 0;
 let keys = {};
 let mousePos = { x: 0, y: 0 };
-let tickCounter = 0;
 
 let player = {
     x: HALF_WORLD, y: HALF_WORLD, radius: 20, speed: 5.2,
@@ -310,7 +309,6 @@ let dimEntities = {
 let draggedItem = null;
 let draggedSource = null;
 
-// MOB & RESOURCE DESIGN DEFINITIONS
 const RESOURCE_TYPES = {
     tree:  { name: 'Ancient Oak', emoji: '🌳', color: '#15803d', borderColor: '#22c55e' },
     rock:  { name: 'Granite Ore', emoji: '🪨', color: '#475569', borderColor: '#94a3b8' },
@@ -344,7 +342,6 @@ const MOB_TYPES = {
     void:      { name: 'Void Stalker', emoji: '👾', color: '#581c87', borderColor: '#e9d5ff' }
 };
 
-// LOAD / SAVE SYSTEM
 function loadSavedData() {
     const saved = localStorage.getItem('survival_realm_v3');
     if (saved) {
@@ -394,7 +391,6 @@ function showToast(title, msg) {
     setTimeout(() => toast.remove(), 2500);
 }
 
-// SAFE OFFSCREEN GENERATION
 function getRandomOffscreenPosition() {
     let x, y, dist;
     let attempts = 0;
@@ -407,7 +403,6 @@ function getRandomOffscreenPosition() {
     return { x, y };
 }
 
-// GENERATE DIMENSIONS
 function generateDimension(dimKey) {
     const res = [];
     const count = dimKey === 'overworld' ? 300 : dimKey === 'nether' ? 250 : 200;
@@ -441,7 +436,7 @@ function generateDimension(dimKey) {
             id: i,
             x: Math.random() * (WORLD_SIZE - 200) + 100,
             y: Math.random() * (WORLD_SIZE - 200) + 100,
-            vx: 0, vy: 0, // KNOCKBACK VELOCITY
+            vx: 0, vy: 0,
             hp: dimKey === 'overworld' ? 60 : dimKey === 'nether' ? 120 : 220,
             maxHp: dimKey === 'overworld' ? 60 : dimKey === 'nether' ? 120 : 220,
             speed: dimKey === 'overworld' ? 2.2 : 2.8,
@@ -459,7 +454,6 @@ generateDimension('overworld');
 generateDimension('nether');
 generateDimension('void');
 
-// OFFSCREEN RESPAWN INTERVALS
 setInterval(() => {
     ['overworld', 'nether', 'void'].forEach(dim => {
         const resList = dimEntities[dim].resources;
@@ -514,7 +508,6 @@ setInterval(() => {
     });
 }, 5000);
 
-// CONTROLS & HUD
 function selectWeaponSlot(index) {
     activeWeaponSlot = index;
     const item = player.weaponHotbar[index];
@@ -592,7 +585,6 @@ function switchDimension(dimKey) {
     updateHUD();
 }
 
-// DRAG & DROP
 function dragItem(e, source, index) {
     draggedSource = { source, index };
     if (source === 'weapon') draggedItem = player.weaponHotbar[index];
@@ -627,7 +619,6 @@ function dropItem(e, targetType, targetIndex) {
     saveData();
 }
 
-// OPTIMIZED FAST UI UPDATES
 function updateHUD() {
     document.getElementById('wood-val').textContent = player.wood;
     document.getElementById('stone-val').textContent = player.stone;
@@ -736,7 +727,6 @@ function renderInventoryUI() {
     `).join('');
 }
 
-// LISTENERS & ATTACK TRIGGER
 window.addEventListener('keydown', e => {
     keys[e.key.toLowerCase()] = true;
     if (e.key === 'Tab') { e.preventDefault(); toggleInventory(true); }
@@ -761,15 +751,14 @@ function performAttack() {
     const currentEnemies = dimEntities[currentDim].enemies;
     const currentResources = dimEntities[currentDim].resources;
 
-    // Check hit against enemies
     for (let i = currentEnemies.length - 1; i >= 0; i--) {
         const enemy = currentEnemies[i];
-        const dist = Math.hypot(enemy.x - player.x, enemy.y - player.y);
-        if (dist <= currentWeapon.range + enemy.radius) {
+        const dx = enemy.x - player.x;
+        const dy = enemy.y - player.y;
+        if (dx * dx + dy * dy <= (currentWeapon.range + enemy.radius) ** 2) {
             enemy.hp -= currentWeapon.damage;
 
-            // APPLY KNOCKBACK FORCE
-            const angle = Math.atan2(enemy.y - player.y, enemy.x - player.x);
+            const angle = Math.atan2(dy, dx);
             const kbForce = currentWeapon.knockback || 15;
             enemy.vx += Math.cos(angle) * kbForce;
             enemy.vy += Math.sin(angle) * kbForce;
@@ -784,11 +773,11 @@ function performAttack() {
         }
     }
 
-    // Check hit against resources
     for (let i = currentResources.length - 1; i >= 0; i--) {
         const res = currentResources[i];
-        const dist = Math.hypot(res.x - player.x, res.y - player.y);
-        if (dist <= currentWeapon.range + res.radius) {
+        const dx = res.x - player.x;
+        const dy = res.y - player.y;
+        if (dx * dx + dy * dy <= (currentWeapon.range + res.radius) ** 2) {
             res.hp -= currentWeapon.damage;
             if (res.hp <= 0) {
                 if (res.type === 'tree') player.wood += 5;
@@ -804,11 +793,12 @@ function performAttack() {
     }
 }
 
-// GAME LOOP & MOVEMENT
-function update() {
-    tickCounter++;
+// HIGH-PERFORMANCE FIXED STEP GAME TICK
+let lastTime = performance.now();
+const deltaStep = 1000 / 60;
+let accum = 0;
 
-    // Player Movement
+function update(dt) {
     let dx = 0;
     let dy = 0;
     if (keys['w'] || keys['arrowup']) dy -= 1;
@@ -824,38 +814,34 @@ function update() {
     player.x = Math.max(player.radius, Math.min(WORLD_SIZE - player.radius, player.x + dx * player.speed));
     player.y = Math.max(player.radius, Math.min(WORLD_SIZE - player.radius, player.y + dy * player.speed));
 
-    // Player facing direction towards cursor
-    const screenCenterX = canvas.width / 2;
-    const screenCenterY = canvas.height / 2;
+    const screenCenterX = canvas.width * 0.5;
+    const screenCenterY = canvas.height * 0.5;
     player.facingAngle = Math.atan2(mousePos.y - screenCenterY, mousePos.x - screenCenterX);
 
-    // Update attack animation (FAST SWING WITH REDUCED COOLDOWN)
     if (player.isAttacking) {
-        player.attackAngle += 0.55; // Accelerated swing speed
+        player.attackAngle += 0.55;
         if (player.attackAngle >= Math.PI / 3) {
             player.isAttacking = false;
         }
     }
 
-    // Update Enemies & Physics
     const currentEnemies = dimEntities[currentDim].enemies;
     let tookDamage = false;
 
-    currentEnemies.forEach(enemy => {
-        // Apply Knockback Velocity Physics
+    for (let i = 0; i < currentEnemies.length; i++) {
+        const enemy = currentEnemies[i];
         enemy.x += enemy.vx;
         enemy.y += enemy.vy;
-        enemy.vx *= 0.82; // Friction decay
+        enemy.vx *= 0.82;
         enemy.vy *= 0.82;
 
-        // Normal AI chasing path
-        const angle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
+        const edx = player.x - enemy.x;
+        const edy = player.y - enemy.y;
+        const angle = Math.atan2(edy, edx);
         enemy.x += Math.cos(angle) * enemy.speed;
         enemy.y += Math.sin(angle) * enemy.speed;
 
-        // Collision with player
-        const dist = Math.hypot(player.x - enemy.x, player.y - enemy.y);
-        if (dist < player.radius + enemy.radius) {
+        if (edx * edx + edy * edy < (player.radius + enemy.radius) ** 2) {
             player.hp -= enemy.damage / 60;
             tookDamage = true;
             if (player.hp <= 0) {
@@ -865,31 +851,37 @@ function update() {
                 showToast("☠️ You Died!", "Respawned at world center.");
             }
         }
-    });
+    }
 
     if (tookDamage) {
         updateHealthBarOnly();
     }
 }
 
+// CULLING OPTIMIZED RENDER LOOP
 function render() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#030712';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Camera offset
-    const camX = canvas.width / 2 - player.x;
-    const camY = canvas.height / 2 - player.y;
+    const camX = canvas.width * 0.5 - player.x;
+    const camY = canvas.height * 0.5 - player.y;
+
+    const viewLeft = player.x - canvas.width * 0.5 - 100;
+    const viewRight = player.x + canvas.width * 0.5 + 100;
+    const viewTop = player.y - canvas.height * 0.5 - 100;
+    const viewBottom = player.y + canvas.height * 0.5 + 100;
 
     ctx.save();
     ctx.translate(camX, camY);
 
-    // Render Grid / Background
+    // Optimized Background Grid Render
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
     ctx.lineWidth = 1;
     const gridSize = 100;
-    const startX = Math.floor((player.x - canvas.width / 2) / gridSize) * gridSize;
-    const endX = startX + canvas.width + gridSize * 2;
-    const startY = Math.floor((player.y - canvas.height / 2) / gridSize) * gridSize;
-    const endY = startY + canvas.height + gridSize * 2;
+    const startX = Math.floor(viewLeft / gridSize) * gridSize;
+    const endX = Math.ceil(viewRight / gridSize) * gridSize;
+    const startY = Math.floor(viewTop / gridSize) * gridSize;
+    const endY = Math.ceil(viewBottom / gridSize) * gridSize;
 
     ctx.beginPath();
     for (let x = startX; x < endX; x += gridSize) {
@@ -902,15 +894,15 @@ function render() {
     }
     ctx.stroke();
 
-    // Render Resources
+    // Render Resources (With Spatial Culling)
     const currentResources = dimEntities[currentDim].resources;
-    currentResources.forEach(res => {
-        const resDef = RESOURCE_TYPES[res.type];
-        ctx.save();
-        ctx.translate(res.x, res.y);
+    for (let i = 0; i < currentResources.length; i++) {
+        const res = currentResources[i];
+        if (res.x < viewLeft || res.x > viewRight || res.y < viewTop || res.y > viewBottom) continue;
 
+        const resDef = RESOURCE_TYPES[res.type];
         ctx.beginPath();
-        ctx.arc(0, 0, res.radius, 0, Math.PI * 2);
+        ctx.arc(res.x, res.y, res.radius, 0, Math.PI * 2);
         ctx.fillStyle = resDef.color;
         ctx.fill();
         ctx.strokeStyle = resDef.borderColor;
@@ -920,27 +912,28 @@ function render() {
         ctx.font = '16px sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(resDef.emoji, 0, 0);
+        ctx.fillText(resDef.emoji, res.x, res.y);
 
         if (res.hp < res.maxHp) {
             ctx.fillStyle = 'rgba(0,0,0,0.6)';
-            ctx.fillRect(-20, -res.radius - 12, 40, 5);
+            ctx.fillRect(res.x - 20, res.y - res.radius - 12, 40, 5);
             ctx.fillStyle = '#22c55e';
-            ctx.fillRect(-20, -res.radius - 12, (res.hp / res.maxHp) * 40, 5);
+            ctx.fillRect(res.x - 20, res.y - res.radius - 12, (res.hp / res.maxHp) * 40, 5);
         }
+    }
 
-        ctx.restore();
-    });
-
-    // Render Enemies
+    // Render Enemies (With Spatial Culling)
     const currentEnemies = dimEntities[currentDim].enemies;
     const mobDef = MOB_TYPES[currentDim];
     
-    currentEnemies.forEach(enemy => {
-        ctx.save();
-        ctx.translate(enemy.x, enemy.y);
+    for (let i = 0; i < currentEnemies.length; i++) {
+        const enemy = currentEnemies[i];
+        if (enemy.x < viewLeft || enemy.x > viewRight || enemy.y < viewTop || enemy.y > viewBottom) continue;
 
         const visualRadius = enemy.radius * 1.6;
+
+        ctx.save();
+        ctx.translate(enemy.x, enemy.y);
 
         ctx.beginPath();
         ctx.arc(0, 0, visualRadius + 2, 0, Math.PI * 2);
@@ -971,25 +964,17 @@ function render() {
 
         ctx.restore();
 
-        // Enemy Health Bar
-        ctx.save();
-        ctx.translate(enemy.x, enemy.y);
         if (enemy.hp < enemy.maxHp) {
-            const visualRadius = enemy.radius * 1.6;
             ctx.fillStyle = 'rgba(0,0,0,0.6)';
-            ctx.fillRect(-20, -visualRadius - 12, 40, 5);
+            ctx.fillRect(enemy.x - 20, enemy.y - visualRadius - 12, 40, 5);
             ctx.fillStyle = '#ef4444';
-            ctx.fillRect(-20, -visualRadius - 12, (enemy.hp / enemy.maxHp) * 40, 5);
+            ctx.fillRect(enemy.x - 20, enemy.y - visualRadius - 12, (enemy.hp / enemy.maxHp) * 40, 5);
         }
-        ctx.restore();
-    });
+    }
 
     // Render Player
-    ctx.save();
-    ctx.translate(player.x, player.y);
-
     ctx.beginPath();
-    ctx.arc(0, 0, player.radius, 0, Math.PI * 2);
+    ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
     ctx.fillStyle = '#6366f1';
     ctx.fill();
     ctx.strokeStyle = '#818cf8';
@@ -999,6 +984,7 @@ function render() {
     // Weapon Swing Arc / Weapon Render
     const activeWeapon = player.weapon || WEAPONS.stick;
     ctx.save();
+    ctx.translate(player.x, player.y);
     ctx.rotate(player.facingAngle + (player.isAttacking ? player.attackAngle : 0));
     ctx.beginPath();
     ctx.moveTo(0, 0);
@@ -1009,20 +995,25 @@ function render() {
     ctx.restore();
 
     ctx.restore();
-
-    ctx.restore();
 }
 
-function gameLoop() {
-    update();
+function gameLoop(time) {
+    const dt = time - lastTime;
+    lastTime = time;
+    accum += dt;
+
+    while (accum >= deltaStep) {
+        update(deltaStep);
+        accum -= deltaStep;
+    }
+
     render();
     requestAnimationFrame(gameLoop);
 }
 
-// INITIALIZATION
 loadSavedData();
 updateHUD();
-gameLoop();
+requestAnimationFrame(gameLoop);
 </script>
 </body>
 </html>
