@@ -66,7 +66,7 @@
             z-index: 5;
         }
 
-        /* Custom Scrollbar for Crafting */
+        /* Custom Scrollbar */
         ::-webkit-scrollbar {
             width: 5px;
         }
@@ -82,7 +82,6 @@
             background: rgba(129, 140, 248, 0.8);
         }
 
-        /* Pulsing Shard Icon Animation */
         @keyframes shardGlow {
             0%, 100% { filter: drop-shadow(0 0 6px rgba(192, 132, 252, 0.8)); transform: scale(1); }
             50% { filter: drop-shadow(0 0 14px rgba(192, 132, 252, 1)); transform: scale(1.08); }
@@ -92,7 +91,6 @@
             animation: shardGlow 2.5s infinite ease-in-out;
         }
 
-        /* Toast Animations */
         @keyframes toastIn {
             from { opacity: 0; transform: translateY(-20px) scale(0.92); }
             to { opacity: 1; transform: translateY(0) scale(1); }
@@ -111,7 +109,6 @@
 <div id="toast-container" class="pointer-events-none absolute top-6 left-1/2 z-30 flex -translate-x-1/2 flex-col items-center gap-2"></div>
 
 <div id="stats-hud" class="glass-panel glass-panel-glow pointer-events-auto absolute top-5 left-5 z-20 w-80 rounded-2xl p-4 transition-all duration-300">
-    <!-- Header info -->
     <div class="mb-3 flex items-center justify-between border-b border-white/10 pb-2">
         <div class="flex items-center gap-2">
             <span class="inline-block h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]"></span>
@@ -261,7 +258,6 @@ window.addEventListener('resize', resizeCanvas);
 const WORLD_SIZE = 8000;
 const HALF_WORLD = WORLD_SIZE / 2;
 
-// WEAPONS CONFIGURATION
 const WEAPONS = {
     stick:  { id: 'stick', name: 'Wooden Stick', damage: 20, range: 65, rarity: 'Common', color: '#9ca3af' },
     spear:  { id: 'spear', name: 'Stone Spear', damage: 40, range: 90, rarity: 'Uncommon', color: '#34d399' },
@@ -270,18 +266,17 @@ const WEAPONS = {
     scythe: { id: 'scythe', name: 'Void Scythe', damage: 190, range: 130, rarity: 'Mythic', color: '#c084fc' }
 };
 
-// MOBS DATA WITH MAPPED SPRITE PATHS & FALLBACKS
+// MOBS DATA WITH ENCODED RELATIVE PATHS
 const MOBS_CONFIG = {
     gerard:  { name: 'Gerard', spriteSrc: 'images/Gerard.JPEG', hp: 100, speed: 2.8, radius: 24, damage: 0.25, fallbackColor: '#ef4444' },
     jason:   { name: 'Jason', spriteSrc: 'images/Jason.JPEG', hp: 130, speed: 2.5, radius: 24, damage: 0.35, fallbackColor: '#f97316' },
-    liuji:   { name: 'Liu Ji', spriteSrc: 'images/Liu Ji.JPEG', hp: 220, speed: 1.8, radius: 28, damage: 0.55, fallbackColor: '#dc2626' },
+    liuji:   { name: 'Liu Ji', spriteSrc: 'images/Liu%20Ji.JPEG', hp: 220, speed: 1.8, radius: 28, damage: 0.55, fallbackColor: '#dc2626' },
     matthew: { name: 'Matthew', spriteSrc: 'images/Matthew.JPEG', hp: 200, speed: 2.7, radius: 26, damage: 0.45, fallbackColor: '#b91c1c' },
     travia:  { name: 'Travia', spriteSrc: 'images/Travia.JPEG', hp: 280, speed: 2.2, radius: 26, damage: 0.60, fallbackColor: '#9333ea' },
     xayven:  { name: 'Xayven', spriteSrc: 'images/Xayven.JPEG', hp: 350, speed: 3.0, radius: 30, damage: 0.75, fallbackColor: '#7e22ce' },
     xuchen:  { name: 'Xuchen', spriteSrc: 'images/Xuchen.JPEG', hp: 1250, speed: 1.5, radius: 46, damage: 1.20, fallbackColor: '#a855f7', isBoss: true }
 };
 
-// Image Preloading Engine with Robust Canvas Fallback Flags
 const loadedSprites = {};
 Object.keys(MOBS_CONFIG).forEach(key => {
     const img = new Image();
@@ -292,72 +287,49 @@ Object.keys(MOBS_CONFIG).forEach(key => {
     loadedSprites[key] = img;
 });
 
-// DIMENSION ENVIRONMENTS
 const DIMENSIONS = {
     overworld: {
-        id: 'overworld',
-        name: 'OVERWORLD',
+        id: 'overworld', name: 'OVERWORLD',
         biomes: [
             { name: 'Verdant Plains', bg: '#062016', accent: '#10b981' },
             { name: 'Sunburnt Dunes', bg: '#2d1f05', accent: '#f59e0b' },
             { name: 'Frostbite Tundra', bg: '#0c222e', accent: '#06b6d4' },
             { name: 'Shadowwood Forest', bg: '#09180e', accent: '#059669' }
         ],
-        mobs: ['gerard', 'jason'],
-        requiredShards: 0,
-        nextDim: 'nether'
+        mobs: ['gerard', 'jason'], requiredShards: 0, nextDim: 'nether'
     },
     nether: {
-        id: 'nether',
-        name: 'NETHER',
+        id: 'nether', name: 'NETHER',
         biomes: [
             { name: 'Crimson Wastes', bg: '#2b0404', accent: '#ef4444' },
             { name: 'Ash Valley', bg: '#141416', accent: '#6b7280' },
             { name: 'Basalt Delta', bg: '#17110e', accent: '#f97316' },
             { name: 'Lava Ridges', bg: '#3b0707', accent: '#dc2626' }
         ],
-        mobs: ['liuji', 'matthew'],
-        requiredShards: 5,
-        nextDim: 'void'
+        mobs: ['liuji', 'matthew'], requiredShards: 5, nextDim: 'void'
     },
     void: {
-        id: 'void',
-        name: 'THE VOID',
+        id: 'void', name: 'THE VOID',
         biomes: [
             { name: 'Astral Abyss', bg: '#17072b', accent: '#a855f7' },
             { name: 'Nebula Ridges', bg: '#1e0a38', accent: '#c084fc' },
             { name: 'Ender Wastes', bg: '#0c0721', accent: '#6366f1' },
             { name: 'Starfall Ruins', bg: '#120d2e', accent: '#818cf8' }
         ],
-        mobs: ['travia', 'xayven'],
-        requiredShards: 5,
-        nextDim: null
+        mobs: ['travia', 'xayven'], requiredShards: 5, nextDim: null
     }
 };
 
-// PLAYER STATE
 let currentDim = 'overworld';
 let player = {
-    x: HALF_WORLD,
-    y: HALF_WORLD,
-    radius: 18,
-    speed: 5.2,
-    hp: 100,
-    maxHp: 100,
-    wood: 0,
-    stone: 0,
-    ore: 0,
+    x: HALF_WORLD, y: HALF_WORLD, radius: 18, speed: 5.2,
+    hp: 100, maxHp: 100, wood: 0, stone: 0, ore: 0,
     shards: { overworld: 0, nether: 0, void: 0 },
     unlockedDims: { overworld: true, nether: false, void: false },
-    weaponKey: 'stick',
-    weapon: WEAPONS.stick,
-    facingAngle: 0,
-    isAttacking: false,
-    attackProgress: 0,
-    currentBiome: ''
+    weaponKey: 'stick', weapon: WEAPONS.stick,
+    facingAngle: 0, isAttacking: false, attackProgress: 0, currentBiome: ''
 };
 
-// ENTITIES CONTAINER FOR EACH DIMENSION
 let dimEntities = {
     overworld: { resources: [], enemies: [], structures: [] },
     nether: { resources: [], enemies: [], structures: [] },
@@ -368,7 +340,7 @@ let particles = [];
 let floatingTexts = [];
 let gameTime = 0;
 
-// --- PERSISTENT STORAGE (LOCALSTORAGE) ---
+// --- PERSISTENT STORAGE ---
 function loadSavedData() {
     const saved = localStorage.getItem('survival_realm_save');
     if (saved) {
@@ -410,7 +382,40 @@ function resetGameData() {
     }
 }
 
+function updateHUD() {
+    document.getElementById('wood-val').innerText = player.wood;
+    document.getElementById('stone-val').innerText = player.stone;
+    document.getElementById('ore-val').innerText = player.ore;
+    document.getElementById('shard-val').innerText = `${player.shards[currentDim]}/5`;
+    document.getElementById('weapon-val').innerText = player.weapon.name;
+    document.getElementById('hp-text').innerText = `${Math.max(0, Math.ceil(player.hp))} / ${player.maxHp}`;
+    
+    const pct = Math.max(0, (player.hp / player.maxHp) * 100);
+    document.getElementById('hp-bar').style.width = `${pct}%`;
+
+    // Portal Buttons State
+    Object.keys(player.unlockedDims).forEach(dim => {
+        const btn = document.getElementById(`btn-${dim}`);
+        if (btn) {
+            if (player.unlockedDims[dim]) {
+                btn.innerText = dim.toUpperCase();
+                btn.style.opacity = '1';
+            }
+        }
+    });
+}
+
+function showToast(title, desc) {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = 'animate-toast glass-panel rounded-xl px-4 py-2 text-center text-xs shadow-lg border border-indigo-500/30';
+    toast.innerHTML = `<div class="font-bold text-indigo-300">${title}</div><div class="text-gray-300 text-[11px]">${desc}</div>`;
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 3500);
+}
+
 loadSavedData();
+
 setInterval(() => {
     gameTime++;
     const mins = Math.floor(gameTime / 60).toString().padStart(2, '0');
@@ -422,8 +427,11 @@ setInterval(() => {
 // --- WORLD INITIALIZATION ---
 function initWorld() {
     Object.keys(DIMENSIONS).forEach(dim => {
-        // Resources Generation
-        for (let i = 0; i < 400; i++) {
+        dimEntities[dim].resources = [];
+        dimEntities[dim].structures = [];
+        dimEntities[dim].enemies = [];
+
+        for (let i = 0; i < 300; i++) {
             const types = ['tree', 'stone', 'ore'];
             const type = types[Math.floor(Math.random() * types.length)];
             dimEntities[dim].resources.push({
@@ -435,60 +443,34 @@ function initWorld() {
             });
         }
 
-        // Chest Structures Generation (Containing Portal Shards)
         let shardsRemaining = 5;
-        for (let i = 0; i < 28; i++) {
-            const containsShard = shardsRemaining > 0 && Math.random() < 0.35;
+        for (let i = 0; i < 25; i++) {
+            const containsShard = shardsRemaining > 0 && Math.random() < 0.4;
             if (containsShard) shardsRemaining--;
 
             dimEntities[dim].structures.push({
                 x: Math.random() * (WORLD_SIZE - 600) + 300,
                 y: Math.random() * (WORLD_SIZE - 600) + 300,
-                width: 130,
-                height: 130,
-                hasChest: true,
-                chestOpened: false,
-                containsShard: containsShard
+                width: 120, height: 120,
+                hasChest: true, chestOpened: false, containsShard: containsShard
             });
         }
 
-        // Dimension Enemies Generation
         const mobKeys = DIMENSIONS[dim].mobs;
-        for (let i = 0; i < 65; i++) {
+        for (let i = 0; i < 50; i++) {
             const mKey = mobKeys[Math.floor(Math.random() * mobKeys.length)];
             const base = MOBS_CONFIG[mKey];
             dimEntities[dim].enemies.push({
-                key: mKey,
-                x: Math.random() * WORLD_SIZE,
-                y: Math.random() * WORLD_SIZE,
-                hp: base.hp,
-                maxHp: base.hp,
-                radius: base.radius,
-                speed: base.speed,
-                damage: base.damage,
-                name: base.name,
-                hitFlash: 0
+                key: mKey, x: Math.random() * WORLD_SIZE, y: Math.random() * WORLD_SIZE,
+                hp: base.hp, maxHp: base.hp, radius: base.radius, speed: base.speed,
+                damage: base.damage, name: base.name, hitFlash: 0
             });
         }
-    });
-
-    // Boss Spawn in Void
-    dimEntities['void'].enemies.push({
-        key: 'xuchen',
-        x: HALF_WORLD,
-        y: HALF_WORLD - 300,
-        hp: MOBS_CONFIG.xuchen.hp,
-        maxHp: MOBS_CONFIG.xuchen.hp,
-        radius: MOBS_CONFIG.xuchen.radius,
-        speed: MOBS_CONFIG.xuchen.speed,
-        damage: MOBS_CONFIG.xuchen.damage,
-        name: MOBS_CONFIG.xuchen.name,
-        hitFlash: 0,
-        isBoss: true
     });
 }
 
 initWorld();
+updateHUD();
 
 // --- CONTROLS & EVENT LISTENERS ---
 const keys = {};
@@ -501,7 +483,6 @@ window.addEventListener('mousemove', e => {
     mouseY = e.clientY;
 });
 
-// DIMENSION PORTAL TELEPORTATION
 function switchDimension(dimName) {
     if (!player.unlockedDims[dimName]) {
         showToast("🔒 Portal Sealed!", `Collect 5 Shards in current realm to unlock ${DIMENSIONS[dimName].name}!`);
@@ -510,21 +491,48 @@ function switchDimension(dimName) {
     if (currentDim === dimName) return;
 
     currentDim = dimName;
-    
-    // Update Button Active Styling
     document.querySelectorAll('.dim-btn').forEach(btn => {
         btn.className = "dim-btn flex items-center gap-2 rounded-full px-5 py-2.5 font-display text-xs font-bold transition-all duration-200 bg-white/5 text-gray-400 border border-white/10 opacity-60 hover:opacity-100";
     });
 
     const activeBtn = document.getElementById(`btn-${dimName}`);
-    activeBtn.className = "dim-btn flex items-center gap-2 rounded-full px-5 py-2.5 font-display text-xs font-bold transition-all duration-200 bg-indigo-600 text-white shadow-[0_0_15px_rgba(79,70,229,0.5)]";
+    if (activeBtn) {
+        activeBtn.className = "dim-btn flex items-center gap-2 rounded-full px-5 py-2.5 font-display text-xs font-bold transition-all duration-200 bg-indigo-600 text-white shadow-[0_0_15px_rgba(79,70,229,0.5)]";
+    }
 
     showToast("🌀 Realm Shift", `Warped into ${DIMENSIONS[dimName].name}`);
     updateHUD();
     saveData();
 }
 
-// ATTACK & INTERACTION ENGINE
+function craftItem(itemKey) {
+    if (itemKey === 'spear' && player.wood >= 10 && player.stone >= 10) {
+        player.wood -= 10; player.stone -= 10;
+        player.weaponKey = 'spear'; player.weapon = WEAPONS.spear;
+        showToast("🗡️ Weapon Crafted", "Equipped Stone Spear!");
+    } else if (itemKey === 'hammer' && player.wood >= 15 && player.ore >= 20) {
+        player.wood -= 15; player.ore -= 20;
+        player.weaponKey = 'hammer'; player.weapon = WEAPONS.hammer;
+        showToast("🔨 Weapon Crafted", "Equipped Ore Sledge!");
+    } else if (itemKey === 'blade' && player.wood >= 25 && player.stone >= 25 && player.ore >= 15) {
+        player.wood -= 25; player.stone -= 25; player.ore -= 15;
+        player.weaponKey = 'blade'; player.weapon = WEAPONS.blade;
+        showToast("⚡ Weapon Crafted", "Equipped Plasma Sword!");
+    } else if (itemKey === 'scythe' && player.wood >= 40 && player.stone >= 40 && player.ore >= 30) {
+        player.wood -= 40; player.stone -= 40; player.ore -= 30;
+        player.weaponKey = 'scythe'; player.weapon = WEAPONS.scythe;
+        showToast("🔮 Weapon Crafted", "Equipped Void Scythe!");
+    } else if (itemKey === 'heal' && player.wood >= 5 && player.stone >= 5) {
+        player.wood -= 5; player.stone -= 5;
+        player.hp = Math.min(player.maxHp, player.hp + 45);
+        showToast("🧪 Vitality Restored", "Gained +45 HP!");
+    } else {
+        showToast("❌ Missing Resources", "Gather resources to craft this item.");
+    }
+    updateHUD();
+    saveData();
+}
+
 canvas.addEventListener('pointerdown', () => {
     if (player.hp <= 0) return;
 
@@ -534,16 +542,15 @@ canvas.addEventListener('pointerdown', () => {
     const currentData = dimEntities[currentDim];
     const swingX = player.x + Math.cos(player.facingAngle) * player.weapon.range * 0.6;
     const swingY = player.y + Math.sin(player.facingAngle) * player.weapon.range * 0.6;
-    createParticles(swingX, swingY, player.weapon.color, 12);
+    createParticles(swingX, swingY, player.weapon.color, 8);
 
-    // Resource Gathering
+    // Harvesting
     currentData.resources.forEach((res, index) => {
         if (Math.hypot(res.x - player.x, res.y - player.y) <= player.weapon.range + 20) {
             res.hp -= 1;
             res.scale = 1.35;
             const pColor = res.type === 'tree' ? '#34d399' : res.type === 'stone' ? '#9ca3af' : '#38bdf8';
-            createParticles(res.x, res.y, pColor, 6);
-            spawnFloatingText(res.x, res.y, "-1", "#fbbf24");
+            createParticles(res.x, res.y, pColor, 5);
 
             if (res.hp <= 0) {
                 if (res.type === 'tree') player.wood += Math.floor(Math.random() * 4) + 3;
@@ -556,7 +563,7 @@ canvas.addEventListener('pointerdown', () => {
         }
     });
 
-    // Opening Ruins & Collecting Portal Shards
+    // Opening Ruins & Shards
     currentData.structures.forEach(struct => {
         if (struct.hasChest && !struct.chestOpened) {
             if (Math.hypot(struct.x - player.x, struct.y - player.y) <= player.weapon.range + 30) {
@@ -565,46 +572,42 @@ canvas.addEventListener('pointerdown', () => {
 
                 if (struct.containsShard && player.shards[currentDim] < 5) {
                     player.shards[currentDim]++;
-                    showToast("🔮 PORTAL SHARD DISCOVERED!", `Collected (${player.shards[currentDim]}/5) Shards for ${DIMENSIONS[currentDim].name}!`);
+                    showToast("🔮 PORTAL SHARD DISCOVERED!", `Collected (${player.shards[currentDim]}/5) Shards!`);
 
                     if (player.shards[currentDim] >= 5) {
                         const nextDim = DIMENSIONS[currentDim].nextDim;
                         if (nextDim) {
                             player.unlockedDims[nextDim] = true;
-                            showToast("🌟 PORTAL IGNITED!", `${DIMENSIONS[nextDim].name} IS NOW UNLOCKED!`);
+                            showToast("🌟 PORTAL IGNITED!", `${DIMENSIONS[nextDim].name} IS UNLOCKED!`);
                         }
                     }
                 } else {
                     showToast("🎁 Ancient Loot Chest", "+20 Wood, +20 Stone, +15 Ore acquired!");
                 }
 
-                createParticles(struct.x, struct.y, "#c084fc", 25);
+                createParticles(struct.x, struct.y, "#c084fc", 20);
                 updateHUD();
                 saveData();
             }
         }
     });
 
-    // Attacking Enemies
+    // Attack Enemies
     currentData.enemies.forEach((enemy, index) => {
         if (Math.hypot(enemy.x - player.x, enemy.y - player.y) <= player.weapon.range + enemy.radius) {
             let isCrit = Math.random() < 0.25;
             let dmg = isCrit ? Math.floor(player.weapon.damage * 1.5) : player.weapon.damage;
 
             enemy.hp -= dmg;
-            enemy.hitFlash = 10;
+            enemy.hitFlash = 8;
             const angle = Math.atan2(enemy.y - player.y, enemy.x - player.x);
-            enemy.x += Math.cos(angle) * 32;
-            enemy.y += Math.sin(angle) * 32;
+            enemy.x += Math.cos(angle) * 20;
+            enemy.y += Math.sin(angle) * 20;
 
-            createParticles(enemy.x, enemy.y, '#f87171', 10);
-            spawnFloatingText(enemy.x, enemy.y, isCrit ? `💥 ${dmg}` : `-${dmg}`, isCrit ? "#facc15" : "#f87171");
+            createParticles(enemy.x, enemy.y, '#f87171', 8);
 
             if (enemy.hp <= 0) {
-                createParticles(enemy.x, enemy.y, '#ef4444', 24);
-                if (enemy.isBoss) {
-                    showToast("🏆 REALM VICTORY!", "Boss Xuchen defeated! You saved the Multiverse!");
-                }
+                createParticles(enemy.x, enemy.y, '#ef4444', 20);
                 currentData.enemies.splice(index, 1);
                 updateHUD();
                 saveData();
@@ -617,14 +620,10 @@ function createParticles(x, y, color, count) {
     for (let i = 0; i < count; i++) {
         particles.push({
             x: x, y: y,
-            vx: (Math.random() - 0.5) * 8, vy: (Math.random() - 0.5) * 8,
+            vx: (Math.random() - 0.5) * 6, vy: (Math.random() - 0.5) * 6,
             color: color, radius: Math.random() * 3 + 2, alpha: 1
         });
     }
-}
-
-function spawnFloatingText(x, y, text, color) {
-    floatingTexts.push({ x: x, y: y, text: text, color: color, alpha: 1 });
 }
 
 function triggerDamageFlash() {
@@ -641,7 +640,6 @@ function respawnPlayer() {
     updateHUD();
 }
 
-// --- GAME UPDATE ENGINE ---
 function update() {
     if (player.hp <= 0) return;
 
@@ -660,37 +658,17 @@ function update() {
     const cameraY = player.y - canvas.height / 2;
     player.facingAngle = Math.atan2((mouseY + cameraY) - player.y, (mouseX + cameraX) - player.x);
 
-    if (player.isAttacking) {
-        player.attackProgress += 0.18;
-        if (player.attackProgress >= 1) { player.isAttacking = false; player.attackProgress = 0; }
-    }
-
-    // Biome Calculation
-    const dimConfig = DIMENSIONS[currentDim];
-    let biomeIdx = 0;
-    if (player.x >= HALF_WORLD && player.y < HALF_WORLD) biomeIdx = 1;
-    else if (player.x < HALF_WORLD && player.y >= HALF_WORLD) biomeIdx = 2;
-    else if (player.x >= HALF_WORLD && player.y >= HALF_WORLD) biomeIdx = 3;
-
-    const currentBiomeObj = dimConfig.biomes[biomeIdx];
-    if (player.currentBiome !== currentBiomeObj.name) {
-        player.currentBiome = currentBiomeObj.name;
-        showToast("📍 Region Discovered", currentBiomeObj.name);
-    }
-
-    // Particle Updates
     particles.forEach((p, i) => {
         p.x += p.vx; p.y += p.vy; p.alpha -= 0.04;
         if (p.alpha <= 0) particles.splice(i, 1);
     });
 
-    // Enemy AI Movement & Damage
     const currentData = dimEntities[currentDim];
     currentData.enemies.forEach(enemy => {
         if (enemy.hitFlash > 0) enemy.hitFlash--;
 
         const dist = Math.hypot(player.x - enemy.x, player.y - enemy.y);
-        if (dist < 650) {
+        if (dist < 500) {
             const angle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
             enemy.x += Math.cos(angle) * enemy.speed;
             enemy.y += Math.sin(angle) * enemy.speed;
@@ -703,13 +681,15 @@ function update() {
             if (player.hp <= 0) respawnPlayer();
         }
     });
-
-    currentData.resources.forEach(res => {
-        if (res.scale > 1) res.scale -= 0.05;
-    });
 }
 
-// --- RENDERING ENGINE ---
+function drawBiomeSquare(x, y, w, h, biome, camX, camY) {
+    const rx = x - camX, ry = y - camY;
+    if (rx + w < 0 || rx > canvas.width || ry + h < 0 || ry > canvas.height) return;
+    ctx.fillStyle = biome.bg;
+    ctx.fillRect(rx, ry, w, h);
+}
+
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const cameraX = player.x - canvas.width / 2;
@@ -717,7 +697,6 @@ function draw() {
 
     const dimConfig = DIMENSIONS[currentDim];
 
-    // Render Biome Sectors
     drawBiomeSquare(0, 0, HALF_WORLD, HALF_WORLD, dimConfig.biomes[0], cameraX, cameraY);
     drawBiomeSquare(HALF_WORLD, 0, HALF_WORLD, HALF_WORLD, dimConfig.biomes[1], cameraX, cameraY);
     drawBiomeSquare(0, HALF_WORLD, HALF_WORLD, HALF_WORLD, dimConfig.biomes[2], cameraX, cameraY);
@@ -725,7 +704,7 @@ function draw() {
 
     const currentData = dimEntities[currentDim];
 
-    // Render Ruin Structures
+    // Render Ruins
     currentData.structures.forEach(struct => {
         const sx = struct.x - cameraX, sy = struct.y - cameraY;
         ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
@@ -736,134 +715,83 @@ function draw() {
 
         if (struct.hasChest) {
             ctx.fillStyle = struct.chestOpened ? "#475569" : struct.containsShard ? "#c084fc" : "#fbbf24";
-            ctx.beginPath();
-            ctx.roundRect(sx - 12, sy - 12, 24, 24, 6);
-            ctx.fill();
+            ctx.fillRect(sx - 12, sy - 12, 24, 24);
         }
     });
 
     // Render Resources
     currentData.resources.forEach(res => {
         const rx = res.x - cameraX, ry = res.y - cameraY;
-        ctx.save(); ctx.translate(rx, ry); ctx.scale(res.scale, res.scale);
-        if (res.type === 'tree') {
-            ctx.fillStyle = "#3f2e21"; ctx.fillRect(-4, -2, 8, 16);
-            ctx.fillStyle = "#10b981"; ctx.beginPath(); ctx.arc(0, -12, 16, 0, Math.PI * 2); ctx.fill();
-        } else if (res.type === 'stone') {
-            ctx.fillStyle = "#64748b"; ctx.beginPath(); ctx.arc(0, 0, 13, 0, Math.PI * 2); ctx.fill();
-        } else if (res.type === 'ore') {
-            ctx.fillStyle = "#334155"; ctx.beginPath(); ctx.arc(0, 0, 13, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = "#38bdf8"; ctx.beginPath(); ctx.arc(-2, -2, 6, 0, Math.PI * 2); ctx.fill();
-        }
-        ctx.restore();
+        ctx.fillStyle = res.type === 'tree' ? '#059669' : res.type === 'stone' ? '#64748b' : '#0284c7';
+        ctx.beginPath();
+        ctx.arc(rx, ry, (res.type === 'tree' ? 22 : 16) * res.scale, 0, Math.PI * 2);
+        ctx.fill();
     });
 
-    // RENDER ENEMIES (WITH IMAGE SPRITES & CLEAN CANVAS FALLBACKS)
-    currentData.enemies.forEach(e => {
-        const ex = e.x - cameraX, ey = e.y - cameraY;
-        const sprite = loadedSprites[e.key];
-        const baseConfig = MOBS_CONFIG[e.key] || { fallbackColor: '#9333ea' };
+    // Render Mobs (With Fallbacks)
+    currentData.enemies.forEach(enemy => {
+        const ex = enemy.x - cameraX, ey = enemy.y - cameraY;
+        const sprite = loadedSprites[enemy.key];
 
-        ctx.save();
-        if (e.hitFlash > 0) ctx.filter = 'brightness(2.2)';
-
-        // Draw Image Sprite if Loaded, Else Render Stylized Canvas Fallback Avatar
         if (sprite && sprite.isLoaded) {
+            ctx.save();
             ctx.beginPath();
-            ctx.arc(ex, ey, e.radius, 0, Math.PI * 2);
+            ctx.arc(ex, ey, enemy.radius, 0, Math.PI * 2);
             ctx.clip();
-            ctx.drawImage(sprite, ex - e.radius, ey - e.radius, e.radius * 2, e.radius * 2);
+            ctx.drawImage(sprite, ex - enemy.radius, ey - enemy.radius, enemy.radius * 2, enemy.radius * 2);
+            ctx.restore();
         } else {
-            // Clean Fallback Circle with Initials
-            ctx.fillStyle = baseConfig.fallbackColor;
+            // Circle Fallback if image fails to load
+            ctx.fillStyle = enemy.hitFlash > 0 ? '#ffffff' : MOBS_CONFIG[enemy.key].fallbackColor;
             ctx.beginPath();
-            ctx.arc(ex, ey, e.radius, 0, Math.PI * 2);
+            ctx.arc(ex, ey, enemy.radius, 0, Math.PI * 2);
             ctx.fill();
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-
-            // Initial Text Fallback
-            ctx.fillStyle = '#ffffff';
-            ctx.font = `700 ${e.radius * 0.9}px 'Plus Jakarta Sans', sans-serif`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(e.name.charAt(0), ex, ey);
         }
-        ctx.restore();
 
-        // DISPLAY ONLY THE ENEMY NAME ABOVE HEAD
-        ctx.fillStyle = "#ffffff";
-        ctx.font = "800 12px 'Plus Jakarta Sans', sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillText(e.name, ex, ey - e.radius - 16);
-
-        // Overhead Health Bar
-        const barW = 36, barH = 4;
-        ctx.fillStyle = "rgba(0,0,0,0.6)";
-        ctx.fillRect(ex - barW / 2, ey - e.radius - 10, barW, barH);
-        const hpPct = Math.max(0, e.hp / e.maxHp);
-        ctx.fillStyle = "#f87171";
-        ctx.fillRect(ex - barW / 2, ey - e.radius - 10, barW * hpPct, barH);
+        // Enemy HP Bar
+        ctx.fillStyle = "rgba(0,0,0,0.5)";
+        ctx.fillRect(ex - 20, ey - enemy.radius - 12, 40, 5);
+        ctx.fillStyle = "#ef4444";
+        ctx.fillRect(ex - 20, ey - enemy.radius - 12, (enemy.hp / enemy.maxHp) * 40, 5);
     });
 
-    // Render Player Avatar & Weapon Swing Arc
-    const px = canvas.width / 2, py = canvas.height / 2;
-    ctx.fillStyle = "#6366f1";
-    ctx.beginPath(); ctx.arc(px, py, player.radius, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = "#a5b4fc"; ctx.lineWidth = 3; ctx.stroke();
-
-    ctx.save();
-    ctx.translate(px, py);
-    let swingAngle = player.facingAngle;
-    if (player.isAttacking) swingAngle += Math.sin(player.attackProgress * Math.PI) * 1.5 - 0.75;
-    ctx.rotate(swingAngle);
-    ctx.fillStyle = player.weapon.color;
-    ctx.fillRect(10, -3, player.weapon.range * 0.55, 6);
-    ctx.restore();
-
-    // Render Floating Particles & Text
+    // Render Particles
     particles.forEach(p => {
-        ctx.fillStyle = p.color; ctx.globalAlpha = p.alpha;
-        ctx.beginPath(); ctx.arc(p.x - cameraX, p.y - cameraY, p.radius, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.alpha;
+        ctx.beginPath();
+        ctx.arc(p.x - cameraX, p.y - cameraY, p.radius, 0, Math.PI * 2);
+        ctx.fill();
         ctx.globalAlpha = 1.0;
     });
 
-    floatingTexts.forEach((ft, i) => {
-        ctx.fillStyle = ft.color; ctx.globalAlpha = ft.alpha;
-        ctx.font = "800 13px 'Space Grotesk', sans-serif"; ctx.textAlign = "center";
-        ctx.fillText(ft.text, ft.x - cameraX, ft.y - cameraY);
-        ctx.globalAlpha = 1.0; ft.y -= 0.8; ft.alpha -= 0.035;
-        if (ft.alpha <= 0) floatingTexts.splice(i, 1);
-    });
+    // Render Player
+    const px = canvas.width / 2, py = canvas.height / 2;
+    ctx.save();
+    ctx.translate(px, py);
+    ctx.rotate(player.facingAngle);
 
-    drawMinimap();
-}
+    // Draw Weapon Swing
+    ctx.strokeStyle = player.weapon.color;
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(player.weapon.range, 0);
+    ctx.stroke();
 
-function drawBiomeSquare(x, y, w, h, biomeObj, camX, camY) {
-    ctx.fillStyle = biomeObj.bg;
-    ctx.fillRect(x - camX, y - camY, w, h);
-}
+    // Player Body
+    ctx.fillStyle = '#6366f1';
+    ctx.beginPath();
+    ctx.arc(0, 0, player.radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
 
-function drawMinimap() {
-    const scale = 160 / WORLD_SIZE;
-    minimapCtx.clearRect(0, 0, 160, 160);
-
-    const dimConfig = DIMENSIONS[currentDim];
-    minimapCtx.fillStyle = dimConfig.biomes[0].bg; minimapCtx.fillRect(0, 0, 80, 80);
-    minimapCtx.fillStyle = dimConfig.biomes[1].bg; minimapCtx.fillRect(80, 0, 80, 80);
-    minimapCtx.fillStyle = dimConfig.biomes[2].bg; minimapCtx.fillRect(0, 80, 80, 80);
-    minimapCtx.fillStyle = dimConfig.biomes[3].bg; minimapCtx.fillRect(80, 80, 80, 80);
-
-    const currentData = dimEntities[currentDim];
-    minimapCtx.fillStyle = "#c084fc";
-    currentData.structures.forEach(struct => {
-        minimapCtx.fillRect(struct.x * scale - 1.5, struct.y * scale - 1.5, 3, 3);
-    });
-
-    // Player Blip
-    minimapCtx.fillStyle = "#6366f1";
-    minimapCtx.beginPath(); minimapCtx.arc(player.x * scale, player.y * scale, 3, 0, Math.PI * 2); minimapCtx.fill();
+    // Render Minimap
+    minimapCtx.fillStyle = '#030712';
+    minimapCtx.fillRect(0, 0, 160, 160);
+    const mmScale = 160 / WORLD_SIZE;
+    minimapCtx.fillStyle = '#6366f1';
+    minimapCtx.fillRect(player.x * mmScale - 2, player.y * mmScale - 2, 5, 5);
 }
 
 function gameLoop() {
@@ -872,91 +800,6 @@ function gameLoop() {
     requestAnimationFrame(gameLoop);
 }
 
-// --- GUI & CRAFTING UPDATES ---
-function updateHUD() {
-    const hpPct = Math.max(0, (player.hp / player.maxHp) * 100);
-    document.getElementById('hp-bar').style.width = `${hpPct}%`;
-    document.getElementById('hp-text').innerText = `${Math.ceil(player.hp)} / ${player.maxHp}`;
-    document.getElementById('wood-val').innerText = player.wood;
-    document.getElementById('stone-val').innerText = player.stone;
-    document.getElementById('ore-val').innerText = player.ore;
-    document.getElementById('shard-val').innerText = `${player.shards[currentDim]}/5`;
-
-    // Dynamic Quest Tracker Text
-    const questDesc = document.getElementById('quest-desc');
-    const objTag = document.getElementById('objective-tag');
-    if (currentDim === 'overworld') {
-        objTag.innerText = "DIMENSION 1";
-        questDesc.innerHTML = player.unlockedDims.nether ? "Nether Unlocked! Step through the portal button below." : `Open ruin chests to collect <span class="font-bold text-purple-300">5 Overworld Shards</span> (${player.shards.overworld}/5)!`;
-    } else if (currentDim === 'nether') {
-        objTag.innerText = "DIMENSION 2";
-        questDesc.innerHTML = player.unlockedDims.void ? "The Void Unlocked! Step through the portal button below." : `Open Nether ruin chests to collect <span class="font-bold text-purple-300">5 Nether Shards</span> (${player.shards.nether}/5)!`;
-    } else {
-        objTag.innerText = "FINAL REALM";
-        questDesc.innerHTML = "Locate and defeat <span class="font-bold text-rose-400">Boss Xuchen</span> in The Void!";
-    }
-
-    // Portal Buttons Requirement States
-    const btnNether = document.getElementById('btn-nether');
-    if (player.unlockedDims.nether) {
-        btnNether.innerHTML = `<span>🔥</span> Nether`;
-        btnNether.classList.remove('opacity-60');
-    }
-
-    const btnVoid = document.getElementById('btn-void');
-    if (player.unlockedDims.void) {
-        btnVoid.innerHTML = `<span>🔮</span> The Void`;
-        btnVoid.classList.remove('opacity-60');
-    }
-
-    document.getElementById('weapon-val').innerText = player.weapon.name;
-
-    // Real-Time Dynamic Button Crafting State Feedback
-    document.getElementById('craft-spear').disabled = !(player.wood >= 10 && player.stone >= 10);
-    document.getElementById('craft-hammer').disabled = !(player.wood >= 15 && player.ore >= 20);
-    document.getElementById('craft-blade').disabled = !(player.wood >= 25 && player.stone >= 25 && player.ore >= 15);
-    document.getElementById('craft-scythe').disabled = !(player.wood >= 40 && player.stone >= 40 && player.ore >= 30);
-    document.getElementById('craft-heal').disabled = !(player.wood >= 5 && player.stone >= 5);
-}
-
-function showToast(title, message) {
-    const container = document.getElementById('toast-container');
-    const toast = document.createElement('div');
-    toast.className = 'glass-panel animate-toast pointer-events-auto flex items-start gap-3 rounded-2xl p-3.5 shadow-2xl border border-white/15 max-w-sm';
-    toast.innerHTML = `
-        <div class="text-lg">✨</div>
-        <div>
-            <div class="text-xs font-bold text-gray-100">${title}</div>
-            <div class="text-[11px] text-gray-300">${message}</div>
-        </div>
-    `;
-    container.appendChild(toast);
-    setTimeout(() => { toast.remove(); }, 3000);
-}
-
-function craftItem(type) {
-    if (type === 'spear' && player.wood >= 10 && player.stone >= 10) {
-        player.wood -= 10; player.stone -= 10; player.weaponKey = 'spear'; player.weapon = WEAPONS.spear;
-        showToast("🗡️ Weapon Forged", "Stone Spear equipped!");
-    } else if (type === 'hammer' && player.wood >= 15 && player.ore >= 20) {
-        player.wood -= 15; player.ore -= 20; player.weaponKey = 'hammer'; player.weapon = WEAPONS.hammer;
-        showToast("🔨 Weapon Forged", "Ore Sledge equipped!");
-    } else if (type === 'blade' && player.wood >= 25 && player.stone >= 25 && player.ore >= 15) {
-        player.wood -= 25; player.stone -= 25; player.ore -= 15; player.weaponKey = 'blade'; player.weapon = WEAPONS.blade;
-        showToast("⚡ Weapon Forged", "Plasma Sword equipped!");
-    } else if (type === 'scythe' && player.wood >= 40 && player.stone >= 40 && player.ore >= 30) {
-        player.wood -= 40; player.stone -= 40; player.ore -= 30; player.weaponKey = 'scythe'; player.weapon = WEAPONS.scythe;
-        showToast("🔮 Weapon Forged", "Void Scythe equipped!");
-    } else if (type === 'heal' && player.wood >= 5 && player.stone >= 5) {
-        player.wood -= 5; player.stone -= 5; player.hp = Math.min(100, player.hp + 45);
-        showToast("🧪 Vitality Restored", "Recovered +45 HP!");
-    }
-    updateHUD();
-    saveData();
-}
-
-// START LOOP
-updateHUD();
 gameLoop();
 </script>
 </body>
