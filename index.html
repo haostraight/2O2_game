@@ -251,12 +251,12 @@ resizeCanvas();
 window.addEventListener('resize', resizeCanvas);
 
 const WEAPONS = {
-    stick:  { id: 'stick', name: 'Wooden Stick', damage: 20, range: 65, color: '#a3e635' },
-    spear:  { id: 'spear', name: 'Stone Spear', damage: 40, range: 90, color: '#cbd5e1' },
-    hammer: { id: 'hammer', name: 'Ore Sledge', damage: 75, range: 75, color: '#38bdf8' },
-    blade:  { id: 'blade', name: 'Plasma Sword', damage: 120, range: 110, color: '#facc15' },
-    scythe: { id: 'scythe', name: 'Void Scythe', damage: 190, range: 130, color: '#c084fc' },
-    bow:    { id: 'bow', name: 'Frostbite Bow', damage: 95, range: 140, color: '#60a5fa' }
+    stick:  { id: 'stick', name: 'Wooden Stick', damage: 20, range: 65, color: '#a3e635', knockback: 12 },
+    spear:  { id: 'spear', name: 'Stone Spear', damage: 40, range: 90, color: '#cbd5e1', knockback: 18 },
+    hammer: { id: 'hammer', name: 'Ore Sledge', damage: 75, range: 75, color: '#38bdf8', knockback: 30 },
+    blade:  { id: 'blade', name: 'Plasma Sword', damage: 120, range: 110, color: '#facc15', knockback: 22 },
+    scythe: { id: 'scythe', name: 'Void Scythe', damage: 190, range: 130, color: '#c084fc', knockback: 28 },
+    bow:    { id: 'bow', name: 'Frostbite Bow', damage: 95, range: 140, color: '#60a5fa', knockback: 20 }
 };
 
 const ARMORS = {
@@ -441,11 +441,12 @@ function generateDimension(dimKey) {
             id: i,
             x: Math.random() * (WORLD_SIZE - 200) + 100,
             y: Math.random() * (WORLD_SIZE - 200) + 100,
+            vx: 0, vy: 0, // KNOCKBACK VELOCITY
             hp: dimKey === 'overworld' ? 60 : dimKey === 'nether' ? 120 : 220,
             maxHp: dimKey === 'overworld' ? 60 : dimKey === 'nether' ? 120 : 220,
             speed: dimKey === 'overworld' ? 2.2 : 2.8,
             damage: dimKey === 'overworld' ? 8 : 16,
-            radius: 20, // HITBOX RADIUS REMAINS EXACTLY 20
+            radius: 20,
             animOffset: Math.random() * 100,
             faceImage: getRandomEnemyImage()
         });
@@ -500,11 +501,12 @@ setInterval(() => {
                 id: Date.now() + Math.random(),
                 x: pos.x,
                 y: pos.y,
+                vx: 0, vy: 0,
                 hp: dim === 'overworld' ? 60 : dim === 'nether' ? 120 : 220,
                 maxHp: dim === 'overworld' ? 60 : dim === 'nether' ? 120 : 220,
                 speed: dim === 'overworld' ? 2.2 : 2.8,
                 damage: dim === 'overworld' ? 8 : 16,
-                radius: 20, // HITBOX RADIUS REMAINS EXACTLY 20
+                radius: 20,
                 animOffset: Math.random() * 100,
                 faceImage: getRandomEnemyImage()
             });
@@ -625,7 +627,7 @@ function dropItem(e, targetType, targetIndex) {
     saveData();
 }
 
-// OPTIMIZED FAST UI UPDATES (Eliminates lag & DOM rebuild trash)
+// OPTIMIZED FAST UI UPDATES
 function updateHUD() {
     document.getElementById('wood-val').textContent = player.wood;
     document.getElementById('stone-val').textContent = player.stone;
@@ -665,7 +667,6 @@ function updateHUD() {
     renderInventoryUI();
 }
 
-// Isolated ultra-fast health bar update for frame-by-frame updates
 function updateHealthBarOnly() {
     document.getElementById('hp-text').textContent = `${Math.ceil(player.hp)} / ${player.maxHp}`;
     document.getElementById('hp-bar').style.width = `${Math.max(0, (player.hp / player.maxHp) * 100)}%`;
@@ -766,6 +767,13 @@ function performAttack() {
         const dist = Math.hypot(enemy.x - player.x, enemy.y - player.y);
         if (dist <= currentWeapon.range + enemy.radius) {
             enemy.hp -= currentWeapon.damage;
+
+            // APPLY KNOCKBACK FORCE
+            const angle = Math.atan2(enemy.y - player.y, enemy.x - player.x);
+            const kbForce = currentWeapon.knockback || 15;
+            enemy.vx += Math.cos(angle) * kbForce;
+            enemy.vy += Math.sin(angle) * kbForce;
+
             if (enemy.hp <= 0) {
                 currentEnemies.splice(i, 1);
                 player.wood += Math.floor(Math.random() * 3) + 1;
@@ -821,24 +829,31 @@ function update() {
     const screenCenterY = canvas.height / 2;
     player.facingAngle = Math.atan2(mousePos.y - screenCenterY, mousePos.x - screenCenterX);
 
-    // Update attack animation
+    // Update attack animation (FAST SWING WITH REDUCED COOLDOWN)
     if (player.isAttacking) {
-        player.attackAngle += 0.25;
+        player.attackAngle += 0.55; // Accelerated swing speed
         if (player.attackAngle >= Math.PI / 3) {
             player.isAttacking = false;
         }
     }
 
-    // Update Enemies
+    // Update Enemies & Physics
     const currentEnemies = dimEntities[currentDim].enemies;
     let tookDamage = false;
 
     currentEnemies.forEach(enemy => {
+        // Apply Knockback Velocity Physics
+        enemy.x += enemy.vx;
+        enemy.y += enemy.vy;
+        enemy.vx *= 0.82; // Friction decay
+        enemy.vy *= 0.82;
+
+        // Normal AI chasing path
         const angle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
         enemy.x += Math.cos(angle) * enemy.speed;
         enemy.y += Math.sin(angle) * enemy.speed;
 
-        // Collision with player (uses exact same original hitbox radius)
+        // Collision with player
         const dist = Math.hypot(player.x - enemy.x, player.y - enemy.y);
         if (dist < player.radius + enemy.radius) {
             player.hp -= enemy.damage / 60;
@@ -894,7 +909,6 @@ function render() {
         ctx.save();
         ctx.translate(res.x, res.y);
 
-        // Body Circle
         ctx.beginPath();
         ctx.arc(0, 0, res.radius, 0, Math.PI * 2);
         ctx.fillStyle = resDef.color;
@@ -903,13 +917,11 @@ function render() {
         ctx.lineWidth = 3;
         ctx.stroke();
 
-        // Icon
         ctx.font = '16px sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(resDef.emoji, 0, 0);
 
-        // Health Bar
         if (res.hp < res.maxHp) {
             ctx.fillStyle = 'rgba(0,0,0,0.6)';
             ctx.fillRect(-20, -res.radius - 12, 40, 5);
@@ -920,7 +932,7 @@ function render() {
         ctx.restore();
     });
 
-    // Render Enemies (Visually scaled UP while keeping hitboxes identical)
+    // Render Enemies
     const currentEnemies = dimEntities[currentDim].enemies;
     const mobDef = MOB_TYPES[currentDim];
     
@@ -928,16 +940,13 @@ function render() {
         ctx.save();
         ctx.translate(enemy.x, enemy.y);
 
-        // Visual radius enlarged (1.6x larger visually, hitbox stays original 20)
         const visualRadius = enemy.radius * 1.6;
 
-        // Outer Glow / Border Ring
         ctx.beginPath();
         ctx.arc(0, 0, visualRadius + 2, 0, Math.PI * 2);
         ctx.fillStyle = mobDef.borderColor;
         ctx.fill();
 
-        // Circular Face Image Clipping
         ctx.beginPath();
         ctx.arc(0, 0, visualRadius, 0, Math.PI * 2);
         ctx.clip();
@@ -979,7 +988,6 @@ function render() {
     ctx.save();
     ctx.translate(player.x, player.y);
 
-    // Player Circle
     ctx.beginPath();
     ctx.arc(0, 0, player.radius, 0, Math.PI * 2);
     ctx.fillStyle = '#6366f1';
@@ -1002,7 +1010,7 @@ function render() {
 
     ctx.restore();
 
-    ctx.restore(); // Restore camera
+    ctx.restore();
 }
 
 function gameLoop() {
