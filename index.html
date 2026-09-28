@@ -226,6 +226,19 @@
 </div>
 
 <script>
+// ==========================================
+// ANIMATION & TWEAK CONFIGURATION
+// Easily adjust values here to change feel
+// ==========================================
+const ANIMATION_SETTINGS = {
+    weaponSwingAngle: Math.PI / 2, // Total arc angle of swing (90 degrees)
+    weaponSwingSpeed: 0.15,        // Attack swing speed (0 to 1 per frame)
+    mobWalkWobbleSpeed: 0.015,     // Frequency of mob walk wobble
+    mobWalkWobbleAmount: 0.25,     // Max tilt angle (radians) during mob walk
+    mobIdleBobSpeed: 0.005,        // Idle bounce speed
+    mobIdleBobAmount: 3            // Idle bounce amplitude (pixels)
+};
+
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const minimapCanvas = document.getElementById('minimapCanvas');
@@ -249,15 +262,15 @@ const WEAPONS = {
     scythe: { id: 'scythe', name: 'Void Scythe', damage: 190, range: 130, rarity: 'Mythic', color: '#c084fc' }
 };
 
-// MATCHED EXACTLY TO LOWERCASE GITHUB REPO FILE NAMES
+// MOBS CONFIG: Added 'size' parameter distinct from 'radius' (hitbox)
 const MOBS_CONFIG = {
-    gerard:  { name: 'Gerard', spriteSrc: 'images/gerard.jpeg', hp: 100, speed: 2.8, radius: 24, damage: 0.25, fallbackColor: '#ef4444' },
-    jason:   { name: 'Jason', spriteSrc: 'images/jason.jpeg', hp: 130, speed: 2.5, radius: 24, damage: 0.35, fallbackColor: '#f97316' },
-    liuji:   { name: 'Liu Ji', spriteSrc: 'images/liu-ji.jpeg', hp: 220, speed: 1.8, radius: 28, damage: 0.55, fallbackColor: '#dc2626' },
-    matthew: { name: 'Matthew', spriteSrc: 'images/matthew.jpeg', hp: 200, speed: 2.7, radius: 26, damage: 0.45, fallbackColor: '#b91c1c' },
-    travia:  { name: 'Travia', spriteSrc: 'images/travia.jpeg', hp: 280, speed: 2.2, radius: 26, damage: 0.60, fallbackColor: '#9333ea' },
-    xayven:  { name: 'Xayven', spriteSrc: 'images/xayven.jpeg', hp: 350, speed: 3.0, radius: 30, damage: 0.75, fallbackColor: '#7e22ce' },
-    xuchen:  { name: 'Xuchen', spriteSrc: 'images/xuchen.jpeg', hp: 1250, speed: 1.5, radius: 46, damage: 1.20, fallbackColor: '#a855f7', isBoss: true }
+    gerard:  { name: 'Gerard', spriteSrc: 'images/gerard.jpeg', hp: 100, speed: 2.8, radius: 20, size: 30, damage: 0.25, fallbackColor: '#ef4444' },
+    jason:   { name: 'Jason', spriteSrc: 'images/jason.jpeg', hp: 130, speed: 2.5, radius: 22, size: 32, damage: 0.35, fallbackColor: '#f97316' },
+    liuji:   { name: 'Liu Ji', spriteSrc: 'images/liu-ji.jpeg', hp: 220, speed: 1.8, radius: 25, size: 38, damage: 0.55, fallbackColor: '#dc2626' },
+    matthew: { name: 'Matthew', spriteSrc: 'images/matthew.jpeg', hp: 200, speed: 2.7, radius: 24, size: 36, damage: 0.45, fallbackColor: '#b91c1c' },
+    travia:  { name: 'Travia', spriteSrc: 'images/travia.jpeg', hp: 280, speed: 2.2, radius: 25, size: 36, damage: 0.60, fallbackColor: '#9333ea' },
+    xayven:  { name: 'Xayven', spriteSrc: 'images/xayven.jpeg', hp: 350, speed: 3.0, radius: 28, size: 40, damage: 0.75, fallbackColor: '#7e22ce' },
+    xuchen:  { name: 'Xuchen', spriteSrc: 'images/xuchen.jpeg', hp: 1250, speed: 1.5, radius: 40, size: 58, damage: 1.20, fallbackColor: '#a855f7', isBoss: true }
 };
 
 const loadedSprites = {};
@@ -434,8 +447,10 @@ function initWorld() {
             const base = MOBS_CONFIG[mKey];
             dimEntities[dim].enemies.push({
                 key: mKey, x: Math.random() * WORLD_SIZE, y: Math.random() * WORLD_SIZE,
-                hp: base.hp, maxHp: base.hp, radius: base.radius, speed: base.speed,
-                damage: base.damage, name: base.name, hitFlash: 0
+                hp: base.hp, maxHp: base.hp,
+                radius: base.radius, size: base.size, // Radius = Hitbox, Size = Appearance
+                speed: base.speed, damage: base.damage, name: base.name, hitFlash: 0,
+                isMoving: false, animTime: Math.random() * 100
             });
         }
     });
@@ -507,6 +522,7 @@ function craftItem(itemKey) {
 canvas.addEventListener('pointerdown', () => {
     if (player.hp <= 0) return;
 
+    // Trigger swing animation cycle
     player.isAttacking = true;
     player.attackProgress = 0;
 
@@ -562,6 +578,7 @@ canvas.addEventListener('pointerdown', () => {
     });
 
     currentData.enemies.forEach((enemy, index) => {
+        // Hitbox collision uses enemy.radius
         if (Math.hypot(enemy.x - player.x, enemy.y - player.y) <= player.weapon.range + enemy.radius) {
             let isCrit = Math.random() < 0.25;
             let dmg = isCrit ? Math.floor(player.weapon.damage * 1.5) : player.weapon.damage;
@@ -611,6 +628,15 @@ function respawnPlayer() {
 function update() {
     if (player.hp <= 0) return;
 
+    // Advance attack swing animation
+    if (player.isAttacking) {
+        player.attackProgress += ANIMATION_SETTINGS.weaponSwingSpeed;
+        if (player.attackProgress >= 1) {
+            player.attackProgress = 0;
+            player.isAttacking = false;
+        }
+    }
+
     let dx = 0, dy = 0;
     if (keys['w'] || keys['arrowup']) dy -= 1;
     if (keys['s'] || keys['arrowdown']) dy += 1;
@@ -638,14 +664,19 @@ function update() {
 
     currentData.enemies.forEach(enemy => {
         if (enemy.hitFlash > 0) enemy.hitFlash--;
+        enemy.animTime += 1;
 
         const dist = Math.hypot(player.x - enemy.x, player.y - enemy.y);
         if (dist < 500) {
+            enemy.isMoving = true;
             const angle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
             enemy.x += Math.cos(angle) * enemy.speed;
             enemy.y += Math.sin(angle) * enemy.speed;
+        } else {
+            enemy.isMoving = false;
         }
 
+        // Damage detection using hitbox radius
         if (dist < player.radius + enemy.radius) {
             player.hp -= enemy.damage;
             triggerDamageFlash();
@@ -655,16 +686,13 @@ function update() {
     });
 }
 
-// FIXED: WORLD-ANCHORED BIOME TILING
 function drawBiomeSquare(x, y, w, h, biome, camX, camY) {
     const rx = x - camX, ry = y - camY;
     if (rx + w < 0 || rx > canvas.width || ry + h < 0 || ry > canvas.height) return;
     
-    // Solid Biome Base
     ctx.fillStyle = biome.bg;
     ctx.fillRect(rx, ry, w, h);
 
-    // Grid lines tied to WORLD coordinates (not screen coordinates)
     ctx.strokeStyle = biome.grid;
     ctx.lineWidth = 1.5;
     const step = 120;
@@ -697,17 +725,14 @@ function drawResource(res, rx, ry) {
     ctx.scale(res.scale, res.scale);
 
     if (res.type === 'tree') {
-        // Shadow
         ctx.fillStyle = 'rgba(0,0,0,0.25)';
         ctx.beginPath();
         ctx.ellipse(0, 18, 22, 10, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        // Trunk
         ctx.fillStyle = '#78350f';
         ctx.fillRect(-5, -5, 10, 22);
 
-        // Pine Foliage
         ctx.fillStyle = '#047857';
         ctx.beginPath(); ctx.arc(0, -12, 22, 0, Math.PI * 2); ctx.fill();
 
@@ -797,7 +822,7 @@ function draw() {
 
     const dimConfig = DIMENSIONS[currentDim];
 
-    // Render Biome Terrain & World-Grounded Grid
+    // Terrain & World Grid
     drawBiomeSquare(0, 0, HALF_WORLD, HALF_WORLD, dimConfig.biomes[0], cameraX, cameraY);
     drawBiomeSquare(HALF_WORLD, 0, HALF_WORLD, HALF_WORLD, dimConfig.biomes[1], cameraX, cameraY);
     drawBiomeSquare(0, HALF_WORLD, HALF_WORLD, HALF_WORLD, dimConfig.biomes[2], cameraX, cameraY);
@@ -805,10 +830,10 @@ function draw() {
 
     const currentData = dimEntities[currentDim];
 
-    // Render Ruins
+    // Structures
     currentData.structures.forEach(struct => drawStructure(struct, cameraX, cameraY));
 
-    // Render Resources
+    // Resources
     currentData.resources.forEach(res => {
         const rx = res.x - cameraX, ry = res.y - cameraY;
         if (rx >= -40 && rx <= canvas.width + 40 && ry >= -40 && ry <= canvas.height + 40) {
@@ -816,37 +841,51 @@ function draw() {
         }
     });
 
-    // Render Enemies
+    // Enemies with Walk Wobble & Size Scaling
     currentData.enemies.forEach(enemy => {
         const ex = enemy.x - cameraX, ey = enemy.y - cameraY;
-        if (ex < -50 || ex > canvas.width + 50 || ey < -50 || ey > canvas.height + 50) return;
+        if (ex < -80 || ex > canvas.width + 80 || ey < -80 || ey > canvas.height + 80) return;
 
         const sprite = loadedSprites[enemy.key];
+        const displaySize = enemy.size || enemy.radius; // Uses size for visual appearance
 
+        // Calculate wobble/bobbing animation offsets
+        let wobbleAngle = 0;
+        let bobY = 0;
+        if (enemy.isMoving) {
+            wobbleAngle = Math.sin(enemy.animTime * ANIMATION_SETTINGS.mobWalkWobbleSpeed) * ANIMATION_SETTINGS.mobWalkWobbleAmount;
+        } else {
+            bobY = Math.sin(enemy.animTime * ANIMATION_SETTINGS.mobIdleBobSpeed) * ANIMATION_SETTINGS.mobIdleBobAmount;
+        }
+
+        // Shadow
         ctx.fillStyle = 'rgba(0,0,0,0.35)';
         ctx.beginPath();
-        ctx.ellipse(ex, ey + enemy.radius * 0.8, enemy.radius * 0.9, enemy.radius * 0.4, 0, 0, Math.PI * 2);
+        ctx.ellipse(ex, ey + displaySize * 0.8, displaySize * 0.8, displaySize * 0.35, 0, 0, Math.PI * 2);
         ctx.fill();
 
+        ctx.save();
+        ctx.translate(ex, ey + bobY);
+        ctx.rotate(wobbleAngle);
+
         if (sprite && sprite.isLoaded) {
-            ctx.save();
             ctx.beginPath();
-            ctx.arc(ex, ey, enemy.radius, 0, Math.PI * 2);
+            ctx.arc(0, 0, displaySize, 0, Math.PI * 2);
             ctx.clip();
-            ctx.drawImage(sprite, ex - enemy.radius, ey - enemy.radius, enemy.radius * 2, enemy.radius * 2);
-            ctx.restore();
+            ctx.drawImage(sprite, -displaySize, -displaySize, displaySize * 2, displaySize * 2);
 
             ctx.strokeStyle = enemy.hitFlash > 0 ? '#ffffff' : 'rgba(255,255,255,0.4)';
             ctx.lineWidth = 2;
             ctx.beginPath();
-            ctx.arc(ex, ey, enemy.radius, 0, Math.PI * 2);
+            ctx.arc(0, 0, displaySize, 0, Math.PI * 2);
             ctx.stroke();
         } else {
             ctx.fillStyle = enemy.hitFlash > 0 ? '#ffffff' : MOBS_CONFIG[enemy.key].fallbackColor;
             ctx.beginPath();
-            ctx.arc(ex, ey, enemy.radius, 0, Math.PI * 2);
+            ctx.arc(0, 0, displaySize, 0, Math.PI * 2);
             ctx.fill();
         }
+        ctx.restore();
 
         // Enemy Name
         ctx.font = 'bold 11px "Plus Jakarta Sans", sans-serif';
@@ -854,15 +893,15 @@ function draw() {
         ctx.fillStyle = '#f3f4f6';
         ctx.shadowColor = '#000000';
         ctx.shadowBlur = 4;
-        ctx.fillText(enemy.name, ex, ey - enemy.radius - 14);
+        ctx.fillText(enemy.name, ex, ey - displaySize - 14 + bobY);
         ctx.shadowBlur = 0;
 
         // Health Bar
-        const barWidth = Math.max(36, enemy.radius * 1.6);
+        const barWidth = Math.max(36, displaySize * 1.6);
         ctx.fillStyle = 'rgba(0,0,0,0.6)';
-        ctx.fillRect(ex - barWidth / 2, ey - enemy.radius - 9, barWidth, 5);
+        ctx.fillRect(ex - barWidth / 2, ey - displaySize - 9 + bobY, barWidth, 5);
         ctx.fillStyle = '#ef4444';
-        ctx.fillRect(ex - barWidth / 2, ey - enemy.radius - 9, (Math.max(0, enemy.hp) / enemy.maxHp) * barWidth, 5);
+        ctx.fillRect(ex - barWidth / 2, ey - displaySize - 9 + bobY, (Math.max(0, enemy.hp) / enemy.maxHp) * barWidth, 5);
     });
 
     // Particles
@@ -875,11 +914,12 @@ function draw() {
         ctx.globalAlpha = 1.0;
     });
 
-    // Player
+    // Player & Weapon Swing Animation
     const px = canvas.width / 2, py = canvas.height / 2;
     ctx.save();
     ctx.translate(px, py);
 
+    // Player Shadow
     ctx.fillStyle = 'rgba(0,0,0,0.35)';
     ctx.beginPath();
     ctx.ellipse(0, 14, player.radius * 0.9, player.radius * 0.4, 0, 0, Math.PI * 2);
@@ -887,14 +927,39 @@ function draw() {
 
     ctx.rotate(player.facingAngle);
 
+    // Dynamic weapon swing calculation
+    let currentSwingOffset = 0;
+    if (player.isAttacking) {
+        const halfArc = ANIMATION_SETTINGS.weaponSwingAngle / 2;
+        currentSwingOffset = -halfArc + (player.attackProgress * ANIMATION_SETTINGS.weaponSwingAngle);
+    }
+
+    ctx.save();
+    ctx.rotate(currentSwingOffset);
+
+    // Draw Weapon
     ctx.strokeStyle = player.weapon.color;
-    ctx.lineWidth = 6;
+    ctx.lineWidth = player.isAttacking ? 8 : 6;
     ctx.lineCap = 'round';
     ctx.beginPath();
     ctx.moveTo(0, 0);
     ctx.lineTo(player.weapon.range, 0);
     ctx.stroke();
 
+    // Weapon Swing Arc Trail Effect
+    if (player.isAttacking) {
+        ctx.fillStyle = player.weapon.color;
+        ctx.globalAlpha = 0.25;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, player.weapon.range, -ANIMATION_SETTINGS.weaponSwingAngle / 2, currentSwingOffset, false);
+        ctx.closePath();
+        ctx.fill();
+        ctx.globalAlpha = 1.0;
+    }
+    ctx.restore();
+
+    // Player Body
     ctx.fillStyle = '#6366f1';
     ctx.beginPath();
     ctx.arc(0, 0, player.radius, 0, Math.PI * 2);
@@ -904,6 +969,7 @@ function draw() {
     ctx.lineWidth = 3;
     ctx.stroke();
 
+    // Player Eyes
     ctx.fillStyle = '#ffffff';
     ctx.beginPath();
     ctx.arc(6, -5, 3.5, 0, Math.PI * 2);
