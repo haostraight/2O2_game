@@ -119,6 +119,11 @@
             text-overflow: ellipsis;
             max-width: 52px;
         }
+
+        /* Custom style for range sliders */
+        input[type=range] {
+            accent-color: #6366f1;
+        }
     </style>
 </head>
 <body class="relative min-h-screen select-none overflow-hidden bg-gray-950 font-sans text-gray-100">
@@ -199,20 +204,65 @@
         <div id="action-hotbar" class="flex items-center gap-1"></div>
     </div>
 
-    <!-- CRAFTING PANEL BUTTON & DROPDOWN -->
+    <!-- CRAFTING & MOB TUNING PANEL -->
     <div class="pointer-events-auto relative">
         <button onclick="toggleCraftingPanel()" class="glass-panel flex items-center gap-2 rounded-2xl px-3 py-2 font-display text-xs font-bold text-indigo-300 border-indigo-500/30 hover:border-indigo-400 transition-all">
-            🔨 Crafting Matrix
+            🔨 Matrix & Mob Modifiers
         </button>
 
         <div id="crafting-panel" class="glass-panel pointer-events-auto absolute top-12 right-0 hidden w-80 rounded-2xl p-4 shadow-2xl">
             <div class="mb-3 flex items-center justify-between border-b border-white/10 pb-2">
-                <span class="font-display text-xs font-bold tracking-wider text-gray-200 uppercase">CRAFTING MATRIX</span>
+                <span class="font-display text-xs font-bold tracking-wider text-gray-200 uppercase">CRAFTING & MOB TUNER</span>
                 <button onclick="resetGameData()" class="rounded bg-rose-600/30 px-2 py-0.5 text-[10px] font-extrabold text-rose-300 border border-rose-500/40 hover:bg-rose-600/60 transition-all">
                     RESET DATA
                 </button>
             </div>
-            <div id="compact-craft-list" class="flex flex-col gap-2 max-h-72 overflow-y-auto pr-1"></div>
+
+            <!-- CRAFTING LIST -->
+            <div class="text-[10px] font-bold text-indigo-300 mb-1">CRAFTING MATRIX</div>
+            <div id="compact-craft-list" class="flex flex-col gap-2 max-h-48 overflow-y-auto pr-1 mb-4 border-b border-white/10 pb-3"></div>
+
+            <!-- MOB CONFIGURATION CONTROLS -->
+            <div class="text-[10px] font-bold text-amber-300 mb-2">⚙️ SPECIAL MOB STAT TUNER</div>
+            <div class="flex flex-col gap-2.5 text-xs">
+                <!-- Ranged Mob Controls -->
+                <div class="rounded-xl border border-rose-500/30 bg-rose-950/20 p-2">
+                    <div class="font-semibold text-rose-300 mb-1.5 text-[11px]">🎯 Ranged Mobs (Liu-Ji / Xayven)</div>
+                    <div class="mb-1.5">
+                        <div class="flex justify-between text-[10px] text-gray-300">
+                            <span>Projectile Speed:</span>
+                            <span id="proj-speed-val" class="font-mono text-indigo-300">6</span>
+                        </div>
+                        <input type="range" id="proj-speed-input" min="3" max="15" step="1" value="6" oninput="updateMobConfig()" class="w-full h-1 bg-gray-700 rounded-lg cursor-pointer">
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-[10px] text-gray-300">
+                            <span>Shot Cooldown (frames):</span>
+                            <span id="proj-cooldown-val" class="font-mono text-indigo-300">90</span>
+                        </div>
+                        <input type="range" id="proj-cooldown-input" min="20" max="180" step="10" value="90" oninput="updateMobConfig()" class="w-full h-1 bg-gray-700 rounded-lg cursor-pointer">
+                    </div>
+                </div>
+
+                <!-- Exploding Mob Controls -->
+                <div class="rounded-xl border border-amber-500/30 bg-amber-950/20 p-2">
+                    <div class="font-semibold text-amber-300 mb-1.5 text-[11px]">💥 Exploding Mobs (Jason / Travia)</div>
+                    <div class="mb-1.5">
+                        <div class="flex justify-between text-[10px] text-gray-300">
+                            <span>Explosion Radius:</span>
+                            <span id="exp-radius-val" class="font-mono text-indigo-300">130</span>
+                        </div>
+                        <input type="range" id="exp-radius-input" min="60" max="300" step="10" value="130" oninput="updateMobConfig()" class="w-full h-1 bg-gray-700 rounded-lg cursor-pointer">
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-[10px] text-gray-300">
+                            <span>Explosion Damage:</span>
+                            <span id="exp-dmg-val" class="font-mono text-indigo-300">50</span>
+                        </div>
+                        <input type="range" id="exp-dmg-input" min="10" max="150" step="5" value="50" oninput="updateMobConfig()" class="w-full h-1 bg-gray-700 rounded-lg cursor-pointer">
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -314,6 +364,38 @@ let DIMENSION_SHARDS = {
     nether:    { name: 'Crimson Shard', label: '🔥 Crimson Shards', req: 10, unlock: 'void' },
     void:      { name: 'Astral Shard',  label: '✨ Astral Shards', req: 10, unlock: null }
 };
+
+// DYNAMIC SPECIAL MOB TUNING SETTINGS
+let specialMobConfig = {
+    projSpeed: 6,
+    projInterval: 90,
+    expRadius: 130,
+    expDamage: 50
+};
+
+function updateMobConfig() {
+    specialMobConfig.projSpeed = parseInt(document.getElementById('proj-speed-input').value);
+    specialMobConfig.projInterval = parseInt(document.getElementById('proj-cooldown-input').value);
+    specialMobConfig.expRadius = parseInt(document.getElementById('exp-radius-input').value);
+    specialMobConfig.expDamage = parseInt(document.getElementById('exp-dmg-input').value);
+
+    document.getElementById('proj-speed-val').textContent = specialMobConfig.projSpeed;
+    document.getElementById('proj-cooldown-val').textContent = specialMobConfig.projInterval;
+    document.getElementById('exp-radius-val').textContent = specialMobConfig.expRadius;
+    document.getElementById('exp-dmg-val').textContent = specialMobConfig.expDamage;
+
+    // Apply live updates to existing active mobs in game
+    Object.keys(dimEntities).forEach(dim => {
+        dimEntities[dim].enemies.forEach(mob => {
+            if (mob instanceof RangedMob) {
+                mob.shootInterval = specialMobConfig.projInterval;
+            } else if (mob instanceof ExplodingMob) {
+                mob.explosionRadius = specialMobConfig.expRadius;
+                mob.explosionDamage = specialMobConfig.expDamage;
+            }
+        });
+    });
+}
 
 // =============================================================================
 // PARTICLE SYSTEM CLASSES
@@ -487,9 +569,9 @@ class Mob extends Entity {
         this.imageName = config.imageName;
         this.color = config.color;
         this.borderColor = config.borderColor;
-        this.maxHp = config.hp; // DIRECT HARDCODED VALUE
+        this.maxHp = config.hp;
         this.hp = this.maxHp;
-        this.damage = config.damage; // DIRECT HARDCODED VALUE
+        this.damage = config.damage;
         this.speed = config.speed;
         this.visualRadius = config.visualRadius;
         this.shardDropChance = config.shardDropChance;
@@ -571,7 +653,7 @@ class RangedMob extends Mob {
     constructor(x, y, config) {
         super(x, y, config);
         this.shootCooldown = 0;
-        this.shootInterval = config.shootInterval || 120;
+        this.shootInterval = specialMobConfig.projInterval;
         this.preferredDist = 250;
     }
 
@@ -597,7 +679,12 @@ class RangedMob extends Mob {
         this.shootCooldown++;
         if (this.shootCooldown >= this.shootInterval && dist < 500) {
             this.shootCooldown = 0;
-            projectiles.push(new Projectile(this.x, this.y, player.x, player.y, 6, Math.round(this.damage * 0.8), '#f43f5e'));
+            projectiles.push(new Projectile(
+                this.x, this.y, player.x, player.y,
+                specialMobConfig.projSpeed,
+                Math.round(this.damage * 0.8),
+                '#f43f5e'
+            ));
             vfx.createTrail(this.x, this.y, '#f43f5e', 8);
         }
     }
@@ -606,8 +693,8 @@ class RangedMob extends Mob {
 class ExplodingMob extends Mob {
     constructor(x, y, config) {
         super(x, y, config);
-        this.explosionRadius = config.explosionRadius || 120;
-        this.explosionDamage = config.explosionDamage || 60;
+        this.explosionRadius = specialMobConfig.expRadius;
+        this.explosionDamage = specialMobConfig.expDamage;
     }
 
     onDeath(dimension, player) {
@@ -624,10 +711,10 @@ class ExplodingMob extends Mob {
     render(ctx) {
         super.render(ctx);
         ctx.beginPath();
-        ctx.arc(this.x, this.y, this.visualRadius + 4, 0, Math.PI * 2);
-        ctx.strokeStyle = '#f97316';
-        ctx.lineWidth = 2;
-        ctx.setLineDash([4, 4]);
+        ctx.arc(this.x, this.y, this.explosionRadius, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(249, 115, 22, 0.4)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([6, 6]);
         ctx.stroke();
         ctx.setLineDash([]);
     }
@@ -822,19 +909,19 @@ class Player extends Entity {
     }
 }
 
-// DIRECT HARDCODED MOB TEMPLATES AND STATS
+// HARDCODED MOB TEMPLATES
 const MOB_TEMPLATES = {
     overworld: [
         { classType: Mob, config: { name: 'Gerard', imageName: 'Gerard', color: '#15803d', borderColor: '#4ade80', hp: 100, damage: 12, speed: 2.2, shardDropChance: 0.25, hitboxRadius: 22, visualRadius: 33 } },
-        { classType: ExplodingMob, config: { name: 'Jason (Exploder)', imageName: 'Jason', color: '#047857', borderColor: '#34d399', hp: 130, damage: 20, speed: 2.5, shardDropChance: 0.35, hitboxRadius: 24, visualRadius: 36, explosionRadius: 130, explosionDamage: 50 } }
+        { classType: ExplodingMob, config: { name: 'Jason', imageName: 'Jason', color: '#047857', borderColor: '#34d399', hp: 130, damage: 20, speed: 2.5, shardDropChance: 0.35, hitboxRadius: 24, visualRadius: 36 } }
     ],
     nether: [
-        { classType: RangedMob, config: { name: 'Liu-Ji (Ranged)', imageName: 'Liu-Ji', color: '#b91c1c', borderColor: '#fca5a5', hp: 220, damage: 32, speed: 2.4, shardDropChance: 0.4, hitboxRadius: 26, visualRadius: 39, shootInterval: 90 } },
+        { classType: RangedMob, config: { name: 'Liu-Ji', imageName: 'Liu-Ji', color: '#b91c1c', borderColor: '#fca5a5', hp: 220, damage: 32, speed: 2.4, shardDropChance: 0.4, hitboxRadius: 26, visualRadius: 39 } },
         { classType: Mob, config: { name: 'Matthew', imageName: 'Matthew', color: '#c2410c', borderColor: '#fdba74', hp: 190, damage: 28, speed: 3.1, shardDropChance: 0.3, hitboxRadius: 22, visualRadius: 33 } },
-        { classType: ExplodingMob, config: { name: 'Travia (Exploder)', imageName: 'Travia', color: '#9a3412', borderColor: '#fb923c', hp: 200, damage: 36, speed: 2.9, shardDropChance: 0.35, hitboxRadius: 25, visualRadius: 37.5, explosionRadius: 150, explosionDamage: 75 } }
+        { classType: ExplodingMob, config: { name: 'Travia', imageName: 'Travia', color: '#9a3412', borderColor: '#fb923c', hp: 200, damage: 36, speed: 2.9, shardDropChance: 0.35, hitboxRadius: 25, visualRadius: 37.5 } }
     ],
     void: [
-        { classType: RangedMob, config: { name: 'Xayven (Ranged)', imageName: 'Xayven', color: '#581c87', borderColor: '#e9d5ff', hp: 400, damage: 48, speed: 2.8, shardDropChance: 0.5, hitboxRadius: 30, visualRadius: 45, shootInterval: 70 } },
+        { classType: RangedMob, config: { name: 'Xayven', imageName: 'Xayven', color: '#581c87', borderColor: '#e9d5ff', hp: 400, damage: 48, speed: 2.8, shardDropChance: 0.5, hitboxRadius: 30, visualRadius: 45 } },
         { classType: Mob, config: { name: 'Xuchen', imageName: 'Xuchen', color: '#312e81', borderColor: '#a5b4fc', hp: 360, damage: 56, speed: 3.5, shardDropChance: 0.45, hitboxRadius: 28, visualRadius: 42 } }
     ]
 };
