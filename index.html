@@ -57,10 +57,9 @@
         ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.5); border-radius: 99px; }
         ::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.5); border-radius: 99px; }
 
-        /* ROBLOX-STYLE HOTBAR SLOTS WITH TEXT LABELS */
         .roblox-slot {
-            width: 72px;
-            height: 64px;
+            width: 58px;
+            height: 54px;
             position: relative;
             background: rgba(15, 23, 42, 0.85);
             border: 2px solid rgba(255, 255, 255, 0.2);
@@ -83,14 +82,14 @@
             border-color: #38bdf8;
             box-shadow: 0 0 18px rgba(56, 189, 248, 0.8);
             background: rgba(14, 116, 144, 0.6);
-            transform: translateY(-4px);
+            transform: translateY(-2px);
         }
 
         .roblox-key-num {
             position: absolute;
             top: 2px;
-            left: 5px;
-            font-size: 10px;
+            left: 4px;
+            font-size: 9px;
             font-weight: 900;
             color: rgba(255, 255, 255, 0.7);
             font-family: var(--font-display);
@@ -100,16 +99,16 @@
             position: absolute;
             top: 2px;
             right: 4px;
-            font-size: 10px;
+            font-size: 9px;
             font-weight: 800;
             color: #38bdf8;
             background: rgba(0, 0, 0, 0.8);
-            padding: 0 4px;
+            padding: 0 3px;
             border-radius: 4px;
         }
 
         .slot-title {
-            font-size: 9px;
+            font-size: 8px;
             font-weight: 700;
             color: #e2e8f0;
             text-align: center;
@@ -118,104 +117,111 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            max-width: 66px;
+            max-width: 52px;
         }
     </style>
 </head>
 <body class="relative min-h-screen select-none overflow-hidden bg-gray-950 font-sans text-gray-100">
 
 <canvas id="gameCanvas"></canvas>
-<div id="toast-container" class="pointer-events-none absolute top-6 left-1/2 z-30 flex -translate-x-1/2 flex-col items-center gap-2"></div>
+<div id="toast-container" class="pointer-events-none absolute top-4 left-1/2 z-40 flex -translate-x-1/2 flex-col items-center gap-2"></div>
 
 <!-- CHEST INTERACTION PROMPT -->
-<div id="chest-prompt" class="pointer-events-none fixed bottom-28 left-1/2 z-30 hidden -translate-x-1/2 rounded-full border border-amber-400/40 bg-slate-900/90 px-5 py-2 text-xs font-bold text-amber-300 shadow-2xl backdrop-blur-md">
+<div id="chest-prompt" class="pointer-events-none fixed bottom-20 left-1/2 z-30 hidden -translate-x-1/2 rounded-full border border-amber-400/40 bg-slate-900/90 px-5 py-2 text-xs font-bold text-amber-300 shadow-2xl backdrop-blur-md">
     📦 Press <span class="rounded bg-amber-500/20 px-2 py-0.5 text-white border border-amber-400/50">[E]</span> to Open Loot Chest
 </div>
 
-<!-- REFRESHED SURVIVOR HUD -->
-<div id="stats-hud" class="glass-panel glass-panel-glow pointer-events-auto absolute top-5 left-5 z-20 w-80 rounded-2xl p-4">
-    <div class="mb-3 flex items-center justify-between border-b border-white/10 pb-2">
-        <div class="flex items-center gap-2">
-            <span class="inline-block h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]"></span>
-            <span class="font-display text-xs font-bold tracking-widest text-gray-300 uppercase">SURVIVOR STATUS</span>
+<!-- TOP BAR: SURVIVOR HUD (LEFT) & HOTBAR (CENTER) -->
+<div class="pointer-events-none absolute top-4 left-4 right-4 z-30 flex items-start justify-between gap-4">
+    <!-- SURVIVOR HUD -->
+    <div id="stats-hud" class="glass-panel glass-panel-glow pointer-events-auto w-72 rounded-2xl p-3">
+        <div class="mb-2 flex items-center justify-between border-b border-white/10 pb-1.5">
+            <div class="flex items-center gap-2">
+                <span class="inline-block h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]"></span>
+                <span class="font-display text-[11px] font-bold tracking-widest text-gray-300 uppercase">SURVIVOR STATUS</span>
+            </div>
+            <button onclick="toggleBackpack()" class="rounded-lg bg-indigo-600/30 px-2 py-0.5 text-[10px] font-bold text-indigo-300 border border-indigo-400/30 hover:bg-indigo-600/50 transition-all">
+                🎒 Backpack [`]
+            </button>
         </div>
-        <button onclick="toggleBackpack()" class="rounded-lg bg-indigo-600/30 px-2.5 py-1 text-xs font-bold text-indigo-300 border border-indigo-400/30 hover:bg-indigo-600/50 transition-all">
-            🎒 Backpack [`]
-        </button>
-    </div>
 
-    <!-- Health Bar -->
-    <div class="relative mb-3.5">
-        <div class="mb-1 flex items-center justify-between text-xs font-bold">
-            <span class="text-rose-400">HEALTH</span>
-            <span id="hp-text" class="text-gray-200">100 / 100</span>
+        <!-- Health Bar -->
+        <div class="relative mb-2">
+            <div class="mb-0.5 flex items-center justify-between text-[11px] font-bold">
+                <span class="text-rose-400">HEALTH</span>
+                <span id="hp-text" class="text-gray-200">100 / 100</span>
+            </div>
+            <div class="relative h-3 w-full overflow-hidden rounded-full border border-white/10 bg-black/50 p-0.5">
+                <div id="hp-bar" class="h-full w-full rounded-full bg-gradient-to-r from-rose-600 via-rose-500 to-amber-500 transition-all duration-150"></div>
+            </div>
         </div>
-        <div class="relative h-4 w-full overflow-hidden rounded-full border border-white/10 bg-black/50 p-0.5">
-            <div id="hp-bar" class="h-full w-full rounded-full bg-gradient-to-r from-rose-600 via-rose-500 to-amber-500 transition-all duration-150"></div>
-        </div>
-    </div>
 
-    <!-- Resource Grid (Clear Labels) -->
-    <div class="mb-3 grid grid-cols-2 gap-2 text-left">
-        <div class="rounded-lg border border-white/10 bg-white/[0.04] p-2 flex items-center justify-between">
-            <span class="text-xs text-gray-300 font-medium">🪵 Wood</span>
-            <span id="wood-val" class="font-display text-sm font-bold text-amber-300">0</span>
+        <!-- Resource Grid -->
+        <div class="mb-2 grid grid-cols-2 gap-1.5 text-left">
+            <div class="rounded-lg border border-white/10 bg-white/[0.04] p-1.5 flex items-center justify-between">
+                <span class="text-[11px] text-gray-300 font-medium">🪵 Wood</span>
+                <span id="wood-val" class="font-display text-xs font-bold text-amber-300">0</span>
+            </div>
+            <div class="rounded-lg border border-white/10 bg-white/[0.04] p-1.5 flex items-center justify-between">
+                <span class="text-[11px] text-gray-300 font-medium">🪨 Stone</span>
+                <span id="stone-val" class="font-display text-xs font-bold text-slate-300">0</span>
+            </div>
+            <div class="rounded-lg border border-white/10 bg-white/[0.04] p-1.5 flex items-center justify-between">
+                <span class="text-[11px] text-gray-300 font-medium">💎 Ore</span>
+                <span id="ore-val" class="font-display text-xs font-bold text-cyan-300">0</span>
+            </div>
+            <div class="rounded-lg border border-purple-500/30 bg-purple-950/40 p-1.5 flex items-center justify-between">
+                <span id="shard-label" class="text-[11px] text-purple-200 font-medium">🌿 Shards</span>
+                <span id="shard-val" class="font-display text-xs font-bold text-emerald-300">0/3</span>
+            </div>
         </div>
-        <div class="rounded-lg border border-white/10 bg-white/[0.04] p-2 flex items-center justify-between">
-            <span class="text-xs text-gray-300 font-medium">🪨 Stone</span>
-            <span id="stone-val" class="font-display text-sm font-bold text-slate-300">0</span>
-        </div>
-        <div class="rounded-lg border border-white/10 bg-white/[0.04] p-2 flex items-center justify-between">
-            <span class="text-xs text-gray-300 font-medium">💎 Ore</span>
-            <span id="ore-val" class="font-display text-sm font-bold text-cyan-300">0</span>
-        </div>
-        <div class="rounded-lg border border-purple-500/30 bg-purple-950/40 p-2 flex items-center justify-between">
-            <span id="shard-label" class="text-xs text-purple-200 font-medium">🌿 Shards</span>
-            <span id="shard-val" class="font-display text-sm font-bold text-emerald-300">0/3</span>
-        </div>
-    </div>
 
-    <!-- Equipped Gear HUD -->
-    <div class="flex flex-col gap-1.5 rounded-xl border border-white/10 bg-black/40 p-2.5 text-xs">
-        <div class="flex items-center justify-between">
-            <span class="text-gray-400">Weapon:</span>
-            <span id="weapon-val" class="font-bold text-indigo-300">None</span>
-        </div>
-        <div class="flex flex-col border-t border-white/10 pt-1.5">
+        <!-- Equipped Gear HUD -->
+        <div class="flex flex-col gap-1 rounded-xl border border-white/10 bg-black/40 p-2 text-[11px]">
             <div class="flex items-center justify-between">
-                <span class="text-gray-400">Armor:</span>
-                <span id="armor-val" class="font-bold text-emerald-400">None</span>
+                <span class="text-gray-400">Weapon:</span>
+                <span id="weapon-val" class="font-bold text-indigo-300">None</span>
             </div>
-            <div id="armor-buff-val" class="mt-0.5 text-[10px] font-semibold text-emerald-300/80">
-                Buff: No Active Armor
+            <div class="flex flex-col border-t border-white/10 pt-1">
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-400">Armor:</span>
+                    <span id="armor-val" class="font-bold text-emerald-400">None</span>
+                </div>
+                <div id="armor-buff-val" class="text-[9px] font-semibold text-emerald-300/80">
+                    Buff: No Active Armor
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- ROBLOX-STYLE TOP HOTBAR BAR (1-9) WITH NAMES -->
-<div class="pointer-events-auto absolute top-5 left-1/2 z-30 flex -translate-x-1/2 items-center gap-1.5 glass-panel rounded-2xl p-2 border-slate-700">
-    <div id="roblox-hotbar" class="flex items-center gap-1.5"></div>
-</div>
+    <!-- ROBLOX-STYLE TOP HOTBAR -->
+    <div class="pointer-events-auto flex items-center gap-1 glass-panel rounded-2xl p-1.5 border-slate-700">
+        <div id="roblox-hotbar" class="flex items-center gap-1"></div>
+    </div>
 
-<!-- DIMENSION SELECTOR -->
-<div id="dimension-bar" class="glass-panel pointer-events-auto absolute bottom-5 left-5 z-20 flex items-center gap-2 rounded-full p-2">
-    <button id="btn-overworld" onclick="switchDimension('overworld')" class="dim-btn flex items-center gap-2 rounded-full px-4 py-2 font-display text-xs font-bold transition-all bg-indigo-600 text-white">Overworld Realm</button>
-    <button id="btn-nether" onclick="switchDimension('nether')" class="dim-btn flex items-center gap-2 rounded-full px-4 py-2 font-display text-xs font-bold transition-all bg-white/5 text-gray-400 opacity-60">Nether Realm (Locked)</button>
-    <button id="btn-void" onclick="switchDimension('void')" class="dim-btn flex items-center gap-2 rounded-full px-4 py-2 font-display text-xs font-bold transition-all bg-white/5 text-gray-400 opacity-60">Void Realm (Locked)</button>
-</div>
-
-<!-- CRAFTING PANEL -->
-<div id="crafting-panel" class="glass-panel pointer-events-auto absolute top-5 right-5 z-20 w-80 rounded-2xl p-4 shadow-2xl">
-    <div class="mb-3 flex items-center justify-between border-b border-white/10 pb-2">
-        <div class="flex items-center gap-2">
-            <span class="font-display text-xs font-bold tracking-wider text-gray-200 uppercase">CRAFTING MATRIX</span>
-        </div>
-        <button onclick="resetGameData()" class="rounded bg-rose-600/30 px-2 py-0.5 text-[11px] font-extrabold text-rose-300 border border-rose-500/40 hover:bg-rose-600/60 transition-all">
-            RESET DATA
+    <!-- CRAFTING MATRIX TOGGLE BUTTON & CRAFTING PANEL -->
+    <div class="pointer-events-auto relative">
+        <button onclick="toggleCraftingPanel()" class="glass-panel flex items-center gap-2 rounded-2xl px-4 py-2 font-display text-xs font-bold text-indigo-300 border-indigo-500/30 hover:border-indigo-400 transition-all">
+            🔨 Crafting Matrix
         </button>
+
+        <div id="crafting-panel" class="glass-panel pointer-events-auto absolute top-12 right-0 hidden w-80 rounded-2xl p-4 shadow-2xl">
+            <div class="mb-3 flex items-center justify-between border-b border-white/10 pb-2">
+                <span class="font-display text-xs font-bold tracking-wider text-gray-200 uppercase">CRAFTING MATRIX</span>
+                <button onclick="resetGameData()" class="rounded bg-rose-600/30 px-2 py-0.5 text-[10px] font-extrabold text-rose-300 border border-rose-500/40 hover:bg-rose-600/60 transition-all">
+                    RESET DATA
+                </button>
+            </div>
+            <div id="compact-craft-list" class="flex flex-col gap-2 max-h-72 overflow-y-auto pr-1"></div>
+        </div>
     </div>
-    <div id="compact-craft-list" class="flex flex-col gap-2 max-h-80 overflow-y-auto pr-1"></div>
+</div>
+
+<!-- BOTTOM BAR: DIMENSION SELECTOR -->
+<div id="dimension-bar" class="glass-panel pointer-events-auto absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 rounded-full p-2">
+    <button id="btn-overworld" onclick="switchDimension('overworld')" class="dim-btn flex items-center gap-2 rounded-full px-4 py-1.5 font-display text-xs font-bold transition-all bg-indigo-600 text-white">Overworld Realm</button>
+    <button id="btn-nether" onclick="switchDimension('nether')" class="dim-btn flex items-center gap-2 rounded-full px-4 py-1.5 font-display text-xs font-bold transition-all bg-white/5 text-gray-400 opacity-60">Nether Realm (Locked)</button>
+    <button id="btn-void" onclick="switchDimension('void')" class="dim-btn flex items-center gap-2 rounded-full px-4 py-1.5 font-display text-xs font-bold transition-all bg-white/5 text-gray-400 opacity-60">Void Realm (Locked)</button>
 </div>
 
 <!-- ROBLOX BACKPACK GUI MODAL -->
@@ -251,6 +257,25 @@ function resizeCanvas() {
 }
 resizeCanvas();
 window.addEventListener('resize', resizeCanvas);
+
+// PRELOAD ENEMY IMAGES
+const mobImageFiles = [
+    { name: 'Gerard', src: 'images/gerard.jpeg' },
+    { name: 'Jason', src: 'images/jason.jpeg' },
+    { name: 'Liu-Ji', src: 'images/liu-ji.jpeg' },
+    { name: 'Matthew', src: 'images/matthew.jpeg' },
+    { name: 'Travia', src: 'images/travia.jpeg' },
+    { name: 'Xayven', src: 'images/xayven.jpeg' },
+    { name: 'Xuchen', src: 'images/xuchen.jpeg' }
+];
+
+const loadedMobImages = {};
+mobImageFiles.forEach(item => {
+    const img = new Image();
+    img.src = item.src;
+    img.onload = () => { loadedMobImages[item.name] = { img, loaded: true }; };
+    img.onerror = () => { loadedMobImages[item.name] = { img: null, loaded: false }; };
+});
 
 const WEAPONS = {
     stick:  { id: 'stick', name: 'Wooden Stick', damage: 20, range: 65, color: '#a3e635', knockback: 12 },
@@ -324,16 +349,17 @@ const RESOURCE_TYPES = {
 
 const MOB_TYPES = {
     overworld: [
-        { name: 'Goblin Scout', emoji: '👺', color: '#15803d', borderColor: '#4ade80', hp: 50, damage: 6, speed: 2.2, shardDropChance: 0.25 },
-        { name: 'Forest Fiend', emoji: '👹', color: '#047857', borderColor: '#34d399', hp: 75, damage: 10, speed: 2.4, shardDropChance: 0.35 }
+        { name: 'Gerard', imageName: 'Gerard', color: '#15803d', borderColor: '#4ade80', hp: 50, damage: 6, speed: 2.2, shardDropChance: 0.25 },
+        { name: 'Jason', imageName: 'Jason', color: '#047857', borderColor: '#34d399', hp: 75, damage: 10, speed: 2.4, shardDropChance: 0.35 }
     ],
     nether: [
-        { name: 'Fiery Demon', emoji: '😈', color: '#b91c1c', borderColor: '#fca5a5', hp: 130, damage: 16, speed: 2.7, shardDropChance: 0.4 },
-        { name: 'Lava Imp', emoji: '👾', color: '#c2410c', borderColor: '#fdba74', hp: 95, damage: 14, speed: 3.1, shardDropChance: 0.3 }
+        { name: 'Liu-Ji', imageName: 'Liu-Ji', color: '#b91c1c', borderColor: '#fca5a5', hp: 130, damage: 16, speed: 2.7, shardDropChance: 0.4 },
+        { name: 'Matthew', imageName: 'Matthew', color: '#c2410c', borderColor: '#fdba74', hp: 95, damage: 14, speed: 3.1, shardDropChance: 0.3 },
+        { name: 'Travia', imageName: 'Travia', color: '#9a3412', borderColor: '#fb923c', hp: 110, damage: 18, speed: 2.9, shardDropChance: 0.35 }
     ],
     void: [
-        { name: 'Void Stalker', emoji: '👽', color: '#581c87', borderColor: '#e9d5ff', hp: 220, damage: 24, speed: 3.0, shardDropChance: 0.5 },
-        { name: 'Shadow Phantom', emoji: '👻', color: '#312e81', borderColor: '#a5b4fc', hp: 180, damage: 28, speed: 3.5, shardDropChance: 0.45 }
+        { name: 'Xayven', imageName: 'Xayven', color: '#581c87', borderColor: '#e9d5ff', hp: 220, damage: 24, speed: 3.0, shardDropChance: 0.5 },
+        { name: 'Xuchen', imageName: 'Xuchen', color: '#312e81', borderColor: '#a5b4fc', hp: 180, damage: 28, speed: 3.5, shardDropChance: 0.45 }
     ]
 };
 
@@ -443,7 +469,7 @@ function generateDimension(dimKey) {
         enemies.push({
             id: i, x: Math.random() * (WORLD_SIZE - 200) + 100, y: Math.random() * (WORLD_SIZE - 200) + 100,
             vx: 0, vy: 0, hp: mobTemplate.hp, maxHp: mobTemplate.hp, speed: mobTemplate.speed,
-            damage: mobTemplate.damage, radius: 20, shardDropChance: mobTemplate.shardDropChance, typeData: mobTemplate
+            damage: mobTemplate.damage, radius: 24, shardDropChance: mobTemplate.shardDropChance, typeData: mobTemplate
         });
     }
 
@@ -459,6 +485,11 @@ function generateDimension(dimKey) {
 generateDimension('overworld');
 generateDimension('nether');
 generateDimension('void');
+
+function toggleCraftingPanel() {
+    const panel = document.getElementById('crafting-panel');
+    panel.classList.toggle('hidden');
+}
 
 function pressHotbarSlot(index) {
     if (equippedSlotIndex === index) {
@@ -581,15 +612,14 @@ function updateHUD() {
 
     updateHealthBarOnly();
 
-    // RENDER 9-SLOT ROBLOX HOTBAR WITH TEXT LABELS
+    // RENDER HOTBAR
     document.getElementById('roblox-hotbar').innerHTML = player.hotbar.map((item, i) => `
         <div onclick="pressHotbarSlot(${i})" class="roblox-slot ${i === equippedSlotIndex ? 'equipped' : ''}">
-            <span class="roblox-key-num">${i + 1}</span>${item ? `<span class="text-lg leading-none mt-1">${item.icon}</span><span class="slot-title">${item.name}</span>` : '<span class="text-[10px] text-gray-500 mt-3">Empty</span>'}
+            <span class="roblox-key-num">${i + 1}</span>${item ? `<span class="text-base leading-none mt-1">${item.icon}</span><span class="slot-title">${item.name}</span>` : '<span class="text-[9px] text-gray-500 mt-2">Empty</span>'}
             ${item && item.count > 1 ? `<span class="item-count">x${item.count}</span>` : ''}
         </div>
     `).join('');
 
-    // UPDATE DIMENSION BUTTON TEXTS
     document.getElementById('btn-overworld').textContent = player.unlockedDims.overworld ? 'Overworld' : 'Overworld (Locked)';
     document.getElementById('btn-nether').textContent = player.unlockedDims.nether ? 'Nether Realm' : 'Nether (3x Shards Needed)';
     document.getElementById('btn-void').textContent = player.unlockedDims.void ? 'Void Realm' : 'Void (3x Shards Needed)';
@@ -611,7 +641,7 @@ function renderCraftingUI() {
         const canAfford = !isToolOwned && player.wood >= item.cost.wood && player.stone >= item.cost.stone && player.ore >= item.cost.ore;
 
         return `
-            <button onclick="craftItem('${item.id}')" ${!canAfford ? 'disabled' : ''} class="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] p-2.5 text-left hover:bg-white/[0.1] disabled:opacity-40 transition-all">
+            <button onclick="craftItem('${item.id}')" ${!canAfford ? 'disabled' : ''} class="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] p-2 text-left hover:bg-white/[0.1] disabled:opacity-40 transition-all">
                 <div>
                     <div class="text-xs font-bold ${isToolOwned ? 'text-emerald-400' : 'text-indigo-300'} flex items-center gap-1.5">
                         <span>${item.icon}</span> <span>${item.name}</span>${isToolOwned ? '✓' : ''}
@@ -873,7 +903,7 @@ function update(dt) {
     if (tookDamage) updateHealthBarOnly();
 }
 
-// RENDER ENGINE WITH SPRITE NAMES ABOVE OBJECTS
+// RENDER ENGINE WITH MOB IMAGES
 function render() {
     const camX = canvas.width * 0.5 - player.x;
     const camY = canvas.height * 0.5 - player.y;
@@ -908,7 +938,6 @@ function render() {
         ctx.textBaseline = 'middle';
         ctx.fillText(resDef.emoji, res.x, res.y);
 
-        // TEXT LABEL OVER RESOURCE
         ctx.font = 'bold 11px sans-serif';
         ctx.fillStyle = '#ffffff';
         ctx.shadowColor = 'black';
@@ -942,7 +971,6 @@ function render() {
         ctx.textBaseline = 'middle';
         ctx.fillText('📦', chest.x, chest.y);
 
-        // TEXT LABEL OVER CHEST
         ctx.font = 'bold 11px sans-serif';
         ctx.fillStyle = '#fde047';
         ctx.shadowColor = 'black';
@@ -951,35 +979,47 @@ function render() {
         ctx.shadowBlur = 0;
     }
 
-    // Enemies
+    // Enemies (Image Sprites)
     const currentEnemies = dimEntities[currentDim].enemies;
     for (let i = 0; i < currentEnemies.length; i++) {
         const enemy = currentEnemies[i];
         if (enemy.x < viewLeft || enemy.x > viewRight || enemy.y < viewTop || enemy.y > viewBottom) continue;
 
-        const visualRadius = enemy.radius * 1.4;
+        const visualRadius = enemy.radius;
         const mobDef = enemy.typeData;
+        const imgData = loadedMobImages[mobDef.imageName];
 
-        ctx.beginPath();
-        ctx.arc(enemy.x, enemy.y, visualRadius + 2, 0, Math.PI * 2);
-        ctx.fillStyle = mobDef.borderColor;
-        ctx.fill();
+        if (imgData && imgData.loaded) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(enemy.x, enemy.y, visualRadius, 0, Math.PI * 2);
+            ctx.clip();
+            ctx.drawImage(imgData.img, enemy.x - visualRadius, enemy.y - visualRadius, visualRadius * 2, visualRadius * 2);
+            ctx.restore();
 
-        ctx.beginPath();
-        ctx.arc(enemy.x, enemy.y, visualRadius, 0, Math.PI * 2);
-        ctx.fillStyle = mobDef.color;
-        ctx.fill();
+            ctx.beginPath();
+            ctx.arc(enemy.x, enemy.y, visualRadius, 0, Math.PI * 2);
+            ctx.strokeStyle = mobDef.borderColor;
+            ctx.lineWidth = 3;
+            ctx.stroke();
+        } else {
+            ctx.beginPath();
+            ctx.arc(enemy.x, enemy.y, visualRadius + 2, 0, Math.PI * 2);
+            ctx.fillStyle = mobDef.borderColor;
+            ctx.fill();
 
-        ctx.font = '18px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(mobDef.emoji, enemy.x, enemy.y);
+            ctx.beginPath();
+            ctx.arc(enemy.x, enemy.y, visualRadius, 0, Math.PI * 2);
+            ctx.fillStyle = mobDef.color;
+            ctx.fill();
+        }
 
         // TEXT LABEL OVER MOB
         ctx.font = 'bold 11px sans-serif';
         ctx.fillStyle = '#fca5a5';
         ctx.shadowColor = 'black';
         ctx.shadowBlur = 4;
+        ctx.textAlign = 'center';
         ctx.fillText(mobDef.name, enemy.x, enemy.y - visualRadius - 10);
         ctx.shadowBlur = 0;
 
@@ -1000,7 +1040,6 @@ function render() {
     ctx.lineWidth = 3;
     ctx.stroke();
 
-    // TEXT LABEL OVER PLAYER
     ctx.font = 'bold 12px sans-serif';
     ctx.fillStyle = '#6366f1';
     ctx.textAlign = 'center';
