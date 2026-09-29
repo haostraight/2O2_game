@@ -347,19 +347,21 @@ const RESOURCE_TYPES = {
     shard: { name: 'Shard Cluster', emoji: '🔮', color: '#7e22ce', borderColor: '#c084fc' }
 };
 
+// INDIVIDUAL HITBOX & VISUAL RADIUS PER MOB
+// visualRadius is set to ~1.5x hitboxRadius by default
 const MOB_TYPES = {
     overworld: [
-        { name: 'Gerard', imageName: 'Gerard', color: '#15803d', borderColor: '#4ade80', hp: 500, damage: 25, speed: 5, shardDropChance: 0.25 },
-        { name: 'Jason', imageName: 'Jason', color: '#047857', borderColor: '#34d399', hp: 75, damage: 10, speed: 2.4, shardDropChance: 0.35 }
+        { name: 'Gerard', imageName: 'Gerard', color: '#15803d', borderColor: '#4ade80', hp: 50, damage: 6, speed: 2.2, shardDropChance: 0.25, hitboxRadius: 22, visualRadius: 33 },
+        { name: 'Jason', imageName: 'Jason', color: '#047857', borderColor: '#34d399', hp: 75, damage: 10, speed: 2.4, shardDropChance: 0.35, hitboxRadius: 24, visualRadius: 36 }
     ],
     nether: [
-        { name: 'Liu-Ji', imageName: 'Liu-Ji', color: '#b91c1c', borderColor: '#fca5a5', hp: 130, damage: 16, speed: 2.7, shardDropChance: 0.4 },
-        { name: 'Matthew', imageName: 'Matthew', color: '#c2410c', borderColor: '#fdba74', hp: 95, damage: 14, speed: 3.1, shardDropChance: 0.3 },
-        { name: 'Travia', imageName: 'Travia', color: '#9a3412', borderColor: '#fb923c', hp: 110, damage: 18, speed: 2.9, shardDropChance: 0.35 }
+        { name: 'Liu-Ji', imageName: 'Liu-Ji', color: '#b91c1c', borderColor: '#fca5a5', hp: 130, damage: 16, speed: 2.7, shardDropChance: 0.4, hitboxRadius: 26, visualRadius: 39 },
+        { name: 'Matthew', imageName: 'Matthew', color: '#c2410c', borderColor: '#fdba74', hp: 95, damage: 14, speed: 3.1, shardDropChance: 0.3, hitboxRadius: 22, visualRadius: 33 },
+        { name: 'Travia', imageName: 'Travia', color: '#9a3412', borderColor: '#fb923c', hp: 110, damage: 18, speed: 2.9, shardDropChance: 0.35, hitboxRadius: 25, visualRadius: 37.5 }
     ],
     void: [
-        { name: 'Xayven', imageName: 'Xayven', color: '#581c87', borderColor: '#e9d5ff', hp: 220, damage: 24, speed: 3.0, shardDropChance: 0.5 },
-        { name: 'Xuchen', imageName: 'Xuchen', color: '#312e81', borderColor: '#a5b4fc', hp: 180, damage: 28, speed: 3.5, shardDropChance: 0.45 }
+        { name: 'Xayven', imageName: 'Xayven', color: '#581c87', borderColor: '#e9d5ff', hp: 220, damage: 24, speed: 3.0, shardDropChance: 0.5, hitboxRadius: 30, visualRadius: 45 },
+        { name: 'Xuchen', imageName: 'Xuchen', color: '#312e81', borderColor: '#a5b4fc', hp: 180, damage: 28, speed: 3.5, shardDropChance: 0.45, hitboxRadius: 28, visualRadius: 42 }
     ]
 };
 
@@ -467,9 +469,18 @@ function generateDimension(dimKey) {
     for (let i = 0; i < eCount; i++) {
         const mobTemplate = mobPool[Math.floor(Math.random() * mobPool.length)];
         enemies.push({
-            id: i, x: Math.random() * (WORLD_SIZE - 200) + 100, y: Math.random() * (WORLD_SIZE - 200) + 100,
-            vx: 0, vy: 0, hp: mobTemplate.hp, maxHp: mobTemplate.hp, speed: mobTemplate.speed,
-            damage: mobTemplate.damage, radius: 24, shardDropChance: mobTemplate.shardDropChance, typeData: mobTemplate
+            id: i,
+            x: Math.random() * (WORLD_SIZE - 200) + 100,
+            y: Math.random() * (WORLD_SIZE - 200) + 100,
+            vx: 0, vy: 0,
+            hp: mobTemplate.hp,
+            maxHp: mobTemplate.hp,
+            speed: mobTemplate.speed,
+            damage: mobTemplate.damage,
+            hitboxRadius: mobTemplate.hitboxRadius,
+            visualRadius: mobTemplate.visualRadius,
+            shardDropChance: mobTemplate.shardDropChance,
+            typeData: mobTemplate
         });
     }
 
@@ -786,11 +797,12 @@ function performAttack() {
     const currentEnemies = dimEntities[currentDim].enemies;
     const currentResources = dimEntities[currentDim].resources;
 
+    // Hit calculation now uses the enemy's HITBOX radius
     for (let i = currentEnemies.length - 1; i >= 0; i--) {
         const enemy = currentEnemies[i];
         const dx = enemy.x - player.x;
         const dy = enemy.y - player.y;
-        if (dx * dx + dy * dy <= (currentWeapon.range + enemy.radius) ** 2) {
+        if (dx * dx + dy * dy <= (currentWeapon.range + enemy.hitboxRadius) ** 2) {
             enemy.hp -= currentWeapon.damage;
 
             const angle = Math.atan2(dy, dx);
@@ -889,7 +901,8 @@ function update(dt) {
         enemy.x += Math.cos(angle) * enemy.speed;
         enemy.y += Math.sin(angle) * enemy.speed;
 
-        if (edx * edx + edy * edy < (player.radius + enemy.radius) ** 2) {
+        // Player collision uses the mob HITBOX radius
+        if (edx * edx + edy * edy < (player.radius + enemy.hitboxRadius) ** 2) {
             player.hp -= enemy.damage / 60;
             tookDamage = true;
             if (player.hp <= 0) {
@@ -903,7 +916,7 @@ function update(dt) {
     if (tookDamage) updateHealthBarOnly();
 }
 
-// RENDER ENGINE WITH MOB IMAGES
+// RENDER ENGINE WITH SEPARATE VISUAL & HITBOX SIZES
 function render() {
     const camX = canvas.width * 0.5 - player.x;
     const camY = canvas.height * 0.5 - player.y;
@@ -979,37 +992,37 @@ function render() {
         ctx.shadowBlur = 0;
     }
 
-    // Enemies (Image Sprites)
+    // Enemies (Rendered using visualRadius; damage/collision uses hitboxRadius)
     const currentEnemies = dimEntities[currentDim].enemies;
     for (let i = 0; i < currentEnemies.length; i++) {
         const enemy = currentEnemies[i];
         if (enemy.x < viewLeft || enemy.x > viewRight || enemy.y < viewTop || enemy.y > viewBottom) continue;
 
-        const visualRadius = enemy.radius;
         const mobDef = enemy.typeData;
         const imgData = loadedMobImages[mobDef.imageName];
+        const vRad = enemy.visualRadius; // Rendered size (1.5x bigger)
 
         if (imgData && imgData.loaded) {
             ctx.save();
             ctx.beginPath();
-            ctx.arc(enemy.x, enemy.y, visualRadius, 0, Math.PI * 2);
+            ctx.arc(enemy.x, enemy.y, vRad, 0, Math.PI * 2);
             ctx.clip();
-            ctx.drawImage(imgData.img, enemy.x - visualRadius, enemy.y - visualRadius, visualRadius * 2, visualRadius * 2);
+            ctx.drawImage(imgData.img, enemy.x - vRad, enemy.y - vRad, vRad * 2, vRad * 2);
             ctx.restore();
 
             ctx.beginPath();
-            ctx.arc(enemy.x, enemy.y, visualRadius, 0, Math.PI * 2);
+            ctx.arc(enemy.x, enemy.y, vRad, 0, Math.PI * 2);
             ctx.strokeStyle = mobDef.borderColor;
             ctx.lineWidth = 3;
             ctx.stroke();
         } else {
             ctx.beginPath();
-            ctx.arc(enemy.x, enemy.y, visualRadius + 2, 0, Math.PI * 2);
+            ctx.arc(enemy.x, enemy.y, vRad + 2, 0, Math.PI * 2);
             ctx.fillStyle = mobDef.borderColor;
             ctx.fill();
 
             ctx.beginPath();
-            ctx.arc(enemy.x, enemy.y, visualRadius, 0, Math.PI * 2);
+            ctx.arc(enemy.x, enemy.y, vRad, 0, Math.PI * 2);
             ctx.fillStyle = mobDef.color;
             ctx.fill();
         }
@@ -1020,14 +1033,14 @@ function render() {
         ctx.shadowColor = 'black';
         ctx.shadowBlur = 4;
         ctx.textAlign = 'center';
-        ctx.fillText(mobDef.name, enemy.x, enemy.y - visualRadius - 10);
+        ctx.fillText(mobDef.name, enemy.x, enemy.y - vRad - 10);
         ctx.shadowBlur = 0;
 
         if (enemy.hp < enemy.maxHp) {
             ctx.fillStyle = 'rgba(0,0,0,0.6)';
-            ctx.fillRect(enemy.x - 20, enemy.y - visualRadius - 22, 40, 4);
+            ctx.fillRect(enemy.x - 20, enemy.y - vRad - 22, 40, 4);
             ctx.fillStyle = '#ef4444';
-            ctx.fillRect(enemy.x - 20, enemy.y - visualRadius - 22, (enemy.hp / enemy.maxHp) * 40, 4);
+            ctx.fillRect(enemy.x - 20, enemy.y - vRad - 22, (enemy.hp / enemy.maxHp) * 40, 4);
         }
     }
 
