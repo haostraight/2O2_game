@@ -654,8 +654,8 @@ class Mob extends Entity {
 }
 
 // =============================================================================
-// HANBO: NEUTRAL SHAPESHIFTING TRADER
-// - Cycles through every mob's face with a crossfade
+// HANBO: NEUTRAL WANDERING TRADER
+// - Always shows his own face (images/Hanbo.jpeg)
 // - Wanders (walks, then stands still), never chases or attacks
 // - Can be hit, knocked back, and killed (drops loot)
 // =============================================================================
@@ -663,6 +663,7 @@ class WanderingTraderMob extends Entity {
     constructor(x, y) {
         super(x, y, 26);
         this.name = 'Hanbo (Trader)';
+        this.imageName = 'Hanbo';
         this.visualRadius = 34;
         this.maxHp = 150;
         this.hp = this.maxHp;
@@ -674,23 +675,6 @@ class WanderingTraderMob extends Entity {
         this.state = 'idle';
         this.stateTimer = 60;
         this.targetAngle = Math.random() * Math.PI * 2;
-
-        // Shapeshifting: cycles through every mob's face
-        this.forms = ['Gerard', 'Jason', 'Liu-Ji', 'Matthew', 'Travia', 'Xayven', 'Xuchen', 'Hanbo'];
-        this.formColors = {
-            'Gerard': '#15803d',
-            'Jason': '#047857',
-            'Liu-Ji': '#b91c1c',
-            'Matthew': '#c2410c',
-            'Travia': '#9a3412',
-            'Xayven': '#581c87',
-            'Xuchen': '#312e81',
-            'Hanbo': '#059669'
-        };
-        this.formIndex = Math.floor(Math.random() * this.forms.length);
-        this.formTimer = 0;
-        this.formDuration = 150; // frames each face is shown
-        this.fadeFrames = 40;    // frames spent crossfading into the next face
     }
 
     update(player, projectiles) {
@@ -720,30 +704,6 @@ class WanderingTraderMob extends Entity {
 
         this.x = Math.max(100, Math.min(WORLD_SIZE - 100, this.x));
         this.y = Math.max(100, Math.min(WORLD_SIZE - 100, this.y));
-
-        // Shapeshift timer
-        this.formTimer++;
-        if (this.formTimer >= this.formDuration) {
-            this.formTimer = 0;
-            this.formIndex = (this.formIndex + 1) % this.forms.length;
-        }
-    }
-
-    drawForm(ctx, formName, alpha) {
-        ctx.save();
-        ctx.globalAlpha = alpha;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.visualRadius, 0, Math.PI * 2);
-        ctx.clip();
-
-        const imgData = loadedMobImages[formName];
-        if (imgData && imgData.loaded) {
-            ctx.drawImage(imgData.img, this.x - this.visualRadius, this.y - this.visualRadius, this.visualRadius * 2, this.visualRadius * 2);
-        } else {
-            ctx.fillStyle = this.formColors[formName] || '#059669';
-            ctx.fillRect(this.x - this.visualRadius, this.y - this.visualRadius, this.visualRadius * 2, this.visualRadius * 2);
-        }
-        ctx.restore();
     }
 
     onDeath(dimension, player) {
@@ -760,19 +720,22 @@ class WanderingTraderMob extends Entity {
     }
 
     render(ctx) {
-        const currentForm = this.forms[this.formIndex];
-        const nextForm = this.forms[(this.formIndex + 1) % this.forms.length];
-
-        // Current face
-        this.drawForm(ctx, currentForm, 1);
-
-        // Crossfade into the next face near the end of the cycle
-        const fadeStart = this.formDuration - this.fadeFrames;
-        if (this.formTimer > fadeStart) {
-            this.drawForm(ctx, nextForm, (this.formTimer - fadeStart) / this.fadeFrames);
+        const imgData = loadedMobImages[this.imageName];
+        if (imgData && imgData.loaded) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.visualRadius, 0, Math.PI * 2);
+            ctx.clip();
+            ctx.drawImage(imgData.img, this.x - this.visualRadius, this.y - this.visualRadius, this.visualRadius * 2, this.visualRadius * 2);
+            ctx.restore();
+        } else {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.visualRadius, 0, Math.PI * 2);
+            ctx.fillStyle = '#059669';
+            ctx.fill();
         }
 
-        // Green ring = neutral trader (so players can tell him apart)
+        // Green ring = neutral trader
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.visualRadius, 0, Math.PI * 2);
         ctx.strokeStyle = '#10b981';
