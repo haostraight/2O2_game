@@ -119,11 +119,6 @@
             text-overflow: ellipsis;
             max-width: 52px;
         }
-
-        /* Custom style for range sliders */
-        input[type=range] {
-            accent-color: #6366f1;
-        }
     </style>
 </head>
 <body class="relative min-h-screen select-none overflow-hidden bg-gray-950 font-sans text-gray-100">
@@ -134,6 +129,11 @@
 <!-- CHEST INTERACTION PROMPT -->
 <div id="chest-prompt" class="pointer-events-none fixed bottom-20 left-1/2 z-30 hidden -translate-x-1/2 rounded-full border border-amber-400/40 bg-slate-900/90 px-5 py-2 text-xs font-bold text-amber-300 shadow-2xl backdrop-blur-md">
     📦 Press <span class="rounded bg-amber-500/20 px-2 py-0.5 text-white border border-amber-400/50">[E]</span> to Open Loot Chest
+</div>
+
+<!-- TRADER INTERACTION PROMPT -->
+<div id="trader-prompt" class="pointer-events-none fixed bottom-20 left-1/2 z-30 hidden -translate-x-1/2 rounded-full border border-emerald-400/40 bg-slate-900/90 px-5 py-2 text-xs font-bold text-emerald-300 shadow-2xl backdrop-blur-md">
+    🧙‍♂️ Press <span class="rounded bg-emerald-500/20 px-2 py-0.5 text-white border border-emerald-400/50">[F]</span> to Trade with Hanbo
 </div>
 
 <!-- TOP BAR: SURVIVOR HUD & CRAFTING -->
@@ -204,65 +204,22 @@
         <div id="action-hotbar" class="flex items-center gap-1"></div>
     </div>
 
-    <!-- CRAFTING & MOB TUNING PANEL -->
+    <!-- CRAFTING PANEL -->
     <div class="pointer-events-auto relative">
         <button onclick="toggleCraftingPanel()" class="glass-panel flex items-center gap-2 rounded-2xl px-3 py-2 font-display text-xs font-bold text-indigo-300 border-indigo-500/30 hover:border-indigo-400 transition-all">
-            🔨 Matrix & Mob Modifiers
+            🔨 Crafting Matrix
         </button>
 
         <div id="crafting-panel" class="glass-panel pointer-events-auto absolute top-12 right-0 hidden w-80 rounded-2xl p-4 shadow-2xl">
             <div class="mb-3 flex items-center justify-between border-b border-white/10 pb-2">
-                <span class="font-display text-xs font-bold tracking-wider text-gray-200 uppercase">CRAFTING & MOB TUNER</span>
+                <span class="font-display text-xs font-bold tracking-wider text-gray-200 uppercase">CRAFTING MATRIX</span>
                 <button onclick="resetGameData()" class="rounded bg-rose-600/30 px-2 py-0.5 text-[10px] font-extrabold text-rose-300 border border-rose-500/40 hover:bg-rose-600/60 transition-all">
                     RESET DATA
                 </button>
             </div>
 
             <!-- CRAFTING LIST -->
-            <div class="text-[10px] font-bold text-indigo-300 mb-1">CRAFTING MATRIX</div>
-            <div id="compact-craft-list" class="flex flex-col gap-2 max-h-48 overflow-y-auto pr-1 mb-4 border-b border-white/10 pb-3"></div>
-
-            <!-- MOB CONFIGURATION CONTROLS -->
-            <div class="text-[10px] font-bold text-amber-300 mb-2">⚙️ SPECIAL MOB STAT TUNER</div>
-            <div class="flex flex-col gap-2.5 text-xs">
-                <!-- Ranged Mob Controls -->
-                <div class="rounded-xl border border-rose-500/30 bg-rose-950/20 p-2">
-                    <div class="font-semibold text-rose-300 mb-1.5 text-[11px]">🎯 Ranged Mobs (Liu-Ji / Xayven)</div>
-                    <div class="mb-1.5">
-                        <div class="flex justify-between text-[10px] text-gray-300">
-                            <span>Projectile Speed:</span>
-                            <span id="proj-speed-val" class="font-mono text-indigo-300">6</span>
-                        </div>
-                        <input type="range" id="proj-speed-input" min="3" max="15" step="1" value="6" oninput="updateMobConfig()" class="w-full h-1 bg-gray-700 rounded-lg cursor-pointer">
-                    </div>
-                    <div>
-                        <div class="flex justify-between text-[10px] text-gray-300">
-                            <span>Shot Cooldown (frames):</span>
-                            <span id="proj-cooldown-val" class="font-mono text-indigo-300">90</span>
-                        </div>
-                        <input type="range" id="proj-cooldown-input" min="20" max="180" step="10" value="90" oninput="updateMobConfig()" class="w-full h-1 bg-gray-700 rounded-lg cursor-pointer">
-                    </div>
-                </div>
-
-                <!-- Exploding Mob Controls -->
-                <div class="rounded-xl border border-amber-500/30 bg-amber-950/20 p-2">
-                    <div class="font-semibold text-amber-300 mb-1.5 text-[11px]">💥 Exploding Mobs (Jason / Travia)</div>
-                    <div class="mb-1.5">
-                        <div class="flex justify-between text-[10px] text-gray-300">
-                            <span>Explosion Radius:</span>
-                            <span id="exp-radius-val" class="font-mono text-indigo-300">130</span>
-                        </div>
-                        <input type="range" id="exp-radius-input" min="60" max="300" step="10" value="130" oninput="updateMobConfig()" class="w-full h-1 bg-gray-700 rounded-lg cursor-pointer">
-                    </div>
-                    <div>
-                        <div class="flex justify-between text-[10px] text-gray-300">
-                            <span>Explosion Damage:</span>
-                            <span id="exp-dmg-val" class="font-mono text-indigo-300">50</span>
-                        </div>
-                        <input type="range" id="exp-dmg-input" min="10" max="150" step="5" value="50" oninput="updateMobConfig()" class="w-full h-1 bg-gray-700 rounded-lg cursor-pointer">
-                    </div>
-                </div>
-            </div>
+            <div id="compact-craft-list" class="flex flex-col gap-2 max-h-80 overflow-y-auto pr-1"></div>
         </div>
     </div>
 </div>
@@ -294,6 +251,28 @@
     </div>
 </div>
 
+<!-- TRADER MODAL -->
+<div id="trader-modal" class="glass-panel pointer-events-auto fixed inset-x-12 top-16 bottom-12 z-50 hidden flex-col rounded-3xl p-6 shadow-2xl backdrop-blur-2xl border-emerald-500/30">
+    <div class="flex items-center justify-between border-b border-white/10 pb-4">
+        <div class="flex items-center gap-3">
+            <div class="h-10 w-10 rounded-full border-2 border-emerald-400 overflow-hidden bg-emerald-950 flex items-center justify-center font-bold text-emerald-300">
+                🧙‍♂️
+            </div>
+            <div>
+                <h2 class="font-display text-xl font-extrabold tracking-wide text-emerald-300">HANBO THE WANDERING TRADER</h2>
+                <p class="text-xs text-gray-400">Swap basic resources for rare materials and dimension shards.</p>
+            </div>
+        </div>
+        <button onclick="toggleTraderModal(false)" class="rounded-xl bg-rose-600/30 px-4 py-2 font-display text-xs font-bold text-rose-200 border border-rose-500/40 hover:bg-rose-600/50">
+            Leave Trade [ESC]
+        </button>
+    </div>
+
+    <div class="mt-4 flex-1 overflow-y-auto pr-2">
+        <div id="trader-offers-list" class="flex flex-col gap-3"></div>
+    </div>
+</div>
+
 <script>
 const WORLD_SIZE = 8000;
 const HALF_WORLD = WORLD_SIZE / 2;
@@ -309,7 +288,7 @@ function resizeCanvas() {
 resizeCanvas();
 window.addEventListener('resize', resizeCanvas);
 
-// PRELOAD ENEMY IMAGES
+// PRELOAD ENEMY & TRADER IMAGES
 const mobImageFiles = [
     { name: 'Gerard', src: 'images/gerard.jpeg' },
     { name: 'Jason', src: 'images/jason.jpeg' },
@@ -317,7 +296,8 @@ const mobImageFiles = [
     { name: 'Matthew', src: 'images/matthew.jpeg' },
     { name: 'Travia', src: 'images/travia.jpeg' },
     { name: 'Xayven', src: 'images/xayven.jpeg' },
-    { name: 'Xuchen', src: 'images/xuchen.jpeg' }
+    { name: 'Xuchen', src: 'images/xuchen.jpeg' },
+    { name: 'Hanbo', src: 'images/Hanbo.jpeg' }
 ];
 
 const loadedMobImages = {};
@@ -358,44 +338,68 @@ const BASE_CRAFTABLES = [
     { id: 'elixir', name: 'Full Elixir', type: 'consumable', icon: '🍷', stats: 'Full Healing', cost: { wood: 60, stone: 60, ore: 40 } }
 ];
 
+// MATERIAL BASE VALUES FOR TRADING RATIO CALCULATION
+const RESOURCE_VALUES = {
+    wood: 1,
+    stone: 1.5,
+    ore: 4,
+    shard_overworld: 15,
+    shard_nether: 25,
+    shard_void: 40
+};
+
+// TRADER DEALS
+const TRADER_OFFERS = [
+    {
+        id: 'trade_1',
+        name: 'Ore Liquidation',
+        give: { type: 'wood', name: 'Wood', count: 35, icon: '🪵' },
+        receive: { type: 'ore', name: 'Crystal Ore', count: 5, icon: '💎' },
+        desc: 'Trade raw wood directly for high-density ore.'
+    },
+    {
+        id: 'trade_2',
+        name: 'Verdant Essence Swap',
+        give: { type: 'stone', name: 'Stone', count: 60, icon: '🪨' },
+        receive: { type: 'shard_overworld', name: 'Verdant Shard', count: 2, icon: '🌿' },
+        desc: 'Exchange processed stone blocks for raw realm shards.'
+    },
+    {
+        id: 'trade_3',
+        name: 'Black Market Ore Deal',
+        give: { type: 'ore', name: 'Crystal Ore', count: 20, icon: '💎' },
+        receive: { type: 'shard_nether', name: 'Crimson Shard', count: 2, icon: '🔥' },
+        desc: 'Trade dense ore directly for rare nether realm energy.'
+    },
+    {
+        id: 'trade_4',
+        name: 'Merchant Scamp (Bad Offer)',
+        give: { type: 'ore', name: 'Crystal Ore', count: 18, icon: '💎' },
+        receive: { type: 'wood', name: 'Wood', count: 20, icon: '🪵' },
+        desc: 'The trader tries to sell basic timber for valuable ores.'
+    },
+    {
+        id: 'trade_5',
+        name: 'Overworld Shard Surplus',
+        give: { type: 'shard_overworld', name: 'Verdant Shard', count: 3, icon: '🌿' },
+        receive: { type: 'ore', name: 'Crystal Ore', count: 25, icon: '💎' },
+        desc: 'Convert excess overworld shards into bulk ore.'
+    },
+    {
+        id: 'trade_6',
+        name: 'Astral Shard Transmutation',
+        give: { type: 'shard_nether', name: 'Crimson Shard', count: 4, icon: '🔥' },
+        receive: { type: 'shard_void', name: 'Astral Shard', count: 2, icon: '✨' },
+        desc: 'High tier dimension energy exchange.'
+    }
+];
+
 // HARDCODED SHARD REQUIREMENTS
 let DIMENSION_SHARDS = {
     overworld: { name: 'Verdant Shard', label: '🌿 Verdant Shards', req: 10, unlock: 'nether' },
     nether:    { name: 'Crimson Shard', label: '🔥 Crimson Shards', req: 10, unlock: 'void' },
     void:      { name: 'Astral Shard',  label: '✨ Astral Shards', req: 10, unlock: null }
 };
-
-// DYNAMIC SPECIAL MOB TUNING SETTINGS
-let specialMobConfig = {
-    projSpeed: 6,
-    projInterval: 90,
-    expRadius: 130,
-    expDamage: 50
-};
-
-function updateMobConfig() {
-    specialMobConfig.projSpeed = parseInt(document.getElementById('proj-speed-input').value);
-    specialMobConfig.projInterval = parseInt(document.getElementById('proj-cooldown-input').value);
-    specialMobConfig.expRadius = parseInt(document.getElementById('exp-radius-input').value);
-    specialMobConfig.expDamage = parseInt(document.getElementById('exp-dmg-input').value);
-
-    document.getElementById('proj-speed-val').textContent = specialMobConfig.projSpeed;
-    document.getElementById('proj-cooldown-val').textContent = specialMobConfig.projInterval;
-    document.getElementById('exp-radius-val').textContent = specialMobConfig.expRadius;
-    document.getElementById('exp-dmg-val').textContent = specialMobConfig.expDamage;
-
-    // Apply live updates to existing active mobs in game
-    Object.keys(dimEntities).forEach(dim => {
-        dimEntities[dim].enemies.forEach(mob => {
-            if (mob instanceof RangedMob) {
-                mob.shootInterval = specialMobConfig.projInterval;
-            } else if (mob instanceof ExplodingMob) {
-                mob.explosionRadius = specialMobConfig.expRadius;
-                mob.explosionDamage = specialMobConfig.expDamage;
-            }
-        });
-    });
-}
 
 // =============================================================================
 // PARTICLE SYSTEM CLASSES
@@ -533,7 +537,7 @@ class Entity {
 }
 
 class Projectile extends Entity {
-    constructor(x, y, targetX, targetY, speed, damage, color = '#ef4444') {
+    constructor(x, y, targetX, targetY, speed = 6, damage = 25, color = '#ef4444') {
         super(x, y, 6);
         const angle = Math.atan2(targetY - y, targetX - x);
         this.vx = Math.cos(angle) * speed;
@@ -649,11 +653,68 @@ class Mob extends Entity {
     }
 }
 
+class WanderingTraderMob extends Entity {
+    constructor(x, y) {
+        super(x, y, 26);
+        this.name = 'Hanbo (Trader)';
+        this.imageName = 'Hanbo';
+        this.visualRadius = 32;
+        this.moveTimer = 0;
+        this.targetAngle = Math.random() * Math.PI * 2;
+        this.speed = 0.8;
+    }
+
+    update(player, projectiles) {
+        this.moveTimer++;
+        if (this.moveTimer > 180) {
+            this.moveTimer = 0;
+            this.targetAngle = Math.random() * Math.PI * 2;
+        }
+
+        this.x += Math.cos(this.targetAngle) * this.speed;
+        this.y += Math.sin(this.targetAngle) * this.speed;
+
+        this.x = Math.max(100, Math.min(WORLD_SIZE - 100, this.x));
+        this.y = Math.max(100, Math.min(WORLD_SIZE - 100, this.y));
+    }
+
+    render(ctx) {
+        const imgData = loadedMobImages[this.imageName];
+        if (imgData && imgData.loaded) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.visualRadius, 0, Math.PI * 2);
+            ctx.clip();
+            ctx.drawImage(imgData.img, this.x - this.visualRadius, this.y - this.visualRadius, this.visualRadius * 2, this.visualRadius * 2);
+            ctx.restore();
+
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.visualRadius, 0, Math.PI * 2);
+            ctx.strokeStyle = '#10b981';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+        } else {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.visualRadius, 0, Math.PI * 2);
+            ctx.fillStyle = '#059669';
+            ctx.fill();
+        }
+
+        ctx.font = 'bold 11px sans-serif';
+        ctx.fillStyle = '#6ee7b7';
+        ctx.textAlign = 'center';
+        ctx.shadowColor = 'black';
+        ctx.shadowBlur = 4;
+        ctx.fillText(this.name, this.x, this.y - this.visualRadius - 10);
+        ctx.shadowBlur = 0;
+    }
+}
+
 class RangedMob extends Mob {
     constructor(x, y, config) {
         super(x, y, config);
         this.shootCooldown = 0;
-        this.shootInterval = specialMobConfig.projInterval;
+        this.shootInterval = 90;
         this.preferredDist = 250;
     }
 
@@ -681,7 +742,7 @@ class RangedMob extends Mob {
             this.shootCooldown = 0;
             projectiles.push(new Projectile(
                 this.x, this.y, player.x, player.y,
-                specialMobConfig.projSpeed,
+                6,
                 Math.round(this.damage * 0.8),
                 '#f43f5e'
             ));
@@ -693,8 +754,8 @@ class RangedMob extends Mob {
 class ExplodingMob extends Mob {
     constructor(x, y, config) {
         super(x, y, config);
-        this.explosionRadius = specialMobConfig.expRadius;
-        this.explosionDamage = specialMobConfig.expDamage;
+        this.explosionRadius = 130;
+        this.explosionDamage = 50;
     }
 
     onDeath(dimension, player) {
@@ -913,15 +974,15 @@ class Player extends Entity {
 const MOB_TEMPLATES = {
     overworld: [
         { classType: Mob, config: { name: 'Gerard', imageName: 'Gerard', color: '#15803d', borderColor: '#4ade80', hp: 100, damage: 12, speed: 2.2, shardDropChance: 0.25, hitboxRadius: 22, visualRadius: 33 } },
-        { classType: ExplodingMob, config: { name: 'Jason', imageName: 'Jason', color: '#047857', borderColor: '#34d399', hp: 130, damage: 20, speed: 2.5, shardDropChance: 0.35, hitboxRadius: 24, visualRadius: 36 } }
+        { classType: ExplodingMob, config: { name: 'Jason (Exploder)', imageName: 'Jason', color: '#047857', borderColor: '#34d399', hp: 130, damage: 20, speed: 2.5, shardDropChance: 0.35, hitboxRadius: 24, visualRadius: 36 } }
     ],
     nether: [
-        { classType: RangedMob, config: { name: 'Liu-Ji', imageName: 'Liu-Ji', color: '#b91c1c', borderColor: '#fca5a5', hp: 220, damage: 32, speed: 2.4, shardDropChance: 0.4, hitboxRadius: 26, visualRadius: 39 } },
+        { classType: RangedMob, config: { name: 'Liu-Ji (Ranged)', imageName: 'Liu-Ji', color: '#b91c1c', borderColor: '#fca5a5', hp: 220, damage: 32, speed: 2.4, shardDropChance: 0.4, hitboxRadius: 26, visualRadius: 39 } },
         { classType: Mob, config: { name: 'Matthew', imageName: 'Matthew', color: '#c2410c', borderColor: '#fdba74', hp: 190, damage: 28, speed: 3.1, shardDropChance: 0.3, hitboxRadius: 22, visualRadius: 33 } },
-        { classType: ExplodingMob, config: { name: 'Travia', imageName: 'Travia', color: '#9a3412', borderColor: '#fb923c', hp: 200, damage: 36, speed: 2.9, shardDropChance: 0.35, hitboxRadius: 25, visualRadius: 37.5 } }
+        { classType: ExplodingMob, config: { name: 'Travia (Exploder)', imageName: 'Travia', color: '#9a3412', borderColor: '#fb923c', hp: 200, damage: 36, speed: 2.9, shardDropChance: 0.35, hitboxRadius: 25, visualRadius: 37.5 } }
     ],
     void: [
-        { classType: RangedMob, config: { name: 'Xayven', imageName: 'Xayven', color: '#581c87', borderColor: '#e9d5ff', hp: 400, damage: 48, speed: 2.8, shardDropChance: 0.5, hitboxRadius: 30, visualRadius: 45 } },
+        { classType: RangedMob, config: { name: 'Xayven (Ranged)', imageName: 'Xayven', color: '#581c87', borderColor: '#e9d5ff', hp: 400, damage: 48, speed: 2.8, shardDropChance: 0.5, hitboxRadius: 30, visualRadius: 45 } },
         { classType: Mob, config: { name: 'Xuchen', imageName: 'Xuchen', color: '#312e81', borderColor: '#a5b4fc', hp: 360, damage: 56, speed: 3.5, shardDropChance: 0.45, hitboxRadius: 28, visualRadius: 42 } }
     ]
 };
@@ -935,11 +996,12 @@ let equippedSlotIndex = 0;
 let keys = {};
 let mousePos = { x: 0, y: 0 };
 let nearbyChest = null;
+let nearbyTrader = null;
 
 let dimEntities = {
-    overworld: { resources: [], enemies: [], chests: [], projectiles: [] },
-    nether:    { resources: [], enemies: [], chests: [], projectiles: [] },
-    void:      { resources: [], enemies: [], chests: [], projectiles: [] }
+    overworld: { resources: [], enemies: [], chests: [], traders: [], projectiles: [] },
+    nether:    { resources: [], enemies: [], chests: [], traders: [], projectiles: [] },
+    void:      { resources: [], enemies: [], chests: [], traders: [], projectiles: [] }
 };
 
 // GROUND PATTERNS
@@ -1012,7 +1074,15 @@ function generateDimension(dimKey) {
         ));
     }
 
-    dimEntities[dimKey] = { resources: res, enemies: enemies, chests: chests, projectiles: [] };
+    const traders = [];
+    for (let i = 0; i < 3; i++) {
+        traders.push(new WanderingTraderMob(
+            Math.random() * (WORLD_SIZE - 400) + 200,
+            Math.random() * (WORLD_SIZE - 400) + 200
+        ));
+    }
+
+    dimEntities[dimKey] = { resources: res, enemies: enemies, chests: chests, traders: traders, projectiles: [] };
 }
 
 generateDimension('overworld');
@@ -1170,6 +1240,7 @@ function updateHUD() {
 
     renderCraftingUI();
     renderBackpackUI();
+    renderTraderUI();
 }
 
 function updateHealthBarOnly() {
@@ -1263,6 +1334,16 @@ function toggleBackpack(force) {
     }
 }
 
+function toggleTraderModal(force) {
+    const modal = document.getElementById('trader-modal');
+    if (force === false || !modal.classList.contains('hidden')) {
+        modal.classList.replace('flex', 'hidden');
+    } else {
+        modal.classList.replace('hidden', 'flex');
+        renderTraderUI();
+    }
+}
+
 function renderBackpackUI() {
     document.getElementById('backpack-grid').innerHTML = player.backpack.map((item, i) => `
         <div onclick="equipFromBackpack(${i})" class="hotbar-slot border-indigo-500/20 flex-col hover:border-indigo-400 w-full h-20">
@@ -1270,6 +1351,118 @@ function renderBackpackUI() {
             <span class="slot-title">${item.name}</span>${item.count > 1 ? `<span class="item-count">x${item.count}</span>` : ''}
         </div>
     `).join('');
+}
+
+function getPlayerResourceCount(type) {
+    if (type === 'wood') return player.wood;
+    if (type === 'stone') return player.stone;
+    if (type === 'ore') return player.ore;
+    if (type === 'shard_overworld') return player.shards.overworld;
+    if (type === 'shard_nether') return player.shards.nether;
+    if (type === 'shard_void') return player.shards.void;
+    return 0;
+}
+
+function renderTraderUI() {
+    const list = document.getElementById('trader-offers-list');
+    if (!list) return;
+
+    list.innerHTML = TRADER_OFFERS.map(offer => {
+        const giveValue = (RESOURCE_VALUES[offer.give.type] || 1) * offer.give.count;
+        const receiveValue = (RESOURCE_VALUES[offer.receive.type] || 1) * offer.receive.count;
+        const ratio = receiveValue / giveValue;
+
+        let dealBadge = '';
+        let dealBgClass = '';
+        let dealTextClass = '';
+        let ratioPercent = Math.min(100, Math.max(10, Math.round(ratio * 50)));
+
+        if (ratio >= 1.25) {
+            dealBadge = '🔥 GREAT DEAL';
+            dealBgClass = 'border-emerald-500/40 bg-emerald-950/30';
+            dealTextClass = 'text-emerald-400';
+        } else if (ratio >= 0.85) {
+            dealBadge = '⚖️ FAIR TRADE';
+            dealBgClass = 'border-amber-500/40 bg-amber-950/30';
+            dealTextClass = 'text-amber-400';
+        } else {
+            dealBadge = '⚠️ BAD DEAL';
+            dealBgClass = 'border-rose-500/40 bg-rose-950/30';
+            dealTextClass = 'text-rose-400';
+        }
+
+        const currentOwned = getPlayerResourceCount(offer.give.type);
+        const canAfford = currentOwned >= offer.give.count;
+
+        return `
+            <div class="glass-panel flex flex-col md:flex-row items-center justify-between rounded-2xl p-4 gap-4 border ${dealBgClass}">
+                <div class="flex-1">
+                    <div class="flex items-center gap-3 mb-1">
+                        <span class="font-display font-bold text-sm text-gray-100">${offer.name}</span>
+                        <span class="rounded-full px-2.5 py-0.5 text-[10px] font-extrabold border border-current ${dealTextClass}">
+                            ${dealBadge}
+                        </span>
+                    </div>
+                    <p class="text-xs text-gray-400 mb-2">${offer.desc}</p>
+                    
+                    <!-- TRADE EVALUATION BAR -->
+                    <div class="w-full max-w-md bg-black/40 rounded-full h-2 overflow-hidden border border-white/10 relative">
+                        <div class="h-full ${ratio >= 1.25 ? 'bg-emerald-500' : ratio >= 0.85 ? 'bg-amber-500' : 'bg-rose-500'} transition-all" style="width: ${ratioPercent}%"></div>
+                    </div>
+                    <div class="flex justify-between text-[9px] text-gray-400 max-w-md mt-1 font-mono">
+                        <span>Cost Value: ${giveValue.toFixed(1)} pts</span>
+                        <span>Value Ratio: ${(ratio * 100).toFixed(0)}%</span>
+                        <span>Return Value: ${receiveValue.toFixed(1)} pts</span>
+                    </div>
+                </div>
+
+                <!-- TRADE ACTION -->
+                <div class="flex items-center gap-4 bg-black/30 p-3 rounded-xl border border-white/5">
+                    <div class="text-right text-xs">
+                        <div class="text-rose-300 font-bold">You Give: ${offer.give.icon} ${offer.give.count}${offer.give.name}</div>
+                        <div class="text-emerald-300 font-bold">You Get: ${offer.receive.icon} ${offer.receive.count}${offer.receive.name}</div>
+                        <div class="text-[10px] text-gray-400">Owned: ${currentOwned}/${offer.give.count}</div>
+                    </div>
+                    <button onclick="executeTrade('${offer.id}')" ${!canAfford ? 'disabled' : ''} class="rounded-xl bg-emerald-600 px-4 py-2 font-display text-xs font-bold text-white shadow-lg hover:bg-emerald-500 disabled:opacity-40 transition-all">
+                        Accept Trade
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function executeTrade(offerId) {
+    const offer = TRADER_OFFERS.find(o => o.id === offerId);
+    if (!offer) return;
+
+    const ownedCount = getPlayerResourceCount(offer.give.type);
+    if (ownedCount < offer.give.count) {
+        showToast("⚠️ Not Enough Resources", `Need ${offer.give.count}${offer.give.name}!`);
+        return;
+    }
+
+    // Deduct Cost
+    if (offer.give.type === 'wood') player.wood -= offer.give.count;
+    else if (offer.give.type === 'stone') player.stone -= offer.give.count;
+    else if (offer.give.type === 'ore') player.ore -= offer.give.count;
+    else if (offer.give.type === 'shard_overworld') player.shards.overworld -= offer.give.count;
+    else if (offer.give.type === 'shard_nether') player.shards.nether -= offer.give.count;
+    else if (offer.give.type === 'shard_void') player.shards.void -= offer.give.count;
+
+    // Receive Product
+    if (offer.receive.type === 'wood') player.wood += offer.receive.count;
+    else if (offer.receive.type === 'stone') player.stone += offer.receive.count;
+    else if (offer.receive.type === 'ore') player.ore += offer.receive.count;
+    else if (offer.receive.type === 'shard_overworld') player.shards.overworld += offer.receive.count;
+    else if (offer.receive.type === 'shard_nether') player.shards.nether += offer.receive.count;
+    else if (offer.receive.type === 'shard_void') player.shards.void += offer.receive.count;
+
+    showToast("🤝 Trade Complete", `Traded ${offer.give.count}${offer.give.name} for ${offer.receive.count}${offer.receive.name}!`);
+    vfx.createExplosion(player.x, player.y, '#10b981', 25);
+
+    updateHUD();
+    saveData();
 }
 
 function equipFromBackpack(backpackIdx) {
@@ -1294,8 +1487,9 @@ function equipFromBackpack(backpackIdx) {
 window.addEventListener('keydown', e => {
     keys[e.key.toLowerCase()] = true;
     if (e.key === '`' || e.key === '~') { e.preventDefault(); toggleBackpack(); }
-    if (e.key === 'Escape') toggleBackpack(false);
+    if (e.key === 'Escape') { toggleBackpack(false); toggleTraderModal(false); }
     if (e.key.toLowerCase() === 'e' && nearbyChest) nearbyChest.open(player, currentDim);
+    if (e.key.toLowerCase() === 'f' && nearbyTrader) toggleTraderModal();
 
     if (['1','2','3','4','5','6','7','8','9'].includes(e.key)) {
         pressHotbarSlot(parseInt(e.key) - 1);
@@ -1309,6 +1503,11 @@ window.addEventListener('mousedown', e => {
     if (e.button === 0) {
         if (nearbyChest) {
             nearbyChest.open(player, currentDim);
+            return;
+        }
+
+        if (nearbyTrader) {
+            toggleTraderModal();
             return;
         }
 
@@ -1412,11 +1611,28 @@ function update(dt) {
     if (nearbyChest) chestPrompt.classList.remove('hidden');
     else chestPrompt.classList.add('hidden');
 
+    nearbyTrader = null;
+    const currentTraders = dimEntities[currentDim].traders;
+    for (let trader of currentTraders) {
+        if (Math.hypot(trader.x - player.x, trader.y - player.y) <= player.radius + trader.radius + 40) {
+            nearbyTrader = trader;
+            break;
+        }
+    }
+
+    const traderPrompt = document.getElementById('trader-prompt');
+    if (nearbyTrader) traderPrompt.classList.remove('hidden');
+    else traderPrompt.classList.add('hidden');
+
     const currentEnemies = dimEntities[currentDim].enemies;
     const currentProjectiles = dimEntities[currentDim].projectiles;
 
     for (let i = 0; i < currentEnemies.length; i++) {
         currentEnemies[i].update(player, currentProjectiles);
+    }
+
+    for (let i = 0; i < currentTraders.length; i++) {
+        currentTraders[i].update(player, currentProjectiles);
     }
 
     for (let i = currentProjectiles.length - 1; i >= 0; i--) {
@@ -1462,6 +1678,13 @@ function render() {
     for (let chest of currentChests) {
         if (!chest.opened && chest.x >= viewLeft && chest.x <= viewRight && chest.y >= viewTop && chest.y <= viewBottom) {
             chest.render(ctx);
+        }
+    }
+
+    const currentTraders = dimEntities[currentDim].traders;
+    for (let trader of currentTraders) {
+        if (trader.x >= viewLeft && trader.x <= viewRight && trader.y >= viewTop && trader.y <= viewBottom) {
+            trader.render(ctx);
         }
     }
 
