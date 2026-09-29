@@ -153,8 +153,8 @@
             <div id="ore-val" class="font-display text-xs font-bold text-cyan-300">0</div>
         </div>
         <div class="rounded-lg border border-purple-500/30 bg-purple-950/40 p-1.5">
-            <div class="text-base">🔮</div>
-            <div id="shard-val" class="font-display text-xs font-bold text-purple-300">0/5</div>
+            <div id="shard-icon" class="text-base">🌿</div>
+            <div id="shard-val" class="font-display text-xs font-bold text-emerald-300">0/3</div>
         </div>
     </div>
 
@@ -283,6 +283,13 @@ const CRAFTABLES = [
     { id: 'elixir', name: 'Full Elixir', type: 'consumable', icon: '🍷', stats: 'Full Healing', cost: { wood: 15, stone: 15, ore: 10 } }
 ];
 
+// DIMENSION SHARD CONFIGURATION
+const DIMENSION_SHARDS = {
+    overworld: { name: 'Verdant Shard', icon: '🌿', req: 3, unlock: 'nether', nextDimName: 'Nether' },
+    nether:    { name: 'Crimson Shard', icon: '🔥', req: 3, unlock: 'void', nextDimName: 'The Void' },
+    void:      { name: 'Astral Shard',  icon: '✨', req: 3, unlock: null, nextDimName: 'Eternity' }
+};
+
 let currentDim = 'overworld';
 let activeWeaponSlot = 0;
 let keys = {};
@@ -319,37 +326,93 @@ const RESOURCE_TYPES = {
     tree:  { name: 'Ancient Oak', emoji: '🌳', color: '#15803d', borderColor: '#22c55e' },
     rock:  { name: 'Granite Ore', emoji: '🪨', color: '#475569', borderColor: '#94a3b8' },
     ore:   { name: 'Crystal Vein', emoji: '💎', color: '#0284c7', borderColor: '#38bdf8' },
-    shard: { name: 'Void Crystal', emoji: '🔮', color: '#7e22ce', borderColor: '#c084fc' }
+    shard: { name: 'Shard Cluster', emoji: '🔮', color: '#7e22ce', borderColor: '#c084fc' }
 };
 
-const ENEMY_IMAGE_PATHS = [
-    './images/gerard.jpeg',
-    './images/jason.jpeg',
-    './images/liu-ji.jpeg',
-    './images/matthew.jpeg',
-    './images/travia.jpeg',
-    './images/xayven.jpeg',
-    './images/xuchen.jpeg'
-];
-
-const enemyImages = ENEMY_IMAGE_PATHS.map(path => {
-    const img = new Image();
-    img.src = path;
-    return img;
-});
-
-function getRandomEnemyImage() {
-    return enemyImages[Math.floor(Math.random() * enemyImages.length)];
-}
-
+// DIMENSION-SPECIFIC ENEMY DEFINITIONS[cite: 1]
 const MOB_TYPES = {
-    overworld: { name: 'Goblin Scout', emoji: '👹', color: '#dc2626', borderColor: '#f87171' },
-    nether:    { name: 'Fiery Demon', emoji: '😈', color: '#b91c1c', borderColor: '#fca5a5' },
-    void:      { name: 'Void Stalker', emoji: '👾', color: '#581c87', borderColor: '#e9d5ff' }
+    overworld: [
+        { name: 'Goblin Scout', emoji: '👺', color: '#15803d', borderColor: '#4ade80', hp: 50, damage: 6, speed: 2.2, shardDropChance: 0.25 },
+        { name: 'Forest Fiend', emoji: '👹', color: '#047857', borderColor: '#34d399', hp: 75, damage: 10, speed: 2.4, shardDropChance: 0.35 }
+    ],
+    nether: [
+        { name: 'Fiery Demon', emoji: '😈', color: '#b91c1c', borderColor: '#fca5a5', hp: 130, damage: 16, speed: 2.7, shardDropChance: 0.4 },
+        { name: 'Lava Imp', emoji: '👾', color: '#c2410c', borderColor: '#fdba74', hp: 95, damage: 14, speed: 3.1, shardDropChance: 0.3 }
+    ],
+    void: [
+        { name: 'Void Stalker', emoji: '👽', color: '#581c87', borderColor: '#e9d5ff', hp: 220, damage: 24, speed: 3.0, shardDropChance: 0.5 },
+        { name: 'Shadow Phantom', emoji: '👻', color: '#312e81', borderColor: '#a5b4fc', hp: 180, damage: 28, speed: 3.5, shardDropChance: 0.45 }
+    ]
 };
+
+// PROCEDURAL GROUND TEXTURE PATTERNS[cite: 1]
+let groundPatterns = {};
+
+function createGroundPatterns() {
+    // 1. OVERWORLD GRASS TEXTURE PATTERN[cite: 1]
+    const pCanvas1 = document.createElement('canvas');
+    pCanvas1.width = 128; pCanvas1.height = 128;
+    const pCtx1 = pCanvas1.getContext('2d');
+    pCtx1.fillStyle = '#112318';
+    pCtx1.fillRect(0, 0, 128, 128);
+    // Darker grass patches
+    pCtx1.fillStyle = '#162e20';
+    for(let i = 0; i < 16; i++) {
+        pCtx1.fillRect((i*29)%128, (i*47)%128, 24, 24);
+    }
+    // Grass blade details
+    pCtx1.strokeStyle = '#1e3a29';
+    pCtx1.lineWidth = 2;
+    for(let i = 0; i < 20; i++) {
+        let x = (i * 37) % 128, y = (i * 53) % 128;
+        pCtx1.beginPath();
+        pCtx1.moveTo(x, y); pCtx1.lineTo(x + 4, y - 8);
+        pCtx1.moveTo(x + 3, y); pCtx1.lineTo(x + 8, y - 6);
+        pCtx1.stroke();
+    }
+    groundPatterns.overworld = ctx.createPattern(pCanvas1, 'repeat');
+
+    // 2. NETHERRACK CRACKED TEXTURE PATTERN[cite: 1]
+    const pCanvas2 = document.createElement('canvas');
+    pCanvas2.width = 128; pCanvas2.height = 128;
+    const pCtx2 = pCanvas2.getContext('2d');
+    pCtx2.fillStyle = '#2a0909';
+    pCtx2.fillRect(0, 0, 128, 128);
+    pCtx2.fillStyle = '#3f0e0e';
+    for(let i = 0; i < 12; i++) {
+        pCtx2.fillRect((i*31)%128, (i*41)%128, 32, 32);
+    }
+    // Lava cracks
+    pCtx2.strokeStyle = '#991b1b';
+    pCtx2.lineWidth = 2;
+    pCtx2.beginPath();
+    pCtx2.moveTo(0, 20); pCtx2.lineTo(40, 50); pCtx2.lineTo(80, 30); pCtx2.lineTo(128, 70);
+    pCtx2.moveTo(20, 128); pCtx2.lineTo(60, 80); pCtx2.lineTo(100, 110);
+    pCtx2.stroke();
+    groundPatterns.nether = ctx.createPattern(pCanvas2, 'repeat');
+
+    // 3. THE VOID COSMIC TILE TEXTURE PATTERN[cite: 1]
+    const pCanvas3 = document.createElement('canvas');
+    pCanvas3.width = 128; pCanvas3.height = 128;
+    const pCtx3 = pCanvas3.getContext('2d');
+    pCtx3.fillStyle = '#090514';
+    pCtx3.fillRect(0, 0, 128, 128);
+    // Void Grid
+    pCtx3.strokeStyle = '#2e1065';
+    pCtx3.lineWidth = 1.5;
+    pCtx3.strokeRect(0, 0, 128, 128);
+    pCtx3.strokeRect(16, 16, 96, 96);
+    // Stars
+    pCtx3.fillStyle = '#c084fc';
+    for(let i = 0; i < 8; i++) {
+        pCtx3.fillRect((i*43)%128, (i*67)%128, 2, 2);
+    }
+    groundPatterns.void = ctx.createPattern(pCanvas3, 'repeat');
+}
+createGroundPatterns();
 
 function loadSavedData() {
-    const saved = localStorage.getItem('survival_realm_v3');
+    const saved = localStorage.getItem('survival_realm_v4');
     if (saved) {
         try {
             const data = JSON.parse(saved);
@@ -378,12 +441,12 @@ function saveData() {
         weaponHotbar: player.weaponHotbar, consumableHotbar: player.consumableHotbar,
         inventory: player.inventory, ownedArmors: player.ownedArmors, armorKey: player.armorKey
     };
-    localStorage.setItem('survival_realm_v3', JSON.stringify(data));
+    localStorage.setItem('survival_realm_v4', JSON.stringify(data));
 }
 
 function resetGameData() {
     if (confirm("Are you SURE you want to fully reset ALL progress, inventory, and unlocked gear?")) {
-        localStorage.removeItem('survival_realm_v3');
+        localStorage.removeItem('survival_realm_v4');
         location.reload();
     }
 }
@@ -397,7 +460,6 @@ function showToast(title, msg) {
     setTimeout(() => toast.remove(), 2500);
 }
 
-// Smart off-screen calculation guaranteeing entities spawn out of view[cite: 1]
 function getRandomOffscreenPosition() {
     let x, y, dist;
     let attempts = 0;
@@ -412,17 +474,17 @@ function getRandomOffscreenPosition() {
 
 function generateDimension(dimKey) {
     const res = [];
-    const count = dimKey === 'overworld' ? 300 : dimKey === 'nether' ? 250 : 200;
+    const count = dimKey === 'overworld' ? 320 : dimKey === 'nether' ? 280 : 240;
     
     for (let i = 0; i < count; i++) {
         let type = 'tree';
         let r = Math.random();
         if (dimKey === 'overworld') {
-            type = r < 0.5 ? 'tree' : r < 0.85 ? 'rock' : 'ore';
+            type = r < 0.4 ? 'tree' : r < 0.7 ? 'rock' : r < 0.85 ? 'ore' : 'shard';
         } else if (dimKey === 'nether') {
-            type = r < 0.4 ? 'rock' : r < 0.8 ? 'ore' : 'shard';
-        } else {
             type = r < 0.3 ? 'rock' : r < 0.6 ? 'ore' : 'shard';
+        } else {
+            type = r < 0.2 ? 'rock' : r < 0.5 ? 'ore' : 'shard';
         }
 
         res.push({
@@ -430,32 +492,36 @@ function generateDimension(dimKey) {
             x: Math.random() * (WORLD_SIZE - 200) + 100,
             y: Math.random() * (WORLD_SIZE - 200) + 100,
             type: type,
-            hp: type === 'tree' ? 30 : type === 'rock' ? 50 : type === 'ore' ? 80 : 100,
-            maxHp: type === 'tree' ? 30 : type === 'rock' ? 50 : type === 'ore' ? 80 : 100,
+            // Reduced HP on shard clusters to make gathering much easier![cite: 1]
+            hp: type === 'tree' ? 30 : type === 'rock' ? 50 : type === 'ore' ? 80 : 35,
+            maxHp: type === 'tree' ? 30 : type === 'rock' ? 50 : type === 'ore' ? 80 : 35,
             radius: 22
         });
     }
 
     const enemies = [];
-    const eCount = dimKey === 'overworld' ? 40 : dimKey === 'nether' ? 65 : 85;
+    const mobPool = MOB_TYPES[dimKey];
+    const eCount = dimKey === 'overworld' ? 45 : dimKey === 'nether' ? 70 : 90;
+
     for (let i = 0; i < eCount; i++) {
+        const mobTemplate = mobPool[Math.floor(Math.random() * mobPool.length)];
         enemies.push({
             id: i,
             x: Math.random() * (WORLD_SIZE - 200) + 100,
             y: Math.random() * (WORLD_SIZE - 200) + 100,
             vx: 0, vy: 0,
-            hp: dimKey === 'overworld' ? 60 : dimKey === 'nether' ? 120 : 220,
-            maxHp: dimKey === 'overworld' ? 60 : dimKey === 'nether' ? 120 : 220,
-            speed: dimKey === 'overworld' ? 2.2 : 2.8,
-            damage: dimKey === 'overworld' ? 8 : 16,
+            hp: mobTemplate.hp,
+            maxHp: mobTemplate.hp,
+            speed: mobTemplate.speed,
+            damage: mobTemplate.damage,
             radius: 20,
-            animOffset: Math.random() * 100,
-            faceImage: getRandomEnemyImage()
+            shardDropChance: mobTemplate.shardDropChance,
+            typeData: mobTemplate
         });
     }
 
     const chests = [];
-    const chestCount = dimKey === 'overworld' ? 20 : dimKey === 'nether' ? 25 : 30;
+    const chestCount = dimKey === 'overworld' ? 22 : dimKey === 'nether' ? 28 : 35;
     for (let i = 0; i < chestCount; i++) {
         chests.push({
             id: i,
@@ -477,18 +543,18 @@ generateDimension('void');
 setInterval(() => {
     ['overworld', 'nether', 'void'].forEach(dim => {
         const resList = dimEntities[dim].resources;
-        const targetCount = dim === 'overworld' ? 300 : dim === 'nether' ? 250 : 200;
+        const targetCount = dim === 'overworld' ? 320 : dim === 'nether' ? 280 : 240;
 
         if (resList.length < targetCount) {
             const pos = getRandomOffscreenPosition();
             let type = 'tree';
             let r = Math.random();
             if (dim === 'overworld') {
-                type = r < 0.5 ? 'tree' : r < 0.85 ? 'rock' : 'ore';
+                type = r < 0.4 ? 'tree' : r < 0.7 ? 'rock' : r < 0.85 ? 'ore' : 'shard';
             } else if (dim === 'nether') {
-                type = r < 0.4 ? 'rock' : r < 0.8 ? 'ore' : 'shard';
-            } else {
                 type = r < 0.3 ? 'rock' : r < 0.6 ? 'ore' : 'shard';
+            } else {
+                type = r < 0.2 ? 'rock' : r < 0.5 ? 'ore' : 'shard';
             }
 
             resList.push({
@@ -496,14 +562,14 @@ setInterval(() => {
                 x: pos.x,
                 y: pos.y,
                 type: type,
-                hp: type === 'tree' ? 30 : type === 'rock' ? 50 : type === 'ore' ? 80 : 100,
-                maxHp: type === 'tree' ? 30 : type === 'rock' ? 50 : type === 'ore' ? 80 : 100,
+                hp: type === 'tree' ? 30 : type === 'rock' ? 50 : type === 'ore' ? 80 : 35,
+                maxHp: type === 'tree' ? 30 : type === 'rock' ? 50 : type === 'ore' ? 80 : 35,
                 radius: 22
             });
         }
 
         const chestList = dimEntities[dim].chests;
-        const targetChests = dim === 'overworld' ? 20 : dim === 'nether' ? 25 : 30;
+        const targetChests = dim === 'overworld' ? 22 : dim === 'nether' ? 28 : 35;
         if (chestList.length < targetChests) {
             const pos = getRandomOffscreenPosition();
             chestList.push({
@@ -521,22 +587,25 @@ setInterval(() => {
 setInterval(() => {
     ['overworld', 'nether', 'void'].forEach(dim => {
         const enemyList = dimEntities[dim].enemies;
-        const targetCount = dim === 'overworld' ? 40 : dim === 'nether' ? 65 : 85;
+        const targetCount = dim === 'overworld' ? 45 : dim === 'nether' ? 70 : 90;
 
         if (enemyList.length < targetCount) {
             const pos = getRandomOffscreenPosition();
+            const mobPool = MOB_TYPES[dim];
+            const mobTemplate = mobPool[Math.floor(Math.random() * mobPool.length)];
+
             enemyList.push({
                 id: Date.now() + Math.random(),
                 x: pos.x,
                 y: pos.y,
                 vx: 0, vy: 0,
-                hp: dim === 'overworld' ? 60 : dim === 'nether' ? 120 : 220,
-                maxHp: dim === 'overworld' ? 60 : dim === 'nether' ? 120 : 220,
-                speed: dim === 'overworld' ? 2.2 : 2.8,
-                damage: dim === 'overworld' ? 8 : 16,
+                hp: mobTemplate.hp,
+                maxHp: mobTemplate.hp,
+                speed: mobTemplate.speed,
+                damage: mobTemplate.damage,
                 radius: 20,
-                animOffset: Math.random() * 100,
-                faceImage: getRandomEnemyImage()
+                shardDropChance: mobTemplate.shardDropChance,
+                typeData: mobTemplate
             });
         }
     });
@@ -603,15 +672,22 @@ function cycleArmor() {
 }
 
 function switchDimension(dimKey) {
+    if (dimKey === currentDim) return;
+
     if (!player.unlockedDims[dimKey]) {
-        if (player.shards[currentDim] >= 5) {
+        // Check if player has required shards from previous dimension[cite: 1]
+        const reqConfig = dimKey === 'nether' ? DIMENSION_SHARDS.overworld : DIMENSION_SHARDS.nether;
+        const reqDimKey = dimKey === 'nether' ? 'overworld' : 'nether';
+
+        if (player.shards[reqDimKey] >= reqConfig.req) {
             player.unlockedDims[dimKey] = true;
-            showToast("🌀 Realm Portal Unlocked", `Entered the ${dimKey.toUpperCase()}!`);
+            showToast("🌀 Realm Portal Unlocked", `Entered ${dimKey.toUpperCase()}!`);
         } else {
-            showToast("🔒 Realm Locked", `Collect 5 Dimensional Shards to enter ${dimKey.toUpperCase()}!`);
+            showToast("🔒 Realm Locked", `Collect ${reqConfig.req}x ${reqConfig.name} (${reqConfig.icon}) in ${reqDimKey.toUpperCase()} first!`);
             return;
         }
     }
+
     currentDim = dimKey;
     document.querySelectorAll('.dim-btn').forEach(btn => btn.classList.add('opacity-60', 'bg-white/5'));
     document.getElementById(`btn-${dimKey}`).classList.remove('opacity-60', 'bg-white/5');
@@ -631,21 +707,22 @@ function openChest(chest) {
     player.stone += sGain;
     player.ore += oGain;
 
-    // Rare Loot Drop Probability
     let bonusMessage = "";
-    if (Math.random() < 0.45) {
-        const healItem = CRAFTABLES.find(c => c.id === 'heal');
-        addItemToStorage({ ...healItem, count: 2 });
-        bonusMessage = " + 2x Health Salves!";
-    } else if (Math.random() < 0.2) {
-        const elixirItem = CRAFTABLES.find(c => c.id === 'elixir');
-        addItemToStorage({ ...elixirItem, count: 1 });
-        bonusMessage = " + 1x Full Elixir!";
+    // Guaranteed shard bonus from chests to make gathering much easier![cite: 1]
+    const currentShardInfo = DIMENSION_SHARDS[currentDim];
+    if (player.shards[currentDim] < currentShardInfo.req) {
+        player.shards[currentDim]++;
+        bonusMessage += ` +1 ${currentShardInfo.name} ${currentShardInfo.icon}!`;
     }
 
-    showToast("📦 Chest Opened!", `Found +${wGain} Wood, +${sGain} Stone, +${oGain} Ore${bonusMessage}`);
+    if (Math.random() < 0.5) {
+        const healItem = CRAFTABLES.find(c => c.id === 'heal');
+        addItemToStorage({ ...healItem, count: 2 });
+        bonusMessage += " + 2x Salves!";
+    }
 
-    // Remove chest after claiming
+    showToast("📦 Chest Opened!", `Found +${wGain}W, +${sGain}S, +${oGain}O${bonusMessage}`);
+
     const chests = dimEntities[currentDim].chests;
     const idx = chests.indexOf(chest);
     if (idx !== -1) chests.splice(idx, 1);
@@ -692,7 +769,12 @@ function updateHUD() {
     document.getElementById('wood-val').textContent = player.wood;
     document.getElementById('stone-val').textContent = player.stone;
     document.getElementById('ore-val').textContent = player.ore;
-    document.getElementById('shard-val').textContent = `${player.shards[currentDim]}/5`;
+    
+    // Update Shard Icon & Values per dimension[cite: 1]
+    const shardConfig = DIMENSION_SHARDS[currentDim];
+    document.getElementById('shard-icon').textContent = shardConfig.icon;
+    document.getElementById('shard-val').textContent = `${player.shards[currentDim]}/${shardConfig.req}`;
+
     document.getElementById('weapon-val').textContent = player.weapon ? player.weapon.name : 'Wooden Stick';
 
     if (player.armor) {
@@ -826,6 +908,7 @@ function performAttack() {
     const currentWeapon = player.weapon || WEAPONS.stick;
     const currentEnemies = dimEntities[currentDim].enemies;
     const currentResources = dimEntities[currentDim].resources;
+    const shardConfig = DIMENSION_SHARDS[currentDim];
 
     for (let i = currentEnemies.length - 1; i >= 0; i--) {
         const enemy = currentEnemies[i];
@@ -841,8 +924,15 @@ function performAttack() {
 
             if (enemy.hp <= 0) {
                 currentEnemies.splice(i, 1);
-                player.wood += Math.floor(Math.random() * 3) + 1;
-                player.stone += Math.floor(Math.random() * 2);
+                player.wood += Math.floor(Math.random() * 4) + 2;
+                player.stone += Math.floor(Math.random() * 3) + 1;
+                
+                // Mobs now have a high chance to drop dimension shards directly![cite: 1]
+                if (Math.random() < enemy.shardDropChance) {
+                    player.shards[currentDim] += 1;
+                    showToast(`${shardConfig.icon} Shard Dropped!`, `Gained +1 ${shardConfig.name} from defeating ${enemy.typeData.name}!`);
+                }
+
                 updateHUD();
                 saveData();
             }
@@ -856,10 +946,14 @@ function performAttack() {
         if (dx * dx + dy * dy <= (currentWeapon.range + res.radius) ** 2) {
             res.hp -= currentWeapon.damage;
             if (res.hp <= 0) {
-                if (res.type === 'tree') player.wood += 5;
-                else if (res.type === 'rock') player.stone += 5;
-                else if (res.type === 'ore') player.ore += 3;
-                else if (res.type === 'shard') player.shards[currentDim] = Math.min(5, player.shards[currentDim] + 1);
+                if (res.type === 'tree') player.wood += 6;
+                else if (res.type === 'rock') player.stone += 6;
+                else if (res.type === 'ore') player.ore += 4;
+                else if (res.type === 'shard') {
+                    // Harvest +2 shards per cluster for faster progression![cite: 1]
+                    player.shards[currentDim] += 2;
+                    showToast(`${shardConfig.icon} Shard Cluster Harvested`, `Obtained +2 ${shardConfig.name}s!`);
+                }
 
                 currentResources.splice(i, 1);
                 updateHUD();
@@ -869,7 +963,7 @@ function performAttack() {
     }
 }
 
-// FIXED GAME TICK
+// GAME UPDATE LOOP
 let lastTime = performance.now();
 const deltaStep = 1000 / 60;
 let accum = 0;
@@ -901,7 +995,6 @@ function update(dt) {
         }
     }
 
-    // Check for nearby chest proximity
     nearbyChest = null;
     const currentChests = dimEntities[currentDim].chests;
     for (let chest of currentChests) {
@@ -951,9 +1044,6 @@ function update(dt) {
 
 // CULLING OPTIMIZED RENDER LOOP
 function render() {
-    ctx.fillStyle = '#030712';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
     const camX = canvas.width * 0.5 - player.x;
     const camY = canvas.height * 0.5 - player.y;
 
@@ -962,31 +1052,16 @@ function render() {
     const viewTop = player.y - canvas.height * 0.5 - 100;
     const viewBottom = player.y + canvas.height * 0.5 + 100;
 
+    // RENDER REALISTIC TEXTURED GROUND PATTERNS[cite: 1]
     ctx.save();
     ctx.translate(camX, camY);
-
-    // Background Grid
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
-    ctx.lineWidth = 1;
-    const gridSize = 100;
-    const startX = Math.floor(viewLeft / gridSize) * gridSize;
-    const endX = Math.ceil(viewRight / gridSize) * gridSize;
-    const startY = Math.floor(viewTop / gridSize) * gridSize;
-    const endY = Math.ceil(viewBottom / gridSize) * gridSize;
-
-    ctx.beginPath();
-    for (let x = startX; x < endX; x += gridSize) {
-        ctx.moveTo(x, startY);
-        ctx.lineTo(x, endY);
-    }
-    for (let y = startY; y < endY; y += gridSize) {
-        ctx.moveTo(startX, y);
-        ctx.lineTo(endX, y);
-    }
-    ctx.stroke();
+    ctx.fillStyle = groundPatterns[currentDim] || '#030712';
+    ctx.fillRect(viewLeft, viewTop, canvas.width + 200, canvas.height + 200);
 
     // Render Resources
     const currentResources = dimEntities[currentDim].resources;
+    const shardConfig = DIMENSION_SHARDS[currentDim];
+
     for (let i = 0; i < currentResources.length; i++) {
         const res = currentResources[i];
         if (res.x < viewLeft || res.x > viewRight || res.y < viewTop || res.y > viewBottom) continue;
@@ -1003,7 +1078,10 @@ function render() {
         ctx.font = '16px sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(resDef.emoji, res.x, res.y);
+        
+        // Show dimension-specific shard emoji for shard nodes[cite: 1]
+        const displayIcon = res.type === 'shard' ? shardConfig.icon : resDef.emoji;
+        ctx.fillText(displayIcon, res.x, res.y);
 
         if (res.hp < res.maxHp) {
             ctx.fillStyle = 'rgba(0,0,0,0.6)';
@@ -1032,15 +1110,14 @@ function render() {
         ctx.fillText('📦', chest.x, chest.y);
     }
 
-    // Render Enemies
+    // Render Dimension-Specific Enemies[cite: 1]
     const currentEnemies = dimEntities[currentDim].enemies;
-    const mobDef = MOB_TYPES[currentDim];
-    
     for (let i = 0; i < currentEnemies.length; i++) {
         const enemy = currentEnemies[i];
         if (enemy.x < viewLeft || enemy.x > viewRight || enemy.y < viewTop || enemy.y > viewBottom) continue;
 
-        const visualRadius = enemy.radius * 1.6;
+        const visualRadius = enemy.radius * 1.5;
+        const mobDef = enemy.typeData;
 
         ctx.save();
         ctx.translate(enemy.x, enemy.y);
@@ -1052,25 +1129,13 @@ function render() {
 
         ctx.beginPath();
         ctx.arc(0, 0, visualRadius, 0, Math.PI * 2);
-        ctx.clip();
+        ctx.fillStyle = mobDef.color;
+        ctx.fill();
 
-        if (enemy.faceImage && enemy.faceImage.complete && enemy.faceImage.naturalWidth !== 0) {
-            ctx.drawImage(
-                enemy.faceImage,
-                -visualRadius,
-                -visualRadius,
-                visualRadius * 2,
-                visualRadius * 2
-            );
-        } else {
-            ctx.fillStyle = mobDef.color;
-            ctx.fillRect(-visualRadius, -visualRadius, visualRadius * 2, visualRadius * 2);
-
-            ctx.font = '22px sans-serif';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(mobDef.emoji, 0, 0);
-        }
+        ctx.font = '20px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(mobDef.emoji, 0, 0);
 
         ctx.restore();
 
