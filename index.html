@@ -133,7 +133,7 @@
 
 <!-- TRADER INTERACTION PROMPT -->
 <div id="trader-prompt" class="pointer-events-none fixed bottom-20 left-1/2 z-30 hidden -translate-x-1/2 rounded-full border border-emerald-400/40 bg-slate-900/90 px-5 py-2 text-xs font-bold text-emerald-300 shadow-2xl backdrop-blur-md">
-    🧙‍♂️ Press <span class="rounded bg-emerald-500/20 px-2 py-0.5 text-white border border-emerald-400/50">[F]</span> to Trade with Hanbo
+    🧙‍♂️ Press <span class="rounded bg-emerald-500/20 px-2 py-0.5 text-white border border-emerald-400/50">[F]</span> to Trade with Hanbo <span class="text-gray-400 font-medium">(or click to attack him)</span>
 </div>
 
 <!-- TOP BAR: SURVIVOR HUD & CRAFTING -->
@@ -653,60 +653,147 @@ class Mob extends Entity {
     }
 }
 
+// =============================================================================
+// HANBO: NEUTRAL SHAPESHIFTING TRADER
+// - Cycles through every mob's face with a crossfade
+// - Wanders (walks, then stands still), never chases or attacks
+// - Can be hit, knocked back, and killed (drops loot)
+// =============================================================================
 class WanderingTraderMob extends Entity {
     constructor(x, y) {
         super(x, y, 26);
         this.name = 'Hanbo (Trader)';
-        this.imageName = 'Hanbo';
-        this.visualRadius = 32;
-        this.moveTimer = 0;
-        this.targetAngle = Math.random() * Math.PI * 2;
+        this.visualRadius = 34;
+        this.maxHp = 150;
+        this.hp = this.maxHp;
+        this.vx = 0;
+        this.vy = 0;
         this.speed = 0.8;
+
+        // Wandering state
+        this.state = 'idle';
+        this.stateTimer = 60;
+        this.targetAngle = Math.random() * Math.PI * 2;
+
+        // Shapeshifting: cycles through every mob's face
+        this.forms = ['Gerard', 'Jason', 'Liu-Ji', 'Matthew', 'Travia', 'Xayven', 'Xuchen', 'Hanbo'];
+        this.formColors = {
+            'Gerard': '#15803d',
+            'Jason': '#047857',
+            'Liu-Ji': '#b91c1c',
+            'Matthew': '#c2410c',
+            'Travia': '#9a3412',
+            'Xayven': '#581c87',
+            'Xuchen': '#312e81',
+            'Hanbo': '#059669'
+        };
+        this.formIndex = Math.floor(Math.random() * this.forms.length);
+        this.formTimer = 0;
+        this.formDuration = 150; // frames each face is shown
+        this.fadeFrames = 40;    // frames spent crossfading into the next face
     }
 
     update(player, projectiles) {
-        this.moveTimer++;
-        if (this.moveTimer > 180) {
-            this.moveTimer = 0;
-            this.targetAngle = Math.random() * Math.PI * 2;
+        // Knockback (so he can be pushed around like other mobs)
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vx *= 0.82;
+        this.vy *= 0.82;
+
+        // Neutral wandering: walk a bit, stand a bit. Never chases or attacks.
+        this.stateTimer--;
+        if (this.stateTimer <= 0) {
+            if (this.state === 'idle') {
+                this.state = 'walk';
+                this.stateTimer = 90 + Math.random() * 120;
+                this.targetAngle = Math.random() * Math.PI * 2;
+            } else {
+                this.state = 'idle';
+                this.stateTimer = 60 + Math.random() * 120;
+            }
         }
 
-        this.x += Math.cos(this.targetAngle) * this.speed;
-        this.y += Math.sin(this.targetAngle) * this.speed;
+        if (this.state === 'walk') {
+            this.x += Math.cos(this.targetAngle) * this.speed;
+            this.y += Math.sin(this.targetAngle) * this.speed;
+        }
 
         this.x = Math.max(100, Math.min(WORLD_SIZE - 100, this.x));
         this.y = Math.max(100, Math.min(WORLD_SIZE - 100, this.y));
+
+        // Shapeshift timer
+        this.formTimer++;
+        if (this.formTimer >= this.formDuration) {
+            this.formTimer = 0;
+            this.formIndex = (this.formIndex + 1) % this.forms.length;
+        }
+    }
+
+    drawForm(ctx, formName, alpha) {
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.visualRadius, 0, Math.PI * 2);
+        ctx.clip();
+
+        const imgData = loadedMobImages[formName];
+        if (imgData && imgData.loaded) {
+            ctx.drawImage(imgData.img, this.x - this.visualRadius, this.y - this.visualRadius, this.visualRadius * 2, this.visualRadius * 2);
+        } else {
+            ctx.fillStyle = this.formColors[formName] || '#059669';
+            ctx.fillRect(this.x - this.visualRadius, this.y - this.visualRadius, this.visualRadius * 2, this.visualRadius * 2);
+        }
+        ctx.restore();
+    }
+
+    onDeath(dimension, player) {
+        const w = Math.floor(Math.random() * 11) + 10;
+        const s = Math.floor(Math.random() * 8) + 8;
+        const o = Math.floor(Math.random() * 6) + 3;
+
+        player.wood += w;
+        player.stone += s;
+        player.ore += o;
+
+        vfx.createExplosion(this.x, this.y, '#10b981', 30);
+        showToast("💀 Hanbo Slain", `He dropped Wood +${w}, Stone +${s}, Ore +${o}`);
     }
 
     render(ctx) {
-        const imgData = loadedMobImages[this.imageName];
-        if (imgData && imgData.loaded) {
-            ctx.save();
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, this.visualRadius, 0, Math.PI * 2);
-            ctx.clip();
-            ctx.drawImage(imgData.img, this.x - this.visualRadius, this.y - this.visualRadius, this.visualRadius * 2, this.visualRadius * 2);
-            ctx.restore();
+        const currentForm = this.forms[this.formIndex];
+        const nextForm = this.forms[(this.formIndex + 1) % this.forms.length];
 
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, this.visualRadius, 0, Math.PI * 2);
-            ctx.strokeStyle = '#10b981';
-            ctx.lineWidth = 3;
-            ctx.stroke();
-        } else {
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, this.visualRadius, 0, Math.PI * 2);
-            ctx.fillStyle = '#059669';
-            ctx.fill();
+        // Current face
+        this.drawForm(ctx, currentForm, 1);
+
+        // Crossfade into the next face near the end of the cycle
+        const fadeStart = this.formDuration - this.fadeFrames;
+        if (this.formTimer > fadeStart) {
+            this.drawForm(ctx, nextForm, (this.formTimer - fadeStart) / this.fadeFrames);
         }
+
+        // Green ring = neutral trader (so players can tell him apart)
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.visualRadius, 0, Math.PI * 2);
+        ctx.strokeStyle = '#10b981';
+        ctx.lineWidth = 3;
+        ctx.stroke();
 
         ctx.font = 'bold 11px sans-serif';
         ctx.fillStyle = '#6ee7b7';
         ctx.textAlign = 'center';
+        ctx.textBaseline = 'alphabetic';
         ctx.shadowColor = 'black';
         ctx.shadowBlur = 4;
         ctx.fillText(this.name, this.x, this.y - this.visualRadius - 10);
         ctx.shadowBlur = 0;
+
+        if (this.hp < this.maxHp) {
+            ctx.fillStyle = 'rgba(0,0,0,0.6)';
+            ctx.fillRect(this.x - 20, this.y - this.visualRadius - 22, 40, 4);
+            ctx.fillStyle = '#10b981';
+            ctx.fillRect(this.x - 20, this.y - this.visualRadius - 22, (this.hp / this.maxHp) * 40, 4);
+        }
     }
 }
 
@@ -874,6 +961,9 @@ class Chest extends Entity {
 
         vfx.createExplosion(this.x, this.y, '#facc15', 25);
         showToast("📦 Chest Looted!", `Obtained Wood +${wGain}, Stone +${sGain}, Ore +${oGain}${bonusMessage}`);
+
+        updateHUD();
+        saveData();
     }
 
     render(ctx) {
@@ -977,12 +1067,12 @@ const MOB_TEMPLATES = {
         { classType: ExplodingMob, config: { name: 'Jason (Exploder)', imageName: 'Jason', color: '#047857', borderColor: '#34d399', hp: 130, damage: 20, speed: 2.5, shardDropChance: 0.35, hitboxRadius: 24, visualRadius: 36 } }
     ],
     nether: [
-        { classType: RangedMob, config: { name: 'Liu-Ji (Ranged)', imageName: 'Liu-Ji', color: '#b91c1c', borderColor: '#fca5a5', hp: 220, damage: 32, speed: 2.4, shardDropChance: 0.4, hitboxRadius: 26, visualRadius: 39 } },
+        { classType: RangedMob, config: { name: 'Liu-Ji', imageName: 'Liu-Ji', color: '#b91c1c', borderColor: '#fca5a5', hp: 220, damage: 32, speed: 2.4, shardDropChance: 0.4, hitboxRadius: 26, visualRadius: 39 } },
         { classType: Mob, config: { name: 'Matthew', imageName: 'Matthew', color: '#c2410c', borderColor: '#fdba74', hp: 190, damage: 28, speed: 3.1, shardDropChance: 0.3, hitboxRadius: 22, visualRadius: 33 } },
-        { classType: ExplodingMob, config: { name: 'Travia (Exploder)', imageName: 'Travia', color: '#9a3412', borderColor: '#fb923c', hp: 200, damage: 36, speed: 2.9, shardDropChance: 0.35, hitboxRadius: 25, visualRadius: 37.5 } }
+        { classType: ExplodingMob, config: { name: 'Travia', imageName: 'Travia', color: '#9a3412', borderColor: '#fb923c', hp: 200, damage: 36, speed: 2.9, shardDropChance: 0.35, hitboxRadius: 25, visualRadius: 37.5 } }
     ],
     void: [
-        { classType: RangedMob, config: { name: 'Xayven (Ranged)', imageName: 'Xayven', color: '#581c87', borderColor: '#e9d5ff', hp: 400, damage: 48, speed: 2.8, shardDropChance: 0.5, hitboxRadius: 30, visualRadius: 45 } },
+        { classType: RangedMob, config: { name: 'Xayven', imageName: 'Xayven', color: '#581c87', borderColor: '#e9d5ff', hp: 400, damage: 48, speed: 2.8, shardDropChance: 0.5, hitboxRadius: 30, visualRadius: 45 } },
         { classType: Mob, config: { name: 'Xuchen', imageName: 'Xuchen', color: '#312e81', borderColor: '#a5b4fc', hp: 360, damage: 56, speed: 3.5, shardDropChance: 0.45, hitboxRadius: 28, visualRadius: 42 } }
     ]
 };
@@ -1030,6 +1120,14 @@ function createGroundPatterns() {
 }
 createGroundPatterns();
 
+// Spawns one Hanbo at a random spot in the given dimension
+function spawnTrader(dimKey) {
+    dimEntities[dimKey].traders.push(new WanderingTraderMob(
+        Math.random() * (WORLD_SIZE - 400) + 200,
+        Math.random() * (WORLD_SIZE - 400) + 200
+    ));
+}
+
 function generateDimension(dimKey) {
     const res = [];
     const count = dimKey === 'overworld' ? 320 : dimKey === 'nether' ? 280 : 240;
@@ -1074,15 +1172,12 @@ function generateDimension(dimKey) {
         ));
     }
 
-    const traders = [];
-    for (let i = 0; i < 3; i++) {
-        traders.push(new WanderingTraderMob(
-            Math.random() * (WORLD_SIZE - 400) + 200,
-            Math.random() * (WORLD_SIZE - 400) + 200
-        ));
-    }
+    dimEntities[dimKey] = { resources: res, enemies: enemies, chests: chests, traders: [], projectiles: [] };
 
-    dimEntities[dimKey] = { resources: res, enemies: enemies, chests: chests, traders: traders, projectiles: [] };
+    // 3 Hanbos per realm
+    for (let i = 0; i < 3; i++) {
+        spawnTrader(dimKey);
+    }
 }
 
 generateDimension('overworld');
@@ -1107,6 +1202,7 @@ function loadSavedData() {
             if (player.armorKey && ARMORS[player.armorKey]) {
                 player.armor = ARMORS[player.armorKey];
                 player.maxHp = player.baseMaxHp + player.armor.hpBonus;
+                player.hp = player.maxHp;
             }
         } catch (e) { console.error(e); }
     }
@@ -1194,7 +1290,7 @@ function switchDimension(dimKey) {
             player.unlockedDims[dimKey] = true;
             showToast("🌀 Realm Portal Unlocked", `Entered ${dimKey.toUpperCase()} Realm!`);
         } else {
-            showToast("🔒 Realm Locked", `Need ${reqConfig.req}x ${reqConfig.name} from${reqDimKey.toUpperCase()} Realm!`);
+            showToast("🔒 Realm Locked", `Need ${reqConfig.req}x ${reqConfig.name} from ${reqDimKey.toUpperCase()} Realm!`);
             return;
         }
     }
@@ -1204,6 +1300,7 @@ function switchDimension(dimKey) {
     document.getElementById(`btn-${dimKey}`).classList.remove('opacity-60', 'bg-white/5');
     document.getElementById(`btn-${dimKey}`).classList.add('bg-indigo-600');
     updateHUD();
+    saveData();
 }
 
 function updateHUD() {
@@ -1244,7 +1341,7 @@ function updateHUD() {
 }
 
 function updateHealthBarOnly() {
-    document.getElementById('hp-text').textContent = `${Math.ceil(player.hp)} /${player.maxHp}`;
+    document.getElementById('hp-text').textContent = `${Math.ceil(player.hp)} / ${player.maxHp}`;
     document.getElementById('hp-bar').style.width = `${Math.max(0, (player.hp / player.maxHp) * 100)}%`;
 }
 
@@ -1419,8 +1516,8 @@ function renderTraderUI() {
                 <!-- TRADE ACTION -->
                 <div class="flex items-center gap-4 bg-black/30 p-3 rounded-xl border border-white/5">
                     <div class="text-right text-xs">
-                        <div class="text-rose-300 font-bold">You Give: ${offer.give.icon} ${offer.give.count}${offer.give.name}</div>
-                        <div class="text-emerald-300 font-bold">You Get: ${offer.receive.icon} ${offer.receive.count}${offer.receive.name}</div>
+                        <div class="text-rose-300 font-bold">You Give: ${offer.give.icon} ${offer.give.count} ${offer.give.name}</div>
+                        <div class="text-emerald-300 font-bold">You Get: ${offer.receive.icon} ${offer.receive.count} ${offer.receive.name}</div>
                         <div class="text-[10px] text-gray-400">Owned: ${currentOwned}/${offer.give.count}</div>
                     </div>
                     <button onclick="executeTrade('${offer.id}')" ${!canAfford ? 'disabled' : ''} class="rounded-xl bg-emerald-600 px-4 py-2 font-display text-xs font-bold text-white shadow-lg hover:bg-emerald-500 disabled:opacity-40 transition-all">
@@ -1438,7 +1535,7 @@ function executeTrade(offerId) {
 
     const ownedCount = getPlayerResourceCount(offer.give.type);
     if (ownedCount < offer.give.count) {
-        showToast("⚠️ Not Enough Resources", `Need ${offer.give.count}${offer.give.name}!`);
+        showToast("⚠️ Not Enough Resources", `Need ${offer.give.count} ${offer.give.name}!`);
         return;
     }
 
@@ -1458,7 +1555,7 @@ function executeTrade(offerId) {
     else if (offer.receive.type === 'shard_nether') player.shards.nether += offer.receive.count;
     else if (offer.receive.type === 'shard_void') player.shards.void += offer.receive.count;
 
-    showToast("🤝 Trade Complete", `Traded ${offer.give.count}${offer.give.name} for ${offer.receive.count}${offer.receive.name}!`);
+    showToast("🤝 Trade Complete", `Traded ${offer.give.count} ${offer.give.name} for ${offer.receive.count} ${offer.receive.name}!`);
     vfx.createExplosion(player.x, player.y, '#10b981', 25);
 
     updateHUD();
@@ -1501,15 +1598,16 @@ window.addEventListener('mousemove', e => { mousePos = { x: e.clientX, y: e.clie
 
 window.addEventListener('mousedown', e => {
     if (e.button === 0) {
+        // Ignore clicks on UI panels/buttons so they don't swing your weapon
+        if (e.target.closest('button, .glass-panel')) return;
+
         if (nearbyChest) {
             nearbyChest.open(player, currentDim);
             return;
         }
 
-        if (nearbyTrader) {
-            toggleTraderModal();
-            return;
-        }
+        // NOTE: clicking near Hanbo no longer opens the trade window,
+        // so you can attack him. Press [F] to trade instead.
 
         if (equippedSlotIndex >= 0 && player.hotbar[equippedSlotIndex] && player.hotbar[equippedSlotIndex].type === 'consumable') {
             useActiveItem();
@@ -1528,10 +1626,12 @@ function performAttack() {
     if (!player.weapon) return;
     const currentWeapon = player.weapon;
     const currentEnemies = dimEntities[currentDim].enemies;
+    const currentTraders = dimEntities[currentDim].traders;
     const currentResources = dimEntities[currentDim].resources;
 
     vfx.addSwingTrail(player.x, player.y, player.facingAngle, currentWeapon.range, currentWeapon.color);
 
+    // ENEMIES
     for (let i = currentEnemies.length - 1; i >= 0; i--) {
         const enemy = currentEnemies[i];
         const dx = enemy.x - player.x;
@@ -1555,6 +1655,37 @@ function performAttack() {
         }
     }
 
+    // TRADERS (Hanbo can be hit and killed, but never fights back)
+    for (let i = currentTraders.length - 1; i >= 0; i--) {
+        const trader = currentTraders[i];
+        const dx = trader.x - player.x;
+        const dy = trader.y - player.y;
+        if (dx * dx + dy * dy <= (currentWeapon.range + trader.radius) ** 2) {
+            trader.hp -= currentWeapon.damage;
+
+            const angle = Math.atan2(dy, dx);
+            const kbForce = currentWeapon.knockback || 15;
+            trader.vx += Math.cos(angle) * kbForce;
+            trader.vy += Math.sin(angle) * kbForce;
+
+            vfx.createExplosion(trader.x, trader.y, currentWeapon.color, 8);
+
+            if (trader.hp <= 0) {
+                trader.onDeath(currentDim, player);
+                currentTraders.splice(i, 1);
+                toggleTraderModal(false); // close the trade window if it was open
+
+                // A new Hanbo wanders in after 30 seconds (remove this block to disable respawns)
+                const dimAtDeath = currentDim;
+                setTimeout(() => spawnTrader(dimAtDeath), 30000);
+
+                updateHUD();
+                saveData();
+            }
+        }
+    }
+
+    // RESOURCES
     for (let i = currentResources.length - 1; i >= 0; i--) {
         const res = currentResources[i];
         const dx = res.x - player.x;
