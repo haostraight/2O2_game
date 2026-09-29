@@ -1,2008 +1,687 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Survival Realm: Multi-Dimensional Quest</title>
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>Red Light, Green Light</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+:root {
+  --pink: #ed1b76;
+  --pink-dark: #9c0f4f;
+  --teal: #0f9a86;
+  --teal-dark: #075248;
+  --ink: #15151a;
+  --gold: #f7d64a;
+  --gold-dark: #b89614;
+}
 
-    <style>
-        :root {
-            --font-sans: 'Plus Jakarta Sans', sans-serif;
-            --font-display: 'Space Grotesk', sans-serif;
-        }
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            user-select: none;
-            -webkit-user-select: none;
-        }
+html, body {
+  margin: 0;
+  background: var(--ink);
+  color: #fff;
+  font-family: "Trebuchet MS", Verdana, sans-serif;
+  user-select: none;
+  -webkit-user-select: none;
+  overflow-x: hidden;
+}
 
-        body {
-            background-color: #030712;
-            color: #f9fafb;
-            font-family: var(--font-sans);
-            overflow: hidden;
-            width: 100vw;
-            height: 100vh;
-        }
+body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+}
 
-        #gameCanvas {
-            display: block;
-            width: 100vw;
-            height: 100vh;
-            background: #030712;
-            cursor: crosshair;
-        }
+#wrap {
+  position: relative;
+  width: min(100vw, 900px);
+}
 
-        .glass-panel {
-            background: rgba(15, 23, 42, 0.90);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-        }
+canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  touch-action: none;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
 
-        .glass-panel-glow {
-            box-shadow: 0 0 30px rgba(99, 102, 241, 0.2), 0 20px 50px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-        }
+#hud {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  width: min(100vw, 900px);
+  padding: 12px 16px;
+  font-size: 15px;
+}
 
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.5); border-radius: 99px; }
-        ::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.5); border-radius: 99px; }
+#hud b {
+  font-size: 20px;
+  font-weight: 800;
+}
 
-        .hotbar-slot {
-            width: 58px;
-            height: 54px;
-            position: relative;
-            background: rgba(15, 23, 42, 0.85);
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            border-radius: 10px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.12s ease-in-out;
-            padding: 2px;
-        }
+#light {
+  padding: 6px 18px;
+  border-radius: 999px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  background: #333;
+  min-width: 150px;
+  text-align: center;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+  transition: background 0.2s ease, transform 0.2s ease;
+}
 
-        .hotbar-slot:hover {
-            border-color: rgba(255, 255, 255, 0.6);
-            background: rgba(30, 41, 59, 0.9);
-        }
+#light.g { background: #12a150; transform: scale(1.03); }
+#light.r { background: #e0213b; transform: scale(1.03); }
 
-        .hotbar-slot.equipped {
-            border-color: #38bdf8;
-            box-shadow: 0 0 18px rgba(56, 189, 248, 0.8);
-            background: rgba(14, 116, 144, 0.6);
-            transform: translateY(-2px);
-        }
+#run {
+  width: min(92vw, 600px);
+  margin: 12px 0 22px;
+  padding: 20px;
+  border: 0;
+  border-radius: 18px;
+  background: var(--pink);
+  color: #fff;
+  font: 900 24px "Trebuchet MS", Verdana, sans-serif;
+  touch-action: none;
+  box-shadow: 0 6px 0 var(--pink-dark);
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
 
-        .hotbar-key-num {
-            position: absolute;
-            top: 2px;
-            left: 4px;
-            font-size: 9px;
-            font-weight: 900;
-            color: rgba(255, 255, 255, 0.7);
-            font-family: var(--font-display);
-        }
+#run:active, #run.on {
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 var(--pink-dark);
+}
 
-        .item-count {
-            position: absolute;
-            top: 2px;
-            right: 4px;
-            font-size: 9px;
-            font-weight: 800;
-            color: #38bdf8;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 0 3px;
-            border-radius: 4px;
-        }
+/* Overlays */
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 15, 26, 0.94);
+  backdrop-filter: blur(8px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 24px;
+  gap: 16px;
+  border-radius: 12px;
+  z-index: 10;
+  animation: fadeIn 0.3s ease-out;
+}
 
-        .slot-title {
-            font-size: 8px;
-            font-weight: 700;
-            color: #e2e8f0;
-            text-align: center;
-            line-height: 1;
-            margin-top: 2px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 52px;
-        }
-    </style>
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.overlay.hide {
+  display: none !important;
+}
+
+/* Victory styling */
+.overlay.victory {
+  background: rgba(10, 30, 20, 0.95);
+  border: 2px solid var(--gold);
+}
+
+.overlay.victory h1 {
+  color: var(--gold) !important;
+  text-shadow: 0 0 15px rgba(247, 214, 74, 0.5);
+}
+
+/* Defeat styling */
+.overlay.defeat {
+  background: rgba(30, 10, 15, 0.95);
+  border: 2px solid #e0213b;
+}
+
+.overlay.defeat h1 {
+  color: #e0213b !important;
+  text-shadow: 0 0 15px rgba(224, 33, 59, 0.5);
+}
+
+.squid-shapes {
+  font-size: 36px;
+  letter-spacing: .4em;
+  color: var(--pink);
+}
+
+.btn-primary {
+  padding: 14px 38px;
+  border: 3px solid var(--pink);
+  border-radius: 10px;
+  background: var(--pink);
+  color: #fff;
+  font: 900 18px "Trebuchet MS", Verdana, sans-serif;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(237, 27, 118, 0.4);
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+  background: #ff2a89;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(237, 27, 118, 0.6);
+}
+
+.btn-secondary {
+  padding: 12px 28px;
+  border: 2px solid #666;
+  border-radius: 10px;
+  background: transparent;
+  color: #ccc;
+  font: 800 16px "Trebuchet MS", Verdana, sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+  border-color: #fff;
+  color: #fff;
+  background: rgba(255,255,255,0.1);
+}
+
+/* Home button on HUD */
+#home-btn {
+  background: #2a2a35;
+  border: 1px solid #444;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+#home-btn:hover {
+  background: #3a3a48;
+}
+</style>
 </head>
-<body class="relative min-h-screen select-none overflow-hidden bg-gray-950 font-sans text-gray-100">
+<body>
 
-<canvas id="gameCanvas"></canvas>
-<div id="toast-container" class="pointer-events-none absolute top-4 left-1/2 z-40 flex -translate-x-1/2 flex-col items-center gap-2"></div>
-
-<!-- CHEST INTERACTION PROMPT -->
-<div id="chest-prompt" class="pointer-events-none fixed bottom-20 left-1/2 z-30 hidden -translate-x-1/2 rounded-full border border-amber-400/40 bg-slate-900/90 px-5 py-2 text-xs font-bold text-amber-300 shadow-2xl backdrop-blur-md">
-    📦 Press <span class="rounded bg-amber-500/20 px-2 py-0.5 text-white border border-amber-400/50">[E]</span> to Open Loot Chest
+<div id="hud">
+  <button id="home-btn" title="Exit to Main Menu">🏠 MENU</button>
+  <div id="light">READY</div>
+  <div>Time <b id="time">45</b>s</div>
+  <div>Alive <b id="alive">16</b></div>
+  <div>Safe <b id="safe">0</b></div>
 </div>
 
-<!-- TRADER INTERACTION PROMPT -->
-<div id="trader-prompt" class="pointer-events-none fixed bottom-20 left-1/2 z-30 hidden -translate-x-1/2 rounded-full border border-emerald-400/40 bg-slate-900/90 px-5 py-2 text-xs font-bold text-emerald-300 shadow-2xl backdrop-blur-md">
-    🧙‍♂️ Press <span class="rounded bg-emerald-500/20 px-2 py-0.5 text-white border border-emerald-400/50">[F]</span> to Trade with Hanbo <span class="text-gray-400 font-medium">(or click to attack him)</span>
+<div id="wrap">
+  <canvas id="c" width="900" height="640"></canvas>
+  
+  <!-- Main Menu Overlay -->
+  <div id="ov-menu" class="overlay">
+    <div class="squid-shapes">○ △ □</div>
+    <h1 class="text-4xl sm:text-5xl font-black text-[var(--pink)] tracking-wider my-1">RED LIGHT<br>GREEN LIGHT</h1>
+    
+    <div class="bg-black/40 p-4 rounded-xl max-w-md text-left text-sm text-gray-300 space-y-2 border border-white/10 my-2">
+      <div class="font-bold text-white text-base mb-1 border-b border-gray-700 pb-1">📜 How to Play:</div>
+      <p>• <b>Hold</b> <span class="bg-gray-800 px-2 py-0.5 rounded text-pink-400">Space</span>, <span class="bg-gray-800 px-2 py-0.5 rounded text-pink-400">W</span>, <span class="bg-gray-800 px-2 py-0.5 rounded text-pink-400">↑ Arrow</span> or the <span class="bg-pink-600 px-2 py-0.5 rounded text-white">PINK BUTTON</span> to run.</p>
+      <p>• Move ONLY during <span class="text-green-400 font-bold">GREEN LIGHT</span> while the doll looks away.</p>
+      <p>• <b>STOP IMMEDIATELY</b> when the doll turns for <span class="text-red-400 font-bold">RED LIGHT</span>!</p>
+      <p>• Cross the red finish line before the timer reaches 0.</p>
+    </div>
+
+    <button id="btn-start" class="btn-primary mt-2">START GAME</button>
+  </div>
+
+  <!-- Win Overlay -->
+  <div id="ov-win" class="overlay victory hide">
+    <div class="squid-shapes text-yellow-400">○ ○ ○</div>
+    <h1 class="text-4xl sm:text-6xl font-black">YOU SURVIVED!</h1>
+    
+    <div class="bg-black/50 p-5 rounded-xl min-w-[280px] border border-yellow-500/30 text-left my-2 space-y-2">
+      <div class="text-center font-bold text-yellow-400 text-lg border-b border-yellow-500/20 pb-1">GAME SUMMARY</div>
+      <div class="flex justify-between"><span>Time Left:</span> <b id="win-time" class="text-green-400">0s</b></div>
+      <div class="flex justify-between"><span>Survivors:</span> <b id="win-survivors" class="text-yellow-400">0 / 16</b></div>
+      <div class="flex justify-between"><span>Status:</span> <b class="text-green-400">PASSED TO ROUND 2</b></div>
+    </div>
+
+    <div class="flex gap-4 mt-2">
+      <button id="btn-win-replay" class="btn-primary">PLAY AGAIN</button>
+      <button id="btn-win-menu" class="btn-secondary">MAIN MENU</button>
+    </div>
+  </div>
+
+  <!-- Loss Overlay -->
+  <div id="ov-loss" class="overlay defeat hide">
+    <div class="squid-shapes text-red-500">✕ ✕ ✕</div>
+    <h1 class="text-4xl sm:text-6xl font-black">ELIMINATED</h1>
+    
+    <p id="loss-reason" class="text-lg text-red-200 font-semibold max-w-md">You moved during Red Light!</p>
+
+    <div class="bg-black/50 p-4 rounded-xl min-w-[260px] border border-red-500/30 text-left my-1 space-y-1 text-sm">
+      <div class="flex justify-between"><span>Other Survivors:</span> <b id="loss-survivors" class="text-white">0 / 16</b></div>
+    </div>
+
+    <div class="flex gap-4 mt-4">
+      <button id="btn-loss-retry" class="btn-primary">TRY AGAIN</button>
+      <button id="btn-loss-menu" class="btn-secondary">MAIN MENU</button>
+    </div>
+  </div>
 </div>
 
-<!-- TOP BAR: SURVIVOR HUD & CRAFTING -->
-<div class="pointer-events-none absolute top-4 left-4 right-4 z-30 flex items-start justify-between gap-4">
-    <!-- SURVIVOR HUD -->
-    <div id="stats-hud" class="glass-panel glass-panel-glow pointer-events-auto w-72 rounded-2xl p-3">
-        <div class="mb-2 flex items-center justify-between border-b border-white/10 pb-1.5">
-            <div class="flex items-center gap-2">
-                <span class="inline-block h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]"></span>
-                <span class="font-display text-[11px] font-bold tracking-widest text-gray-300 uppercase">SURVIVOR STATUS</span>
-            </div>
-            <button onclick="toggleBackpack()" class="rounded-lg bg-indigo-600/30 px-2 py-0.5 text-[10px] font-bold text-indigo-300 border border-indigo-400/30 hover:bg-indigo-600/50 transition-all">
-                🎒 Backpack [`]
-            </button>
-        </div>
-
-        <!-- Health Bar -->
-        <div class="relative mb-2">
-            <div class="mb-0.5 flex items-center justify-between text-[11px] font-bold">
-                <span class="text-rose-400">HEALTH</span>
-                <span id="hp-text" class="text-gray-200">100 / 100</span>
-            </div>
-            <div class="relative h-3 w-full overflow-hidden rounded-full border border-white/10 bg-black/50 p-0.5">
-                <div id="hp-bar" class="h-full w-full rounded-full bg-gradient-to-r from-rose-600 via-rose-500 to-amber-500 transition-all duration-150"></div>
-            </div>
-        </div>
-
-        <!-- Resource Grid -->
-        <div class="mb-2 grid grid-cols-2 gap-1.5 text-left">
-            <div class="rounded-lg border border-white/10 bg-white/[0.04] p-1.5 flex items-center justify-between">
-                <span class="text-[11px] text-gray-300 font-medium">🪵 Wood</span>
-                <span id="wood-val" class="font-display text-xs font-bold text-amber-300">0</span>
-            </div>
-            <div class="rounded-lg border border-white/10 bg-white/[0.04] p-1.5 flex items-center justify-between">
-                <span class="text-[11px] text-gray-300 font-medium">🪨 Stone</span>
-                <span id="stone-val" class="font-display text-xs font-bold text-slate-300">0</span>
-            </div>
-            <div class="rounded-lg border border-white/10 bg-white/[0.04] p-1.5 flex items-center justify-between">
-                <span class="text-[11px] text-gray-300 font-medium">💎 Ore</span>
-                <span id="ore-val" class="font-display text-xs font-bold text-cyan-300">0</span>
-            </div>
-            <div class="rounded-lg border border-purple-500/30 bg-purple-950/40 p-1.5 flex items-center justify-between">
-                <span id="shard-label" class="text-[11px] text-purple-200 font-medium">🌿 Shards</span>
-                <span id="shard-val" class="font-display text-xs font-bold text-emerald-300">0/10</span>
-            </div>
-        </div>
-
-        <!-- Equipped Gear HUD -->
-        <div class="flex flex-col gap-1 rounded-xl border border-white/10 bg-black/40 p-2 text-[11px]">
-            <div class="flex items-center justify-between">
-                <span class="text-gray-400">Weapon:</span>
-                <span id="weapon-val" class="font-bold text-indigo-300">None</span>
-            </div>
-            <div class="flex flex-col border-t border-white/10 pt-1">
-                <div class="flex items-center justify-between">
-                    <span class="text-gray-400">Armor:</span>
-                    <span id="armor-val" class="font-bold text-emerald-400">None</span>
-                </div>
-                <div id="armor-buff-val" class="text-[9px] font-semibold text-emerald-300/80">
-                    Buff: No Active Armor
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- TOP HOTBAR -->
-    <div class="pointer-events-auto flex items-center gap-1 glass-panel rounded-2xl p-1.5 border-slate-700">
-        <div id="action-hotbar" class="flex items-center gap-1"></div>
-    </div>
-
-    <!-- CRAFTING PANEL -->
-    <div class="pointer-events-auto relative">
-        <button onclick="toggleCraftingPanel()" class="glass-panel flex items-center gap-2 rounded-2xl px-3 py-2 font-display text-xs font-bold text-indigo-300 border-indigo-500/30 hover:border-indigo-400 transition-all">
-            🔨 Crafting Matrix
-        </button>
-
-        <div id="crafting-panel" class="glass-panel pointer-events-auto absolute top-12 right-0 hidden w-80 rounded-2xl p-4 shadow-2xl">
-            <div class="mb-3 flex items-center justify-between border-b border-white/10 pb-2">
-                <span class="font-display text-xs font-bold tracking-wider text-gray-200 uppercase">CRAFTING MATRIX</span>
-                <button onclick="resetGameData()" class="rounded bg-rose-600/30 px-2 py-0.5 text-[10px] font-extrabold text-rose-300 border border-rose-500/40 hover:bg-rose-600/60 transition-all">
-                    RESET DATA
-                </button>
-            </div>
-
-            <!-- CRAFTING LIST -->
-            <div id="compact-craft-list" class="flex flex-col gap-2 max-h-80 overflow-y-auto pr-1"></div>
-        </div>
-    </div>
-</div>
-
-<!-- BOTTOM BAR: DIMENSION SELECTOR -->
-<div id="dimension-bar" class="glass-panel pointer-events-auto absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 rounded-full p-2">
-    <button id="btn-overworld" onclick="switchDimension('overworld')" class="dim-btn flex items-center gap-2 rounded-full px-4 py-1.5 font-display text-xs font-bold transition-all bg-indigo-600 text-white">Overworld Realm</button>
-    <button id="btn-nether" onclick="switchDimension('nether')" class="dim-btn flex items-center gap-2 rounded-full px-4 py-1.5 font-display text-xs font-bold transition-all bg-white/5 text-gray-400 opacity-60">Nether Realm (Locked)</button>
-    <button id="btn-void" onclick="switchDimension('void')" class="dim-btn flex items-center gap-2 rounded-full px-4 py-1.5 font-display text-xs font-bold transition-all bg-white/5 text-gray-400 opacity-60">Void Realm (Locked)</button>
-</div>
-
-<!-- BACKPACK MODAL -->
-<div id="backpack-modal" class="glass-panel pointer-events-auto fixed inset-x-12 top-20 bottom-12 z-50 hidden flex-col rounded-3xl p-6 shadow-2xl backdrop-blur-2xl">
-    <div class="flex items-center justify-between border-b border-white/10 pb-4">
-        <div>
-            <h2 class="font-display text-2xl font-extrabold tracking-wide text-white">🎒 INVENTORY & STORAGE</h2>
-            <p class="text-xs text-gray-400">Click items to move them into active hotbar slots!</p>
-        </div>
-        <button onclick="toggleBackpack(false)" class="rounded-xl bg-rose-600/30 px-4 py-2 font-display text-xs font-bold text-rose-200 border border-rose-500/40 hover:bg-rose-600/50">
-            Close Backpack [`]
-        </button>
-    </div>
-
-    <div class="mt-6 flex flex-1 gap-6 overflow-hidden">
-        <div class="flex-1 overflow-y-auto pr-2">
-            <h3 class="mb-3 font-display text-xs font-bold tracking-wider text-indigo-300 uppercase">STORED TOOLS & ITEMS</h3>
-            <div id="backpack-grid" class="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-3"></div>
-        </div>
-    </div>
-</div>
-
-<!-- TRADER MODAL -->
-<div id="trader-modal" class="glass-panel pointer-events-auto fixed inset-x-12 top-16 bottom-12 z-50 hidden flex-col rounded-3xl p-6 shadow-2xl backdrop-blur-2xl border-emerald-500/30">
-    <div class="flex items-center justify-between border-b border-white/10 pb-4">
-        <div class="flex items-center gap-3">
-            <div class="h-10 w-10 rounded-full border-2 border-emerald-400 overflow-hidden bg-emerald-950 flex items-center justify-center font-bold text-emerald-300">
-                🧙‍♂️
-            </div>
-            <div>
-                <h2 class="font-display text-xl font-extrabold tracking-wide text-emerald-300">HANBO THE WANDERING TRADER</h2>
-                <p class="text-xs text-gray-400">Swap basic resources for rare materials and dimension shards.</p>
-            </div>
-        </div>
-        <button onclick="toggleTraderModal(false)" class="rounded-xl bg-rose-600/30 px-4 py-2 font-display text-xs font-bold text-rose-200 border border-rose-500/40 hover:bg-rose-600/50">
-            Leave Trade [ESC]
-        </button>
-    </div>
-
-    <div class="mt-4 flex-1 overflow-y-auto pr-2">
-        <div id="trader-offers-list" class="flex flex-col gap-3"></div>
-    </div>
-</div>
+<button id="run">HOLD TO RUN</button>
 
 <script>
-const WORLD_SIZE = 8000;
-const HALF_WORLD = WORLD_SIZE / 2;
+const W=900, H=640, FINISH=125, START=H-85, TIME=45, GRACE=0.35;
 
-// CANVAS SETUP
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d', { alpha: false });
-
-function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-}
-resizeCanvas();
-window.addEventListener('resize', resizeCanvas);
-
-// PRELOAD ENEMY & TRADER IMAGES
-const mobImageFiles = [
-    { name: 'Gerard', src: 'images/gerard.jpeg' },
-    { name: 'Jason', src: 'images/jason.jpeg' },
-    { name: 'Liu-Ji', src: 'images/liu-ji.jpeg' },
-    { name: 'Matthew', src: 'images/matthew.jpeg' },
-    { name: 'Travia', src: 'images/travia.jpeg' },
-    { name: 'Xayven', src: 'images/xayven.jpeg' },
-    { name: 'Xuchen', src: 'images/xuchen.jpeg' },
-    { name: 'Hanbo', src: 'images/Hanbo.jpeg' }
-];
-
-const loadedMobImages = {};
-mobImageFiles.forEach(item => {
-    const img = new Image();
-    img.src = item.src;
-    img.onload = () => { loadedMobImages[item.name] = { img, loaded: true }; };
-    img.onerror = () => { loadedMobImages[item.name] = { img: null, loaded: false }; };
+const FILES=['Hanbo','asher','callum','gerard','guangyan','ivan','jason','liu-ji','matthew','travia','travis','winston','xayven','xuchen','yichen'];
+const label=f=>f.split('-').map(s=>s[0].toUpperCase()+s.slice(1)).join('-');
+const imgs={};
+FILES.forEach(f=>{
+  const i=new Image();
+  i.src='images/'+f+'.jpeg';
+  imgs[f]=i;
 });
 
-// WEAPON & ARMOR DATA
-const BASE_WEAPONS = {
-    stick:  { id: 'stick', name: 'Wooden Stick', damage: 15, range: 65, color: '#a3e635', knockback: 10 },
-    spear:  { id: 'spear', name: 'Stone Spear', damage: 30, range: 90, color: '#cbd5e1', knockback: 15 },
-    hammer: { id: 'hammer', name: 'Ore Sledge', damage: 60, range: 75, color: '#38bdf8', knockback: 25 },
-    blade:  { id: 'blade', name: 'Plasma Sword', damage: 95, range: 110, color: '#facc15', knockback: 18 },
-    scythe: { id: 'scythe', name: 'Void Scythe', damage: 150, range: 130, color: '#c084fc', knockback: 22 },
-    bow:    { id: 'bow', name: 'Frostbite Bow', damage: 75, range: 140, color: '#60a5fa', knockback: 15 }
+const cv=document.getElementById('c'), ctx=cv.getContext('2d');
+const $=id=>document.getElementById(id);
+
+let P=[], phase='idle', phaseT=0, phaseDur=0, redT=0, headTurn=0, timeLeft=TIME, held=false, beams=[], flash=0, endT=null, running=false, reason='';
+
+// Web Audio API Synth Sounds
+let ac;
+function initAudio() {
+  if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
+}
+
+function tone(f, d, type='sine', v=0.08) {
+  if(!ac) return;
+  try {
+    const o=ac.createOscillator(), g=ac.createGain();
+    o.type=type;
+    o.frequency.value=f;
+    g.gain.setValueAtTime(v, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime+d);
+    o.connect(g);
+    g.connect(ac.destination);
+    o.start();
+    o.stop(ac.currentTime+d);
+  } catch(e){}
+}
+
+const shot=()=>{
+  tone(90,.25,'sawtooth',.25);
+  tone(55,.3,'square',.15);
 };
 
-const ARMORS = {
-    padded: { id: 'padded', name: 'Reinforced Plating', icon: '🛡️', hpBonus: 30, desc: '+30 Max HP Protection' },
-    shadow: { id: 'shadow', name: 'Shadow Cloak', icon: '🧥', hpBonus: 75, desc: '+75 Max HP Dark Shield' },
-    aegis:  { id: 'aegis', name: 'Aegis Plate', icon: '🦾', hpBonus: 130, desc: '+130 Max HP Aegis Barrier' }
-};
-
-// HARDCODED CRAFTING COSTS & VALUES
-const BASE_CRAFTABLES = [
-    { id: 'padded', name: 'Reinforced Plating', type: 'armor', armorKey: 'padded', icon: '🛡️', stats: '+30 Max HP', cost: { wood: 60, stone: 80, ore: 20 } },
-    { id: 'shadow', name: 'Shadow Cloak', type: 'armor', armorKey: 'shadow', icon: '🧥', stats: '+75 Max HP', cost: { wood: 100, stone: 100, ore: 80 } },
-    { id: 'aegis', name: 'Aegis Plate', type: 'armor', armorKey: 'aegis', icon: '🦾', stats: '+130 Max HP', cost: { wood: 160, stone: 160, ore: 140 } },
-    { id: 'spear', name: 'Stone Spear', type: 'weapon', weaponKey: 'spear', icon: '🗡️', stats: '+30 Damage', cost: { wood: 40, stone: 40, ore: 0 } },
-    { id: 'hammer', name: 'Ore Sledge', type: 'weapon', weaponKey: 'hammer', icon: '🔨', stats: '+60 Damage', cost: { wood: 60, stone: 0, ore: 80 } },
-    { id: 'bow', name: 'Frostbite Bow', type: 'weapon', weaponKey: 'bow', icon: '🏹', stats: '+75 Damage', cost: { wood: 120, stone: 60, ore: 40 } },
-    { id: 'blade', name: 'Plasma Sword', type: 'weapon', weaponKey: 'blade', icon: '⚡', stats: '+95 Damage', cost: { wood: 100, stone: 100, ore: 60 } },
-    { id: 'scythe', name: 'Void Scythe', type: 'weapon', weaponKey: 'scythe', icon: '🔮', stats: '+150 Damage', cost: { wood: 160, stone: 160, ore: 120 } },
-    { id: 'heal', name: 'Health Salve', type: 'consumable', icon: '🧪', stats: '+45 Vitality', cost: { wood: 20, stone: 20, ore: 0 } },
-    { id: 'elixir', name: 'Full Elixir', type: 'consumable', icon: '🍷', stats: 'Full Healing', cost: { wood: 60, stone: 60, ore: 40 } }
-];
-
-// MATERIAL BASE VALUES FOR TRADING RATIO CALCULATION
-const RESOURCE_VALUES = {
-    wood: 1,
-    stone: 1.5,
-    ore: 4,
-    shard_overworld: 15,
-    shard_nether: 25,
-    shard_void: 40
-};
-
-// TRADER DEALS
-const TRADER_OFFERS = [
-    {
-        id: 'trade_1',
-        name: 'Ore Liquidation',
-        give: { type: 'wood', name: 'Wood', count: 35, icon: '🪵' },
-        receive: { type: 'ore', name: 'Crystal Ore', count: 5, icon: '💎' },
-        desc: 'Trade raw wood directly for high-density ore.'
-    },
-    {
-        id: 'trade_2',
-        name: 'Verdant Essence Swap',
-        give: { type: 'stone', name: 'Stone', count: 60, icon: '🪨' },
-        receive: { type: 'shard_overworld', name: 'Verdant Shard', count: 2, icon: '🌿' },
-        desc: 'Exchange processed stone blocks for raw realm shards.'
-    },
-    {
-        id: 'trade_3',
-        name: 'Black Market Ore Deal',
-        give: { type: 'ore', name: 'Crystal Ore', count: 20, icon: '💎' },
-        receive: { type: 'shard_nether', name: 'Crimson Shard', count: 2, icon: '🔥' },
-        desc: 'Trade dense ore directly for rare nether realm energy.'
-    },
-    {
-        id: 'trade_4',
-        name: 'Merchant Scamp (Bad Offer)',
-        give: { type: 'ore', name: 'Crystal Ore', count: 18, icon: '💎' },
-        receive: { type: 'wood', name: 'Wood', count: 20, icon: '🪵' },
-        desc: 'The trader tries to sell basic timber for valuable ores.'
-    },
-    {
-        id: 'trade_5',
-        name: 'Overworld Shard Surplus',
-        give: { type: 'shard_overworld', name: 'Verdant Shard', count: 3, icon: '🌿' },
-        receive: { type: 'ore', name: 'Crystal Ore', count: 25, icon: '💎' },
-        desc: 'Convert excess overworld shards into bulk ore.'
-    },
-    {
-        id: 'trade_6',
-        name: 'Astral Shard Transmutation',
-        give: { type: 'shard_nether', name: 'Crimson Shard', count: 4, icon: '🔥' },
-        receive: { type: 'shard_void', name: 'Astral Shard', count: 2, icon: '✨' },
-        desc: 'High tier dimension energy exchange.'
+// Setup Game State
+function init(){
+  const slots=FILES.map(f=>({f})).concat([{you:true}]);
+  for(let i=slots.length-1; i>0; i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [slots[i], slots[j]]=[slots[j], slots[i]];
+  }
+  const used=new Set([456]);
+  
+  P=slots.map((s,i)=>{
+    let n=456;
+    if(!s.you){
+      do { n=1+Math.floor(Math.random()*455); } while(used.has(n));
+      used.add(n);
     }
-];
-
-// HARDCODED SHARD REQUIREMENTS
-let DIMENSION_SHARDS = {
-    overworld: { name: 'Verdant Shard', label: '🌿 Verdant Shards', req: 10, unlock: 'nether' },
-    nether:    { name: 'Crimson Shard', label: '🔥 Crimson Shards', req: 10, unlock: 'void' },
-    void:      { name: 'Astral Shard',  label: '✨ Astral Shards', req: 10, unlock: null }
-};
-
-// =============================================================================
-// PARTICLE SYSTEM CLASSES
-// =============================================================================
-
-class Particle {
-    constructor(x, y, vx, vy, color, radius, maxLife) {
-        this.x = x;
-        this.y = y;
-        this.vx = vx;
-        this.vy = vy;
-        this.color = color;
-        this.radius = radius;
-        this.life = maxLife;
-        this.maxLife = maxLife;
-        this.markedForDeletion = false;
-    }
-
-    update() {
-        this.x += this.vx;
-        this.y += this.vy;
-        this.vx *= 0.95;
-        this.vy *= 0.95;
-        this.life--;
-        if (this.life <= 0) this.markedForDeletion = true;
-    }
-
-    render(ctx) {
-        ctx.save();
-        ctx.globalAlpha = Math.max(0, this.life / this.maxLife);
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, Math.max(0.1, this.radius * (this.life / this.maxLife)), 0, Math.PI * 2);
-        ctx.fillStyle = this.color;
-        ctx.fill();
-        ctx.restore();
-    }
-}
-
-class VisualEffectSystem {
-    constructor() {
-        this.particles = [];
-        this.swingTrails = [];
-    }
-
-    createExplosion(x, y, color = '#f97316', count = 35) {
-        for (let i = 0; i < count; i++) {
-            const angle = Math.random() * Math.PI * 2;
-            const speed = Math.random() * 8 + 2;
-            const vx = Math.cos(angle) * speed;
-            const vy = Math.sin(angle) * speed;
-            const radius = Math.random() * 6 + 3;
-            const life = Math.floor(Math.random() * 25) + 20;
-            const palette = [color, '#ef4444', '#facc15', '#ffffff'];
-            const chosenColor = palette[Math.floor(Math.random() * palette.length)];
-            this.particles.push(new Particle(x, y, vx, vy, chosenColor, radius, life));
-        }
-    }
-
-    createTrail(x, y, color = '#f43f5e', count = 2) {
-        for (let i = 0; i < count; i++) {
-            const vx = (Math.random() - 0.5) * 1.5;
-            const vy = (Math.random() - 0.5) * 1.5;
-            const radius = Math.random() * 3 + 1.5;
-            const life = Math.floor(Math.random() * 12) + 8;
-            this.particles.push(new Particle(x, y, vx, vy, color, radius, life));
-        }
-    }
-
-    addSwingTrail(x, y, angle, range, color) {
-        this.swingTrails.push({
-            x, y, angle, range, color,
-            alpha: 1.0,
-            life: 10
-        });
-
-        for (let i = 0; i < 5; i++) {
-            const particleAngle = angle + (Math.random() - 0.5) * 0.8;
-            const dist = Math.random() * range;
-            const px = x + Math.cos(particleAngle) * dist;
-            const py = y + Math.sin(particleAngle) * dist;
-            const vx = Math.cos(particleAngle) * 3;
-            const vy = Math.sin(particleAngle) * 3;
-            this.particles.push(new Particle(px, py, vx, vy, color, Math.random() * 2 + 1, 12));
-        }
-    }
-
-    update() {
-        for (let i = this.particles.length - 1; i >= 0; i--) {
-            this.particles[i].update();
-            if (this.particles[i].markedForDeletion) {
-                this.particles.splice(i, 1);
-            }
-        }
-
-        for (let i = this.swingTrails.length - 1; i >= 0; i--) {
-            this.swingTrails[i].life--;
-            this.swingTrails[i].alpha = this.swingTrails[i].life / 10;
-            if (this.swingTrails[i].life <= 0) {
-                this.swingTrails.splice(i, 1);
-            }
-        }
-    }
-
-    render(ctx) {
-        for (let trail of this.swingTrails) {
-            ctx.save();
-            ctx.globalAlpha = trail.alpha;
-            ctx.beginPath();
-            ctx.arc(trail.x, trail.y, trail.range, trail.angle - 0.4, trail.angle + 0.4);
-            ctx.strokeStyle = trail.color;
-            ctx.lineWidth = 6;
-            ctx.stroke();
-            ctx.restore();
-        }
-
-        for (let particle of this.particles) {
-            particle.render(ctx);
-        }
-    }
-}
-
-const vfx = new VisualEffectSystem();
-
-// =============================================================================
-// OBJECT-ORIENTED CLASSES
-// =============================================================================
-
-class Entity {
-    constructor(x, y, radius) {
-        this.x = x;
-        this.y = y;
-        this.radius = radius;
-        this.markedForDeletion = false;
-    }
-}
-
-class Projectile extends Entity {
-    constructor(x, y, targetX, targetY, speed = 6, damage = 25, color = '#ef4444') {
-        super(x, y, 6);
-        const angle = Math.atan2(targetY - y, targetX - x);
-        this.vx = Math.cos(angle) * speed;
-        this.vy = Math.sin(angle) * speed;
-        this.damage = damage;
-        this.color = color;
-        this.life = 180;
-    }
-
-    update() {
-        this.x += this.vx;
-        this.y += this.vy;
-        this.life--;
-        vfx.createTrail(this.x, this.y, this.color, 1);
-        if (this.life <= 0) this.markedForDeletion = true;
-    }
-
-    render(ctx) {
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        ctx.fillStyle = this.color;
-        ctx.fill();
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-    }
-}
-
-class Mob extends Entity {
-    constructor(x, y, config) {
-        super(x, y, config.hitboxRadius);
-        this.name = config.name;
-        this.imageName = config.imageName;
-        this.color = config.color;
-        this.borderColor = config.borderColor;
-        this.maxHp = config.hp;
-        this.hp = this.maxHp;
-        this.damage = config.damage;
-        this.speed = config.speed;
-        this.visualRadius = config.visualRadius;
-        this.shardDropChance = config.shardDropChance;
-        this.vx = 0;
-        this.vy = 0;
-
-        // Line of sight: mobs only chase the player inside this range
-        this.detectRange = config.detectRange || 450;
-        this.aggro = false;
-
-        // Wandering (used while no player is detected)
-        this.wanderState = 'idle';
-        this.wanderTimer = Math.floor(Math.random() * 120);
-        this.wanderAngle = Math.random() * Math.PI * 2;
-        this.wanderSpeed = this.speed * 0.4;
-    }
-
-    applyKnockback() {
-        this.x += this.vx;
-        this.y += this.vy;
-        this.vx *= 0.82;
-        this.vy *= 0.82;
-    }
-
-    // Aggro on when the player enters detectRange; drops when they get well outside it
-    updateAggro(dist) {
-        if (!this.aggro && dist <= this.detectRange) {
-            this.aggro = true;
-        } else if (this.aggro && dist > this.detectRange * 1.5) {
-            this.aggro = false;
-        }
-    }
-
-    // Idle for a bit, then stroll in a random direction, repeat
-    wander() {
-        this.wanderTimer--;
-        if (this.wanderTimer <= 0) {
-            if (this.wanderState === 'idle') {
-                this.wanderState = 'walk';
-                this.wanderTimer = 60 + Math.random() * 120;
-                this.wanderAngle = Math.random() * Math.PI * 2;
-            } else {
-                this.wanderState = 'idle';
-                this.wanderTimer = 40 + Math.random() * 100;
-            }
-        }
-
-        if (this.wanderState === 'walk') {
-            this.x += Math.cos(this.wanderAngle) * this.wanderSpeed;
-            this.y += Math.sin(this.wanderAngle) * this.wanderSpeed;
-        }
-
-        this.x = Math.max(100, Math.min(WORLD_SIZE - 100, this.x));
-        this.y = Math.max(100, Math.min(WORLD_SIZE - 100, this.y));
-    }
-
-    update(player, projectiles) {
-        this.applyKnockback();
-
-        const dx = player.x - this.x;
-        const dy = player.y - this.y;
-        const dist = Math.hypot(dx, dy);
-
-        this.updateAggro(dist);
-
-        if (this.aggro) {
-            // Player detected: head straight for them
-            const angle = Math.atan2(dy, dx);
-            this.x += Math.cos(angle) * this.speed;
-            this.y += Math.sin(angle) * this.speed;
-        } else {
-            // Nobody in sight: wander around
-            this.wander();
-        }
-
-        // Touching the player hurts (even if the mob was just wandering)
-        if (dist * dist < (player.radius + this.radius) ** 2) {
-            this.aggro = true;
-            player.takeDamage(this.damage / 60);
-        }
-    }
-
-    onDeath(dimension, player) {
-        player.wood += Math.floor(Math.random() * 4) + 2;
-        player.stone += Math.floor(Math.random() * 3) + 1;
-        
-        vfx.createExplosion(this.x, this.y, this.color, 15);
-
-        if (Math.random() < this.shardDropChance) {
-            player.shards[dimension] += 1;
-            showToast("✨ Shard Dropped", `Acquired +1 ${DIMENSION_SHARDS[dimension].name}!`);
-        }
-    }
-
-    render(ctx) {
-        const imgData = loadedMobImages[this.imageName];
-        if (imgData && imgData.loaded) {
-            ctx.save();
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, this.visualRadius, 0, Math.PI * 2);
-            ctx.clip();
-            ctx.drawImage(imgData.img, this.x - this.visualRadius, this.y - this.visualRadius, this.visualRadius * 2, this.visualRadius * 2);
-            ctx.restore();
-
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, this.visualRadius, 0, Math.PI * 2);
-            ctx.strokeStyle = this.borderColor;
-            ctx.lineWidth = 3;
-            ctx.stroke();
-        } else {
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, this.visualRadius, 0, Math.PI * 2);
-            ctx.fillStyle = this.color;
-            ctx.fill();
-        }
-
-        ctx.font = 'bold 11px sans-serif';
-        ctx.fillStyle = '#fca5a5';
-        ctx.textAlign = 'center';
-        ctx.shadowColor = 'black';
-        ctx.shadowBlur = 4;
-        ctx.fillText(this.name, this.x, this.y - this.visualRadius - 10);
-        ctx.shadowBlur = 0;
-
-        if (this.hp < this.maxHp) {
-            ctx.fillStyle = 'rgba(0,0,0,0.6)';
-            ctx.fillRect(this.x - 20, this.y - this.visualRadius - 22, 40, 4);
-            ctx.fillStyle = '#ef4444';
-            ctx.fillRect(this.x - 20, this.y - this.visualRadius - 22, (this.hp / this.maxHp) * 40, 4);
-        }
-    }
-}
-
-// =============================================================================
-// HANBO: NEUTRAL WANDERING TRADER
-// - Always shows his own face (images/Hanbo.jpeg)
-// - Wanders (walks, then stands still), never chases or attacks
-// - Can be hit, knocked back, and killed (drops loot)
-// =============================================================================
-class WanderingTraderMob extends Entity {
-    constructor(x, y) {
-        super(x, y, 26);
-        this.name = 'Hanbo (Trader)';
-        this.imageName = 'Hanbo';
-        this.visualRadius = 34;
-        this.maxHp = 150;
-        this.hp = this.maxHp;
-        this.vx = 0;
-        this.vy = 0;
-        this.speed = 0.8;
-
-        // Wandering state
-        this.state = 'idle';
-        this.stateTimer = 60;
-        this.targetAngle = Math.random() * Math.PI * 2;
-    }
-
-    update(player, projectiles) {
-        // Knockback (so he can be pushed around like other mobs)
-        this.x += this.vx;
-        this.y += this.vy;
-        this.vx *= 0.82;
-        this.vy *= 0.82;
-
-        // Neutral wandering: walk a bit, stand a bit. Never chases or attacks.
-        this.stateTimer--;
-        if (this.stateTimer <= 0) {
-            if (this.state === 'idle') {
-                this.state = 'walk';
-                this.stateTimer = 90 + Math.random() * 120;
-                this.targetAngle = Math.random() * Math.PI * 2;
-            } else {
-                this.state = 'idle';
-                this.stateTimer = 60 + Math.random() * 120;
-            }
-        }
-
-        if (this.state === 'walk') {
-            this.x += Math.cos(this.targetAngle) * this.speed;
-            this.y += Math.sin(this.targetAngle) * this.speed;
-        }
-
-        this.x = Math.max(100, Math.min(WORLD_SIZE - 100, this.x));
-        this.y = Math.max(100, Math.min(WORLD_SIZE - 100, this.y));
-    }
-
-    onDeath(dimension, player) {
-        const w = Math.floor(Math.random() * 11) + 10;
-        const s = Math.floor(Math.random() * 8) + 8;
-        const o = Math.floor(Math.random() * 6) + 3;
-
-        player.wood += w;
-        player.stone += s;
-        player.ore += o;
-
-        vfx.createExplosion(this.x, this.y, '#10b981', 30);
-        showToast("💀 Hanbo Slain", `He dropped Wood +${w}, Stone +${s}, Ore +${o}`);
-    }
-
-    render(ctx) {
-        const imgData = loadedMobImages[this.imageName];
-        if (imgData && imgData.loaded) {
-            ctx.save();
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, this.visualRadius, 0, Math.PI * 2);
-            ctx.clip();
-            ctx.drawImage(imgData.img, this.x - this.visualRadius, this.y - this.visualRadius, this.visualRadius * 2, this.visualRadius * 2);
-            ctx.restore();
-        } else {
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, this.visualRadius, 0, Math.PI * 2);
-            ctx.fillStyle = '#059669';
-            ctx.fill();
-        }
-
-        // Green ring = neutral trader
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.visualRadius, 0, Math.PI * 2);
-        ctx.strokeStyle = '#10b981';
-        ctx.lineWidth = 3;
-        ctx.stroke();
-
-        ctx.font = 'bold 11px sans-serif';
-        ctx.fillStyle = '#6ee7b7';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'alphabetic';
-        ctx.shadowColor = 'black';
-        ctx.shadowBlur = 4;
-        ctx.fillText(this.name, this.x, this.y - this.visualRadius - 10);
-        ctx.shadowBlur = 0;
-
-        if (this.hp < this.maxHp) {
-            ctx.fillStyle = 'rgba(0,0,0,0.6)';
-            ctx.fillRect(this.x - 20, this.y - this.visualRadius - 22, 40, 4);
-            ctx.fillStyle = '#10b981';
-            ctx.fillRect(this.x - 20, this.y - this.visualRadius - 22, (this.hp / this.maxHp) * 40, 4);
-        }
-    }
-}
-
-class RangedMob extends Mob {
-    constructor(x, y, config) {
-        super(x, y, config);
-        this.shootCooldown = 0;
-        this.shootInterval = 90;
-        this.preferredDist = 250;
-        this.detectRange = config.detectRange || 600; // ranged mobs see a bit further
-    }
-
-    update(player, projectiles) {
-        this.applyKnockback();
-
-        const dx = player.x - this.x;
-        const dy = player.y - this.y;
-        const dist = Math.hypot(dx, dy);
-        const angle = Math.atan2(dy, dx);
-
-        this.updateAggro(dist);
-
-        if (!this.aggro) {
-            // Nobody in sight: wander around
-            this.wander();
-            this.shootCooldown = 0;
-            return;
-        }
-
-        // Player detected: keep a preferred distance and shoot
-        if (dist > this.preferredDist + 40) {
-            this.x += Math.cos(angle) * this.speed;
-            this.y += Math.sin(angle) * this.speed;
-        } else if (dist < this.preferredDist - 40) {
-            this.x -= Math.cos(angle) * this.speed;
-            this.y -= Math.sin(angle) * this.speed;
-        }
-
-        this.shootCooldown++;
-        if (this.shootCooldown >= this.shootInterval && dist < 500) {
-            this.shootCooldown = 0;
-            projectiles.push(new Projectile(
-                this.x, this.y, player.x, player.y,
-                6,
-                Math.round(this.damage * 0.8),
-                '#f43f5e'
-            ));
-            vfx.createTrail(this.x, this.y, '#f43f5e', 8);
-        }
-    }
-}
-
-class ExplodingMob extends Mob {
-    constructor(x, y, config) {
-        super(x, y, config);
-        this.explosionRadius = 130;
-        this.explosionDamage = 50;
-    }
-
-    onDeath(dimension, player) {
-        super.onDeath(dimension, player);
-        vfx.createExplosion(this.x, this.y, '#f97316', 50);
-
-        const dist = Math.hypot(player.x - this.x, player.y - this.y);
-        if (dist <= this.explosionRadius) {
-            player.takeDamage(this.explosionDamage);
-            showToast("💥 BOOM!", `${this.name} exploded! Took ${this.explosionDamage} damage!`);
-        }
-    }
-
-    render(ctx) {
-        super.render(ctx);
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.explosionRadius, 0, Math.PI * 2);
-        ctx.strokeStyle = 'rgba(249, 115, 22, 0.4)';
-        ctx.lineWidth = 1.5;
-        ctx.setLineDash([6, 6]);
-        ctx.stroke();
-        ctx.setLineDash([]);
-    }
-}
-
-class Resource extends Entity {
-    constructor(id, x, y, type) {
-        super(x, y, 22);
-        this.id = id;
-        this.type = type;
-        const hpMap = { tree: 30, rock: 50, ore: 80, shard: 35 };
-        this.maxHp = hpMap[type] || 30;
-        this.hp = this.maxHp;
-    }
-
-    harvest(player, currentDim) {
-        if (this.type === 'tree') player.wood += 6;
-        else if (this.type === 'rock') player.stone += 6;
-        else if (this.type === 'ore') player.ore += 4;
-        else if (this.type === 'shard') {
-            player.shards[currentDim] += 2;
-            showToast("✨ Shard Harvested", `Harvested +2 ${DIMENSION_SHARDS[currentDim].name}s!`);
-        }
-        vfx.createExplosion(this.x, this.y, '#38bdf8', 12);
-    }
-
-    render(ctx) {
-        const RESOURCE_TYPES = {
-            tree:  { name: 'Ancient Tree', emoji: '🌳', color: '#15803d', borderColor: '#22c55e' },
-            rock:  { name: 'Granite Rock', emoji: '🪨', color: '#475569', borderColor: '#94a3b8' },
-            ore:   { name: 'Crystal Ore',  emoji: '💎', color: '#0284c7', borderColor: '#38bdf8' },
-            shard: { name: 'Shard Cluster', emoji: '🔮', color: '#7e22ce', borderColor: '#c084fc' }
-        };
-
-        const resDef = RESOURCE_TYPES[this.type];
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        ctx.fillStyle = resDef.color;
-        ctx.fill();
-        ctx.strokeStyle = resDef.borderColor;
-        ctx.lineWidth = 3;
-        ctx.stroke();
-
-        ctx.font = '16px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(resDef.emoji, this.x, this.y);
-
-        ctx.font = 'bold 11px sans-serif';
-        ctx.fillStyle = '#ffffff';
-        ctx.shadowColor = 'black';
-        ctx.shadowBlur = 4;
-        ctx.fillText(resDef.name, this.x, this.y - this.radius - 8);
-        ctx.shadowBlur = 0;
-
-        if (this.hp < this.maxHp) {
-            ctx.fillStyle = 'rgba(0,0,0,0.6)';
-            ctx.fillRect(this.x - 20, this.y - this.radius - 20, 40, 4);
-            ctx.fillStyle = '#22c55e';
-            ctx.fillRect(this.x - 20, this.y - this.radius - 20, (this.hp / this.maxHp) * 40, 4);
-        }
-    }
-}
-
-class Chest extends Entity {
-    constructor(id, x, y) {
-        super(x, y, 24);
-        this.id = id;
-        this.opened = false;
-    }
-
-    open(player, currentDim) {
-        if (this.opened) return;
-        this.opened = true;
-
-        const wGain = Math.floor(Math.random() * 25) + 15;
-        const sGain = Math.floor(Math.random() * 20) + 10;
-        const oGain = Math.floor(Math.random() * 15) + 5;
-
-        player.wood += wGain;
-        player.stone += sGain;
-        player.ore += oGain;
-
-        let bonusMessage = "";
-        const currentShardInfo = DIMENSION_SHARDS[currentDim];
-        if (player.shards[currentDim] < currentShardInfo.req) {
-            player.shards[currentDim]++;
-            bonusMessage += ` +1 ${currentShardInfo.name}!`;
-        }
-
-        if (Math.random() < 0.5) {
-            const healItem = BASE_CRAFTABLES.find(c => c.id === 'heal');
-            addItemToInventory({ ...healItem, count: 2 });
-            bonusMessage += " + 2x Health Salves!";
-        }
-
-        vfx.createExplosion(this.x, this.y, '#facc15', 25);
-        showToast("📦 Chest Looted!", `Obtained Wood +${wGain}, Stone +${sGain}, Ore +${oGain}${bonusMessage}`);
-
-        updateHUD();
-        saveData();
-    }
-
-    render(ctx) {
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        ctx.fillStyle = '#854d0e';
-        ctx.fill();
-        ctx.strokeStyle = '#facc15';
-        ctx.lineWidth = 3;
-        ctx.stroke();
-
-        ctx.font = '18px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('📦', this.x, this.y);
-
-        ctx.font = 'bold 11px sans-serif';
-        ctx.fillStyle = '#fde047';
-        ctx.shadowColor = 'black';
-        ctx.shadowBlur = 4;
-        ctx.fillText('Loot Chest', this.x, this.y - this.radius - 8);
-        ctx.shadowBlur = 0;
-    }
-}
-
-class Player extends Entity {
-    constructor(x, y) {
-        super(x, y, 20);
-        this.speed = 5.2;
-        this.hp = 100;
-        this.maxHp = 100;
-        this.baseMaxHp = 100;
-        this.wood = 0;
-        this.stone = 0;
-        this.ore = 0;
-        this.shards = { overworld: 0, nether: 0, void: 0 };
-        this.unlockedDims = { overworld: true, nether: false, void: false };
-        this.hotbar = [
-            { id: 'stick', name: 'Wooden Stick', type: 'weapon', weaponKey: 'stick', icon: '🪵', count: 1 },
-            null, null, null, null, null, null, null, null
-        ];
-        this.backpack = [];
-        this.ownedWeapons = ['stick'];
-        this.ownedArmors = [];
-        this.armorKey = null;
-        this.armor = null;
-        this.weaponKey = 'stick';
-        this.weapon = BASE_WEAPONS.stick;
-        this.facingAngle = 0;
-        this.isAttacking = false;
-        this.attackAngle = 0;
-    }
-
-    takeDamage(amount) {
-        this.hp -= amount;
-        if (this.hp <= 0) {
-            this.hp = this.maxHp;
-            this.x = HALF_WORLD;
-            this.y = HALF_WORLD;
-            showToast("☠️ Respawned", "Respawned at home base.");
-        }
-        updateHealthBarOnly();
-    }
-
-    render(ctx) {
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        ctx.fillStyle = '#6366f1';
-        ctx.fill();
-        ctx.strokeStyle = '#818cf8';
-        ctx.lineWidth = 3;
-        ctx.stroke();
-
-        ctx.font = 'bold 12px sans-serif';
-        ctx.fillStyle = '#6366f1';
-        ctx.textAlign = 'center';
-        ctx.shadowColor = 'black';
-        ctx.shadowBlur = 4;
-        ctx.fillText('You', this.x, this.y - this.radius - 10);
-        ctx.shadowBlur = 0;
-
-        if (this.weapon) {
-            ctx.save();
-            ctx.translate(this.x, this.y);
-            ctx.rotate(this.facingAngle + (this.isAttacking ? this.attackAngle : 0));
-            ctx.beginPath();
-            ctx.moveTo(0, 0);
-            ctx.lineTo(this.weapon.range, 0);
-            ctx.strokeStyle = this.weapon.color;
-            ctx.lineWidth = this.isAttacking ? 6 : 3;
-            ctx.stroke();
-            ctx.restore();
-        }
-    }
-}
-
-// HARDCODED MOB TEMPLATES
-const MOB_TEMPLATES = {
-    overworld: [
-        { classType: Mob, config: { name: 'Gerard', imageName: 'Gerard', color: '#15803d', borderColor: '#4ade80', hp: 100, damage: 12, speed: 2.2, shardDropChance: 0.25, hitboxRadius: 22, visualRadius: 33 } },
-        { classType: ExplodingMob, config: { name: 'Jason (Exploder)', imageName: 'Jason', color: '#047857', borderColor: '#34d399', hp: 130, damage: 20, speed: 2.5, shardDropChance: 0.35, hitboxRadius: 24, visualRadius: 36 } }
-    ],
-    nether: [
-        { classType: RangedMob, config: { name: 'Liu-Ji', imageName: 'Liu-Ji', color: '#b91c1c', borderColor: '#fca5a5', hp: 220, damage: 32, speed: 2.4, shardDropChance: 0.4, hitboxRadius: 26, visualRadius: 39 } },
-        { classType: Mob, config: { name: 'Matthew', imageName: 'Matthew', color: '#c2410c', borderColor: '#fdba74', hp: 190, damage: 28, speed: 3.1, shardDropChance: 0.3, hitboxRadius: 22, visualRadius: 33 } },
-        { classType: ExplodingMob, config: { name: 'Travia', imageName: 'Travia', color: '#9a3412', borderColor: '#fb923c', hp: 200, damage: 36, speed: 2.9, shardDropChance: 0.35, hitboxRadius: 25, visualRadius: 37.5 } }
-    ],
-    void: [
-        { classType: RangedMob, config: { name: 'Xayven', imageName: 'Xayven', color: '#581c87', borderColor: '#e9d5ff', hp: 400, damage: 48, speed: 2.8, shardDropChance: 0.5, hitboxRadius: 30, visualRadius: 45 } },
-        { classType: Mob, config: { name: 'Xuchen', imageName: 'Xuchen', color: '#312e81', borderColor: '#a5b4fc', hp: 360, damage: 56, speed: 3.5, shardDropChance: 0.45, hitboxRadius: 28, visualRadius: 42 } }
-    ]
-};
-
-// =============================================================================
-// GAME STATE MANAGEMENT
-// =============================================================================
-let player = new Player(HALF_WORLD, HALF_WORLD);
-let currentDim = 'overworld';
-let equippedSlotIndex = 0;
-let keys = {};
-let mousePos = { x: 0, y: 0 };
-let nearbyChest = null;
-let nearbyTrader = null;
-
-let dimEntities = {
-    overworld: { resources: [], enemies: [], chests: [], traders: [], projectiles: [] },
-    nether:    { resources: [], enemies: [], chests: [], traders: [], projectiles: [] },
-    void:      { resources: [], enemies: [], chests: [], traders: [], projectiles: [] }
-};
-
-// GROUND PATTERNS
-let groundPatterns = {};
-function createGroundPatterns() {
-    const p1 = document.createElement('canvas'); p1.width = 128; p1.height = 128;
-    const c1 = p1.getContext('2d');
-    c1.fillStyle = '#112318'; c1.fillRect(0, 0, 128, 128);
-    c1.fillStyle = '#162e20';
-    for(let i = 0; i < 16; i++) c1.fillRect((i*29)%128, (i*47)%128, 24, 24);
-    groundPatterns.overworld = ctx.createPattern(p1, 'repeat');
-
-    const p2 = document.createElement('canvas'); p2.width = 128; p2.height = 128;
-    const c2 = p2.getContext('2d');
-    c2.fillStyle = '#2a0909'; c2.fillRect(0, 0, 128, 128);
-    c2.fillStyle = '#3f0e0e';
-    for(let i = 0; i < 12; i++) c2.fillRect((i*31)%128, (i*41)%128, 32, 32);
-    groundPatterns.nether = ctx.createPattern(p2, 'repeat');
-
-    const p3 = document.createElement('canvas'); p3.width = 128; p3.height = 128;
-    const c3 = p3.getContext('2d');
-    c3.fillStyle = '#090514'; c3.fillRect(0, 0, 128, 128);
-    c3.strokeStyle = '#2e1065'; c3.lineWidth = 1.5;
-    c3.strokeRect(0, 0, 128, 128);
-    groundPatterns.void = ctx.createPattern(p3, 'repeat');
-}
-createGroundPatterns();
-
-// Spawns one Hanbo at a random spot in the given dimension
-function spawnTrader(dimKey) {
-    dimEntities[dimKey].traders.push(new WanderingTraderMob(
-        Math.random() * (WORLD_SIZE - 400) + 200,
-        Math.random() * (WORLD_SIZE - 400) + 200
-    ));
-}
-
-// =============================================================================
-// SPAWN MANAGER: keeps mobs & Hanbo around the player, with hard caps
-// =============================================================================
-const MOB_CAPS = { overworld: 45, nether: 70, void: 90 }; // max enemies alive per realm
-const TRADER_CAP = 3;                // max Hanbos alive per realm
-const SPAWN_NEARBY_RADIUS = 1800;    // "near the player" distance
-const MIN_NEARBY_ENEMIES = 6;        // always try to keep at least this many close by
-const TRADER_NEARBY_RADIUS = 2200;   // Hanbo should always be within this range
-const ENEMY_SPAWN_INTERVAL = 90;     // frames between enemy spawn checks (~1.5s)
-const TRADER_SPAWN_INTERVAL = 300;   // frames between Hanbo checks (~5s)
-let enemySpawnTick = 0;
-let traderSpawnTick = 0;
-
-// Finds a random spot just outside the visible screen
-function pickOffscreenPos() {
-    const halfW = canvas.width / 2 + 60;
-    const halfH = canvas.height / 2 + 60;
-    const minDist = Math.hypot(canvas.width, canvas.height) / 2 + 100;
-
-    for (let i = 0; i < 12; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const dist = minDist + Math.random() * 500;
-        const x = Math.max(100, Math.min(WORLD_SIZE - 100, player.x + Math.cos(angle) * dist));
-        const y = Math.max(100, Math.min(WORLD_SIZE - 100, player.y + Math.sin(angle) * dist));
-
-        if (Math.abs(x - player.x) > halfW || Math.abs(y - player.y) > halfH) {
-            return { x, y };
-        }
-    }
-    // Fallback: any random spot in the world that isn't on screen
-    for (let i = 0; i < 50; i++) {
-        const x = Math.random() * (WORLD_SIZE - 200) + 100;
-        const y = Math.random() * (WORLD_SIZE - 200) + 100;
-        if (Math.abs(x - player.x) > halfW || Math.abs(y - player.y) > halfH) {
-            return { x, y };
-        }
-    }
-    // Last resort (basically impossible): spawn far to one side of the player
     return {
-        x: Math.max(100, Math.min(WORLD_SIZE - 100, player.x + minDist)),
-        y: Math.max(100, Math.min(WORLD_SIZE - 100, player.y))
+      x: 50 + i*(W-100)/(slots.length-1),
+      y: START + Math.random()*16 - 8,
+      you: !!s.you,
+      name: s.you ? 'YOU' : label(s.f),
+      img: s.f ? imgs[s.f] : null,
+      num: n,
+      speed: s.you ? 108 : 82 + Math.random()*28,
+      skill: .3 + Math.random()*.8,
+      st: 'alive',
+      mv: false,
+      delay: 0,
+      goAt: 0,
+      restT: 0,
+      ph: Math.random()*6,
+      was: false
     };
+  });
+
+  phase='green'; phaseT=0; phaseDur=3+Math.random()*1.5;
+  redT=0; headTurn=0; timeLeft=TIME; beams=[]; flash=0;
+  endT=null; held=false; reason=''; running=true;
 }
 
-// Instantly tops a realm back up so it is never empty (used when entering a realm)
-function refillDimension(dimKey) {
-    const e = dimEntities[dimKey];
-    const target = Math.ceil(MOB_CAPS[dimKey] * 0.6);
-    while (e.enemies.length < target) {
-        const pos = pickOffscreenPos();
-        spawnEnemy(dimKey, pos.x, pos.y);
-    }
+function startRed(){
+  phase='red'; phaseT=0; redT=0; phaseDur=2.2+Math.random()*1.6;
+  tone(220, .35, 'square', .09);
+  P.forEach(p => {
+    p.was = p.mv;
+    p.delay = .05 + p.skill * Math.random() * .55;
+  });
 }
 
-function spawnEnemy(dimKey, x, y) {
-    const pool = MOB_TEMPLATES[dimKey];
-    const template = pool[Math.floor(Math.random() * pool.length)];
-    const MobClass = template.classType;
-    dimEntities[dimKey].enemies.push(new MobClass(x, y, template.config));
+function startGreen(){
+  phase='green'; phaseT=0; phaseDur=1.8+Math.random()*2.7;
+  tone(660, .15);
+  P.forEach(p => {
+    p.goAt = Math.random() * .5;
+    p.restT = 0;
+  });
 }
 
-function manageSpawns() {
-    const e = dimEntities[currentDim];
-    const distToPlayer = o => Math.hypot(o.x - player.x, o.y - player.y);
-
-    // ---- ENEMIES ----
-    if (++enemySpawnTick >= ENEMY_SPAWN_INTERVAL) {
-        enemySpawnTick = 0;
-        const cap = MOB_CAPS[currentDim];
-        const nearby = e.enemies.filter(m => distToPlayer(m) <= SPAWN_NEARBY_RADIUS).length;
-
-        // How many to spawn this check:
-        //  - realm empty / nearly empty  -> big batch so the map is never left bare
-        //  - few mobs near the player    -> refill up to the minimum
-        //  - below cap                   -> trickle in 1-2 at a time
-        let toSpawn = 0;
-        if (e.enemies.length < Math.ceil(cap * 0.25)) toSpawn = 8;
-        else if (nearby < MIN_NEARBY_ENEMIES) toSpawn = MIN_NEARBY_ENEMIES - nearby;
-        else if (e.enemies.length < cap) toSpawn = 2;
-
-        for (let n = 0; n < toSpawn; n++) {
-            // At the cap? Recycle the farthest mob (only if it's far away) so the total never grows
-            if (e.enemies.length >= cap) {
-                let farIdx = -1, farDist = SPAWN_NEARBY_RADIUS;
-                e.enemies.forEach((m, i) => {
-                    const d = distToPlayer(m);
-                    if (d > farDist) { farDist = d; farIdx = i; }
-                });
-                if (farIdx === -1) break; // everything is nearby already, nothing to recycle
-                e.enemies.splice(farIdx, 1);
-            }
-
-            const pos = pickOffscreenPos();
-            spawnEnemy(currentDim, pos.x, pos.y);
-        }
-    }
-
-    // ---- HANBO (only if none is nearby) ----
-    if (++traderSpawnTick >= TRADER_SPAWN_INTERVAL) {
-        traderSpawnTick = 0;
-        const traderNearby = e.traders.some(t => distToPlayer(t) <= TRADER_NEARBY_RADIUS);
-
-        if (!traderNearby) {
-            const pos = pickOffscreenPos();
-            if (pos) {
-                if (e.traders.length < TRADER_CAP) {
-                    e.traders.push(new WanderingTraderMob(pos.x, pos.y));
-                } else if (e.traders.length > 0) {
-                    // At the cap: move the farthest Hanbo to just off-screen
-                    let far = e.traders[0];
-                    for (const t of e.traders) if (distToPlayer(t) > distToPlayer(far)) far = t;
-                    far.x = pos.x;
-                    far.y = pos.y;
-                }
-            }
-        }
-    }
+function kill(p){
+  p.st='dead';
+  beams.push({x:p.x, y:p.y, t:.3});
+  flash=.5;
+  shot();
+  if(p.you){
+    endT=1.4;
+    reason='shot';
+  }
 }
 
-function generateDimension(dimKey) {
-    const res = [];
-    const count = dimKey === 'overworld' ? 320 : dimKey === 'nether' ? 280 : 240;
-    
-    for (let i = 0; i < count; i++) {
-        let type = 'tree';
-        let r = Math.random();
-        if (dimKey === 'overworld') type = r < 0.4 ? 'tree' : r < 0.7 ? 'rock' : r < 0.85 ? 'ore' : 'shard';
-        else if (dimKey === 'nether') type = r < 0.3 ? 'rock' : r < 0.6 ? 'ore' : 'shard';
-        else type = r < 0.2 ? 'rock' : r < 0.5 ? 'ore' : 'shard';
+function update(dt){
+  if(!running) return;
 
-        res.push(new Resource(
-            i,
-            Math.random() * (WORLD_SIZE - 200) + 100,
-            Math.random() * (WORLD_SIZE - 200) + 100,
-            type
-        ));
-    }
+  timeLeft -= dt;
+  phaseT += dt;
 
-    const enemies = [];
-    const mobPool = MOB_TEMPLATES[dimKey];
-    const eCount = dimKey === 'overworld' ? 45 : dimKey === 'nether' ? 70 : 90;
+  if(phase === 'green'){
+    if(phaseT >= phaseDur) startRed();
+  } else {
+    redT += dt;
+    if(phaseT >= phaseDur) startGreen();
+  }
 
-    for (let i = 0; i < eCount; i++) {
-        const mobTemplate = mobPool[Math.floor(Math.random() * mobPool.length)];
-        const MobClass = mobTemplate.classType;
-        
-        enemies.push(new MobClass(
-            Math.random() * (WORLD_SIZE - 200) + 100,
-            Math.random() * (WORLD_SIZE - 200) + 100,
-            mobTemplate.config
-        ));
-    }
+  headTurn += Math.max(-dt/.3, Math.min(dt/.3, (phase==='red'?1:0) - headTurn));
 
-    const chests = [];
-    const chestCount = dimKey === 'overworld' ? 22 : dimKey === 'nether' ? 28 : 35;
-    for (let i = 0; i < chestCount; i++) {
-        chests.push(new Chest(
-            i,
-            Math.random() * (WORLD_SIZE - 200) + 100,
-            Math.random() * (WORLD_SIZE - 200) + 100
-        ));
-    }
+  for(const p of P){
+    if(p.st !== 'alive') continue;
 
-    dimEntities[dimKey] = { resources: res, enemies: enemies, chests: chests, traders: [], projectiles: [] };
-
-    // 3 Hanbos per realm
-    for (let i = 0; i < 3; i++) {
-        spawnTrader(dimKey);
-    }
-}
-
-generateDimension('overworld');
-generateDimension('nether');
-generateDimension('void');
-
-function loadSavedData() {
-    const saved = localStorage.getItem('survival_realm_v8');
-    if (saved) {
-        try {
-            const data = JSON.parse(saved);
-            player.wood = data.wood || 0;
-            player.stone = data.stone || 0;
-            player.ore = data.ore || 0;
-            player.shards = data.shards || { overworld: 0, nether: 0, void: 0 };
-            player.unlockedDims = data.unlockedDims || { overworld: true, nether: false, void: false };
-            player.hotbar = data.hotbar || player.hotbar;
-            player.backpack = data.backpack || [];
-            player.ownedWeapons = data.ownedWeapons || ['stick'];
-            player.ownedArmors = data.ownedArmors || [];
-            player.armorKey = data.armorKey || null;
-            if (player.armorKey && ARMORS[player.armorKey]) {
-                player.armor = ARMORS[player.armorKey];
-                player.maxHp = player.baseMaxHp + player.armor.hpBonus;
-                player.hp = player.maxHp;
-            }
-        } catch (e) { console.error(e); }
-    }
-}
-
-function saveData() {
-    const data = {
-        wood: player.wood, stone: player.stone, ore: player.ore,
-        shards: player.shards, unlockedDims: player.unlockedDims,
-        hotbar: player.hotbar, backpack: player.backpack,
-        ownedWeapons: player.ownedWeapons, ownedArmors: player.ownedArmors, armorKey: player.armorKey
-    };
-    localStorage.setItem('survival_realm_v8', JSON.stringify(data));
-}
-
-function resetGameData() {
-    if (confirm("Reset ALL progress, inventory, and unlocked gear?")) {
-        localStorage.removeItem('survival_realm_v8');
-        location.reload();
-    }
-}
-
-function showToast(title, msg) {
-    const container = document.getElementById('toast-container');
-    const toast = document.createElement('div');
-    toast.className = 'glass-panel flex items-center gap-3 rounded-2xl px-4 py-3 shadow-2xl border-indigo-500/30';
-    toast.innerHTML = `<div><div class="text-xs font-bold text-indigo-300">${title}</div><div class="text-[11px] text-gray-300">${msg}</div></div>`;
-    container.appendChild(toast);
-    setTimeout(() => toast.remove(), 2500);
-}
-
-function toggleCraftingPanel() {
-    document.getElementById('crafting-panel').classList.toggle('hidden');
-}
-
-function pressHotbarSlot(index) {
-    if (equippedSlotIndex === index) {
-        equippedSlotIndex = -1;
-        player.weapon = null;
-        player.weaponKey = null;
+    let mv;
+    if(p.you) mv = held;
+    else if(phase === 'green'){
+      if(p.restT > 0){
+        p.restT -= dt;
+        mv = false;
+      } else {
+        mv = phaseT >= p.goAt;
+        if(mv && Math.random() < dt*.3) p.restT = .3 + Math.random()*.5;
+      }
     } else {
-        equippedSlotIndex = index;
-        const item = player.hotbar[index];
-        if (item && item.type === 'weapon' && BASE_WEAPONS[item.weaponKey]) {
-            player.weaponKey = item.weaponKey;
-            player.weapon = BASE_WEAPONS[item.weaponKey];
-        } else {
-            player.weapon = null;
-            player.weaponKey = null;
+      mv = p.was && redT < p.delay;
+    }
+
+    if(phase === 'red' && redT > GRACE && mv){
+      kill(p);
+      p.mv = false;
+      continue;
+    }
+
+    if(mv){
+      p.y -= p.speed * dt;
+      p.ph += dt * 12;
+      if(p.y <= FINISH + 8){
+        p.y = FINISH + 8;
+        p.st = 'safe';
+        mv = false;
+        tone(880, .12, 'triangle', .07);
+        if(p.you){
+          endT = 1.0;
+          reason = 'safe';
         }
+      }
     }
-    updateHUD();
+    p.mv = mv;
+  }
+
+  // Time limit expired logic
+  if(timeLeft <= 0 && running && endT === null){
+    timeLeft = 0;
+    P.forEach(p => {
+      if(p.st === 'alive'){
+        p.st = 'dead';
+        if(p.you) reason = 'time';
+      }
+    });
+    if(reason !== 'safe') reason = reason || 'time';
+    endT = endT ?? 1.2;
+  }
+
+  for(const b of beams) b.t -= dt;
+  beams = beams.filter(b => b.t > 0);
+  flash = Math.max(0, flash - dt*1.5);
+
+  if(endT !== null){
+    endT -= dt;
+    if(endT <= 0) finish();
+  }
 }
 
-function useActiveItem() {
-    if (equippedSlotIndex < 0) return;
-    let item = player.hotbar[equippedSlotIndex];
-    if (!item) return;
+function finish(){
+  running = false;
+  endT = null;
+  const safeCount = P.filter(p => p.st === 'safe').length;
 
-    if (item.type === 'consumable') {
-        if (item.id === 'heal') {
-            player.hp = Math.min(player.maxHp, player.hp + 45);
-            showToast("🧪 Consumed Salve", "Restored +45 Vitality!");
-        } else if (item.id === 'elixir') {
-            player.hp = player.maxHp;
-            showToast("🍷 Consumed Elixir", "Fully Restored Vitality!");
-        }
-
-        vfx.createExplosion(player.x, player.y, '#10b981', 15);
-        item.count--;
-        if (item.count <= 0) player.hotbar[equippedSlotIndex] = null;
-        updateHUD();
-        saveData();
-    }
+  if(reason === 'safe'){
+    $('win-time').textContent = Math.ceil(Math.max(0, timeLeft)) + 's';
+    $('win-survivors').textContent = safeCount + ' / ' + P.length;
+    showOverlay('ov-win');
+  } else {
+    $('loss-reason').textContent = reason === 'time' 
+      ? 'Time ran out before reaching the finish line!' 
+      : 'You moved while the doll was looking!';
+    $('loss-survivors').textContent = safeCount + ' / ' + P.length;
+    showOverlay('ov-loss');
+  }
 }
 
-function switchDimension(dimKey) {
-    if (dimKey === currentDim) return;
+function drawBG(){
+  ctx.fillStyle='#d9b382'; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='rgba(120,80,40,.08)';
+  for(let y=FINISH+20; y<H; y+=28) ctx.fillRect(0,y,W,2);
 
-    if (!player.unlockedDims[dimKey]) {
-        const reqConfig = dimKey === 'nether' ? DIMENSION_SHARDS.overworld : DIMENSION_SHARDS.nether;
-        const reqDimKey = dimKey === 'nether' ? 'overworld' : 'nether';
+  const g=ctx.createLinearGradient(0,0,0,FINISH);
+  g.addColorStop(0,'#8fd3e8'); g.addColorStop(1,'#f4a6c0');
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,FINISH-8);
 
-        if (player.shards[reqDimKey] >= reqConfig.req) {
-            player.unlockedDims[dimKey] = true;
-            showToast("🌀 Realm Portal Unlocked", `Entered ${dimKey.toUpperCase()} Realm!`);
-        } else {
-            showToast("🔒 Realm Locked", `Need ${reqConfig.req}x ${reqConfig.name} from ${reqDimKey.toUpperCase()} Realm!`);
-            return;
-        }
-    }
+  ctx.fillStyle='rgba(255,255,255,.2)';
+  for(let x=0; x<W; x+=60) ctx.fillRect(x,0,30,FINISH-8);
 
-    currentDim = dimKey;
-    refillDimension(dimKey);
-    document.querySelectorAll('.dim-btn').forEach(btn => btn.classList.add('opacity-60', 'bg-white/5'));
-    document.getElementById(`btn-${dimKey}`).classList.remove('opacity-60', 'bg-white/5');
-    document.getElementById(`btn-${dimKey}`).classList.add('bg-indigo-600');
-    updateHUD();
-    saveData();
+  for(let x=0; x<W; x+=24){
+    ctx.fillStyle=(x/24)%2?'#fff':'#e0213b';
+    ctx.fillRect(x,FINISH-8,24,8);
+  }
+
+  ctx.fillStyle='rgba(255,255,255,.85)';
+  ctx.fillRect(0,START+38,W,4);
+  ctx.fillStyle='rgba(0,0,0,.3)';
+  ctx.font='bold 13px Trebuchet MS,sans-serif';
+  ctx.textAlign='left';
+  ctx.fillText('START LINE', 10, START+56);
 }
 
-function updateHUD() {
-    document.getElementById('wood-val').textContent = player.wood;
-    document.getElementById('stone-val').textContent = player.stone;
-    document.getElementById('ore-val').textContent = player.ore;
-    
-    const shardConfig = DIMENSION_SHARDS[currentDim];
-    document.getElementById('shard-label').textContent = shardConfig.label;
-    document.getElementById('shard-val').textContent = `${player.shards[currentDim]}/${shardConfig.req}`;
+function drawDoll(){
+  const cx = W/2;
+  ctx.fillStyle='#f0842c'; ctx.beginPath(); ctx.moveTo(cx-32,FINISH-14); ctx.lineTo(cx+32,FINISH-14); ctx.lineTo(cx+14,50); ctx.lineTo(cx-14,50); ctx.fill();
+  ctx.fillStyle='#f7d64a'; ctx.fillRect(cx-15,44,30,14);
 
-    document.getElementById('weapon-val').textContent = player.weapon ? player.weapon.name : 'None';
+  const sx=Math.max(.05, Math.abs(Math.cos(Math.PI*headTurn)));
+  ctx.save(); ctx.translate(cx,28); ctx.scale(sx,1);
+  ctx.fillStyle='#111'; ctx.beginPath(); ctx.arc(0,0,23,0,7); ctx.fill();
 
-    if (player.armor) {
-        document.getElementById('armor-val').textContent = player.armor.name;
-        document.getElementById('armor-buff-val').textContent = `Buff: ${player.armor.desc}`;
+  if(headTurn>=.5){
+    ctx.fillStyle='#f2c9a0'; ctx.beginPath(); ctx.ellipse(0,5,18,17,0,0,7); ctx.fill();
+    ctx.fillStyle='rgba(240,120,150,.7)'; [-12,12].forEach(x=>{ctx.beginPath();ctx.arc(x,10,3.5,0,7);ctx.fill();});
+    ctx.fillStyle=headTurn>.9?'#ff1a3c':'#111';
+    ctx.shadowColor='#f00'; ctx.shadowBlur=headTurn>.9?12:0;
+    [-7,7].forEach(x=>{ctx.beginPath();ctx.arc(x,3,3,0,7);ctx.fill();});
+  }
+  ctx.restore();
+}
+
+function rr(x,y,w,h,r){
+  ctx.beginPath();
+  ctx.roundRect(x,y,w,h,r);
+}
+
+function drawP(p){
+  const bob = p.st==='alive' && p.mv ? -Math.abs(Math.sin(p.ph))*3 : 0;
+  const x=p.x, y=p.y+bob, r=17, hy=y-6, leg=p.mv?Math.sin(p.ph)*5:0;
+
+  ctx.globalAlpha = p.st==='dead' ? 0.75 : 1;
+
+  ctx.fillStyle='rgba(0,0,0,.2)'; ctx.beginPath(); ctx.ellipse(x,p.y+32,17,6,0,0,7); ctx.fill();
+  ctx.fillStyle='#0a6b5f'; ctx.fillRect(x-9,y+20+leg,7,12); ctx.fillRect(x+2,y+20-leg,7,12);
+  ctx.fillStyle=p.st==='dead'?'#5d7d78':'#0f9a86'; rr(x-16,y+2,32,24,8); ctx.fill();
+  ctx.fillStyle='#fff'; rr(x-10,y+10,20,12,3); ctx.fill();
+  ctx.fillStyle='#111'; ctx.font='bold 9px Trebuchet MS,sans-serif'; ctx.textAlign='center'; ctx.fillText(p.num,x,y+19.5);
+
+  ctx.save(); ctx.beginPath(); ctx.arc(x,hy,r,0,7); ctx.clip();
+  const im=p.img;
+  if(im && im.complete && im.naturalWidth){
+    const s=Math.max(2*r/im.naturalWidth, 2*r/im.naturalHeight), w=im.naturalWidth*s, h=im.naturalHeight*s;
+    ctx.drawImage(im, x-w/2, hy-r-(h-2*r)*.3, w, h);
+  } else {
+    ctx.fillStyle=p.you?'#f2c9a0':'#777'; ctx.fillRect(x-r,hy-r,2*r,2*r);
+    ctx.fillStyle='#222';
+    if(p.you){
+      ctx.beginPath(); ctx.arc(x-5,hy-1,2,0,7); ctx.arc(x+5,hy-1,2,0,7); ctx.fill();
+      ctx.fillRect(x-8,hy+6,16,2);
     } else {
-        document.getElementById('armor-val').textContent = 'None';
-        document.getElementById('armor-buff-val').textContent = 'Buff: No Active Armor';
+      ctx.font='bold 14px sans-serif'; ctx.fillText(p.name[0],x,hy+5);
     }
+  }
+  ctx.restore();
 
-    updateHealthBarOnly();
+  ctx.lineWidth=3;
+  ctx.strokeStyle = p.you ? '#ffd84a' : (p.st==='safe' ? '#7CFFB2' : '#fff');
+  ctx.beginPath(); ctx.arc(x,hy,r,0,7); ctx.stroke();
 
-    document.getElementById('action-hotbar').innerHTML = player.hotbar.map((item, i) => `
-        <div onclick="pressHotbarSlot(${i})" class="hotbar-slot ${i === equippedSlotIndex ? 'equipped' : ''}">
-            <span class="hotbar-key-num">${i + 1}</span>${item ? `<span class="text-base leading-none mt-1">${item.icon}</span><span class="slot-title">${item.name}</span>` : '<span class="text-[9px] text-gray-500 mt-2">Empty</span>'}
-            ${item && item.count > 1 ? `<span class="item-count">x${item.count}</span>` : ''}
-        </div>
-    `).join('');
+  if(p.st==='dead'){
+    ctx.fillStyle='rgba(20,20,20,.5)'; ctx.beginPath(); ctx.arc(x,hy,r,0,7); ctx.fill();
+    ctx.strokeStyle='#e0213b'; ctx.lineWidth=4;
+    ctx.beginPath(); ctx.moveTo(x-10,hy-10); ctx.lineTo(x+10,hy+10); ctx.moveTo(x+10,hy-10); ctx.lineTo(x-10,hy+10); ctx.stroke();
+  }
 
-    document.getElementById('btn-overworld').textContent = player.unlockedDims.overworld ? 'Overworld' : 'Overworld (Locked)';
-    document.getElementById('btn-nether').textContent = player.unlockedDims.nether ? 'Nether Realm' : 'Nether (10x Shards Needed)';
-    document.getElementById('btn-void').textContent = player.unlockedDims.void ? 'Void Realm' : 'Void (10x Shards Needed)';
+  ctx.globalAlpha=1;
+  ctx.font='bold 11px Trebuchet MS,sans-serif'; ctx.textAlign='center'; ctx.lineWidth=3; ctx.strokeStyle='rgba(0,0,0,.6)';
+  ctx.strokeText(p.name,x,p.y+46); ctx.fillStyle=p.you?'#ffd84a':'#fff'; ctx.fillText(p.name,x,p.y+46);
 
-    renderCraftingUI();
-    renderBackpackUI();
-    renderTraderUI();
+  if(p.you && p.st==='alive'){
+    ctx.fillStyle='#ffd84a';
+    const b=Math.sin(performance.now()/200)*3;
+    ctx.beginPath(); ctx.moveTo(x-6,hy-r-14+b); ctx.lineTo(x+6,hy-r-14+b); ctx.lineTo(x,hy-r-6+b); ctx.fill();
+  }
 }
 
-function updateHealthBarOnly() {
-    document.getElementById('hp-text').textContent = `${Math.ceil(player.hp)} / ${player.maxHp}`;
-    document.getElementById('hp-bar').style.width = `${Math.max(0, (player.hp / player.maxHp) * 100)}%`;
+function draw(){
+  drawBG();
+  drawDoll();
+  P.slice().sort((a,b)=>a.y-b.y).forEach(drawP);
+
+  if(headTurn>0){
+    ctx.fillStyle='rgba(255,0,40,'+(.14*headTurn)+')';
+    ctx.fillRect(0,0,W,H);
+  }
+
+  for(const b of beams){
+    ctx.strokeStyle='rgba(255,40,60,'+(b.t/.3)+')';
+    ctx.lineWidth=4;
+    ctx.beginPath(); ctx.moveTo(W/2,30); ctx.lineTo(b.x,b.y-6); ctx.stroke();
+  }
+
+  if(flash>0){
+    ctx.fillStyle='rgba(255,255,255,'+flash*.5+')';
+    ctx.fillRect(0,0,W,H);
+  }
+
+  // HUD sync
+  const L=$('light');
+  if(!running && phase==='idle'){
+    L.textContent='READY'; L.className='';
+  } else if(phase==='red'){
+    L.textContent='RED LIGHT'; L.className='r';
+  } else {
+    L.textContent='GREEN LIGHT'; L.className='g';
+  }
+
+  $('time').textContent=Math.ceil(Math.max(0,timeLeft));
+  $('alive').textContent=P.filter(p=>p.st==='alive').length;
+  $('safe').textContent=P.filter(p=>p.st==='safe').length;
 }
 
-function renderCraftingUI() {
-    document.getElementById('compact-craft-list').innerHTML = BASE_CRAFTABLES.map(item => {
-        const isToolOwned = (item.type === 'weapon' && player.ownedWeapons.includes(item.weaponKey)) ||
-                            (item.type === 'armor' && player.ownedArmors.includes(item.armorKey));
-
-        const canAfford = !isToolOwned && player.wood >= item.cost.wood && player.stone >= item.cost.stone && player.ore >= item.cost.ore;
-
-        return `
-            <button onclick="craftItem('${item.id}')" ${!canAfford ? 'disabled' : ''} class="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] p-2 text-left hover:bg-white/[0.1] disabled:opacity-40 transition-all">
-                <div>
-                    <div class="text-xs font-bold ${isToolOwned ? 'text-emerald-400' : 'text-indigo-300'} flex items-center gap-1.5">
-                        <span>${item.icon}</span> <span>${item.name}</span>${isToolOwned ? '✓' : ''}
-                    </div>
-                    <div class="text-[10px] text-gray-400">${item.stats}</div>
-                </div>
-                <div class="text-right text-[10px] font-mono text-gray-300">
-                    ${isToolOwned ? '<span class="font-bold text-emerald-400">OWNED</span>' : `Wood: ${item.cost.wood}<br>Stone: ${item.cost.stone}<br>Ore: ${item.cost.ore}`}
-                </div>
-            </button>
-        `;
-    }).join('');
+function showOverlay(id) {
+  document.querySelectorAll('.overlay').forEach(el => el.classList.add('hide'));
+  if (id) $(id).classList.remove('hide');
 }
 
-function craftItem(id) {
-    const item = BASE_CRAFTABLES.find(c => c.id === id);
-    if (!item) return;
-
-    if (item.type === 'weapon' && player.ownedWeapons.includes(item.weaponKey)) {
-        showToast("⚠️ Tool Owned", "You already own this weapon/tool!");
-        return;
-    }
-    if (item.type === 'armor' && player.ownedArmors.includes(item.armorKey)) {
-        showToast("⚠️ Armor Owned", "You already own this armor!");
-        return;
-    }
-
-    if (player.wood >= item.cost.wood && player.stone >= item.cost.stone && player.ore >= item.cost.ore) {
-        player.wood -= item.cost.wood;
-        player.stone -= item.cost.stone;
-        player.ore -= item.cost.ore;
-
-        if (item.type === 'armor') {
-            player.ownedArmors.push(item.armorKey);
-            player.armorKey = item.armorKey;
-            player.armor = ARMORS[item.armorKey];
-            player.maxHp = player.baseMaxHp + player.armor.hpBonus;
-            showToast("🛡️ Armor Equipped", `Equipped ${item.name}!`);
-        } else if (item.type === 'weapon') {
-            player.ownedWeapons.push(item.weaponKey);
-            addItemToInventory({ ...item, count: 1 });
-            showToast(`${item.icon} Weapon Crafted!`, `Acquired ${item.name}! Added to hotbar.`);
-        } else {
-            addItemToInventory({ ...item, count: 1 });
-            showToast(`${item.icon} Consumable Crafted!`, `Created ${item.name}!`);
-        }
-
-        updateHUD();
-        saveData();
-    }
+function openMainMenu() {
+  running = false;
+  phase = 'idle';
+  showOverlay('ov-menu');
 }
 
-function addItemToInventory(newItem) {
-    if (newItem.type === 'consumable') {
-        let hotbarItem = player.hotbar.find(i => i && i.id === newItem.id);
-        if (hotbarItem) { hotbarItem.count += (newItem.count || 1); return; }
-        let backpackItem = player.backpack.find(i => i && i.id === newItem.id);
-        if (backpackItem) { backpackItem.count += (newItem.count || 1); return; }
-    }
-
-    let emptySlot = player.hotbar.findIndex(slot => slot === null);
-    if (emptySlot !== -1) {
-        player.hotbar[emptySlot] = newItem;
-    } else {
-        player.backpack.push(newItem);
-    }
+function startGame() {
+  initAudio();
+  showOverlay(null);
+  init();
 }
 
-function toggleBackpack(force) {
-    const modal = document.getElementById('backpack-modal');
-    if (force === false || !modal.classList.contains('hidden')) {
-        modal.classList.replace('flex', 'hidden');
-    } else {
-        modal.classList.replace('hidden', 'flex');
-    }
-}
+// Input bindings
+const hold = v => {
+  held = v;
+  $('run').classList.toggle('on', v);
+};
 
-function toggleTraderModal(force) {
-    const modal = document.getElementById('trader-modal');
-    if (force === false || !modal.classList.contains('hidden')) {
-        modal.classList.replace('flex', 'hidden');
-    } else {
-        modal.classList.replace('hidden', 'flex');
-        renderTraderUI();
-    }
-}
-
-function renderBackpackUI() {
-    document.getElementById('backpack-grid').innerHTML = player.backpack.map((item, i) => `
-        <div onclick="equipFromBackpack(${i})" class="hotbar-slot border-indigo-500/20 flex-col hover:border-indigo-400 w-full h-20">
-            <span class="text-xl mt-1">${item.icon}</span>
-            <span class="slot-title">${item.name}</span>${item.count > 1 ? `<span class="item-count">x${item.count}</span>` : ''}
-        </div>
-    `).join('');
-}
-
-function getPlayerResourceCount(type) {
-    if (type === 'wood') return player.wood;
-    if (type === 'stone') return player.stone;
-    if (type === 'ore') return player.ore;
-    if (type === 'shard_overworld') return player.shards.overworld;
-    if (type === 'shard_nether') return player.shards.nether;
-    if (type === 'shard_void') return player.shards.void;
-    return 0;
-}
-
-function renderTraderUI() {
-    const list = document.getElementById('trader-offers-list');
-    if (!list) return;
-
-    list.innerHTML = TRADER_OFFERS.map(offer => {
-        const giveValue = (RESOURCE_VALUES[offer.give.type] || 1) * offer.give.count;
-        const receiveValue = (RESOURCE_VALUES[offer.receive.type] || 1) * offer.receive.count;
-        const ratio = receiveValue / giveValue;
-
-        let dealBadge = '';
-        let dealBgClass = '';
-        let dealTextClass = '';
-        let ratioPercent = Math.min(100, Math.max(10, Math.round(ratio * 50)));
-
-        if (ratio >= 1.25) {
-            dealBadge = '🔥 GREAT DEAL';
-            dealBgClass = 'border-emerald-500/40 bg-emerald-950/30';
-            dealTextClass = 'text-emerald-400';
-        } else if (ratio >= 0.85) {
-            dealBadge = '⚖️ FAIR TRADE';
-            dealBgClass = 'border-amber-500/40 bg-amber-950/30';
-            dealTextClass = 'text-amber-400';
-        } else {
-            dealBadge = '⚠️ BAD DEAL';
-            dealBgClass = 'border-rose-500/40 bg-rose-950/30';
-            dealTextClass = 'text-rose-400';
-        }
-
-        const currentOwned = getPlayerResourceCount(offer.give.type);
-        const canAfford = currentOwned >= offer.give.count;
-
-        return `
-            <div class="glass-panel flex flex-col md:flex-row items-center justify-between rounded-2xl p-4 gap-4 border ${dealBgClass}">
-                <div class="flex-1">
-                    <div class="flex items-center gap-3 mb-1">
-                        <span class="font-display font-bold text-sm text-gray-100">${offer.name}</span>
-                        <span class="rounded-full px-2.5 py-0.5 text-[10px] font-extrabold border border-current ${dealTextClass}">
-                            ${dealBadge}
-                        </span>
-                    </div>
-                    <p class="text-xs text-gray-400 mb-2">${offer.desc}</p>
-                    
-                    <!-- TRADE EVALUATION BAR -->
-                    <div class="w-full max-w-md bg-black/40 rounded-full h-2 overflow-hidden border border-white/10 relative">
-                        <div class="h-full ${ratio >= 1.25 ? 'bg-emerald-500' : ratio >= 0.85 ? 'bg-amber-500' : 'bg-rose-500'} transition-all" style="width: ${ratioPercent}%"></div>
-                    </div>
-                    <div class="flex justify-between text-[9px] text-gray-400 max-w-md mt-1 font-mono">
-                        <span>Cost Value: ${giveValue.toFixed(1)} pts</span>
-                        <span>Value Ratio: ${(ratio * 100).toFixed(0)}%</span>
-                        <span>Return Value: ${receiveValue.toFixed(1)} pts</span>
-                    </div>
-                </div>
-
-                <!-- TRADE ACTION -->
-                <div class="flex items-center gap-4 bg-black/30 p-3 rounded-xl border border-white/5">
-                    <div class="text-right text-xs">
-                        <div class="text-rose-300 font-bold">You Give: ${offer.give.icon} ${offer.give.count} ${offer.give.name}</div>
-                        <div class="text-emerald-300 font-bold">You Get: ${offer.receive.icon} ${offer.receive.count} ${offer.receive.name}</div>
-                        <div class="text-[10px] text-gray-400">Owned: ${currentOwned}/${offer.give.count}</div>
-                    </div>
-                    <button onclick="executeTrade('${offer.id}')" ${!canAfford ? 'disabled' : ''} class="rounded-xl bg-emerald-600 px-4 py-2 font-display text-xs font-bold text-white shadow-lg hover:bg-emerald-500 disabled:opacity-40 transition-all">
-                        Accept Trade
-                    </button>
-                </div>
-            </div>
-        `;
-    }).join('');
-}
-
-function executeTrade(offerId) {
-    const offer = TRADER_OFFERS.find(o => o.id === offerId);
-    if (!offer) return;
-
-    const ownedCount = getPlayerResourceCount(offer.give.type);
-    if (ownedCount < offer.give.count) {
-        showToast("⚠️ Not Enough Resources", `Need ${offer.give.count} ${offer.give.name}!`);
-        return;
-    }
-
-    // Deduct Cost
-    if (offer.give.type === 'wood') player.wood -= offer.give.count;
-    else if (offer.give.type === 'stone') player.stone -= offer.give.count;
-    else if (offer.give.type === 'ore') player.ore -= offer.give.count;
-    else if (offer.give.type === 'shard_overworld') player.shards.overworld -= offer.give.count;
-    else if (offer.give.type === 'shard_nether') player.shards.nether -= offer.give.count;
-    else if (offer.give.type === 'shard_void') player.shards.void -= offer.give.count;
-
-    // Receive Product
-    if (offer.receive.type === 'wood') player.wood += offer.receive.count;
-    else if (offer.receive.type === 'stone') player.stone += offer.receive.count;
-    else if (offer.receive.type === 'ore') player.ore += offer.receive.count;
-    else if (offer.receive.type === 'shard_overworld') player.shards.overworld += offer.receive.count;
-    else if (offer.receive.type === 'shard_nether') player.shards.nether += offer.receive.count;
-    else if (offer.receive.type === 'shard_void') player.shards.void += offer.receive.count;
-
-    showToast("🤝 Trade Complete", `Traded ${offer.give.count} ${offer.give.name} for ${offer.receive.count} ${offer.receive.name}!`);
-    vfx.createExplosion(player.x, player.y, '#10b981', 25);
-
-    updateHUD();
-    saveData();
-}
-
-function equipFromBackpack(backpackIdx) {
-    let item = player.backpack[backpackIdx];
-    let emptySlot = player.hotbar.findIndex(slot => slot === null);
-
-    if (emptySlot !== -1) {
-        player.hotbar[emptySlot] = item;
-        player.backpack.splice(backpackIdx, 1);
-    } else {
-        let activeIdx = equippedSlotIndex >= 0 ? equippedSlotIndex : 0;
-        let temp = player.hotbar[activeIdx];
-        player.hotbar[activeIdx] = item;
-        player.backpack[backpackIdx] = temp;
-    }
-
-    updateHUD();
-    saveData();
-}
-
-// INPUT EVENTS
-window.addEventListener('keydown', e => {
-    keys[e.key.toLowerCase()] = true;
-    if (e.key === '`' || e.key === '~') { e.preventDefault(); toggleBackpack(); }
-    if (e.key === 'Escape') { toggleBackpack(false); toggleTraderModal(false); }
-    if (e.key.toLowerCase() === 'e' && nearbyChest) nearbyChest.open(player, currentDim);
-    if (e.key.toLowerCase() === 'f' && nearbyTrader) toggleTraderModal();
-
-    if (['1','2','3','4','5','6','7','8','9'].includes(e.key)) {
-        pressHotbarSlot(parseInt(e.key) - 1);
-    }
+addEventListener('keydown', e => {
+  if(['Space','ArrowUp','KeyW'].includes(e.code)) {
+    hold(true);
+    e.preventDefault();
+  }
 });
 
-window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
-window.addEventListener('mousemove', e => { mousePos = { x: e.clientX, y: e.clientY }; });
-
-window.addEventListener('mousedown', e => {
-    if (e.button === 0) {
-        // Ignore clicks on UI panels/buttons so they don't swing your weapon
-        if (e.target.closest('button, .glass-panel')) return;
-
-        if (nearbyChest) {
-            nearbyChest.open(player, currentDim);
-            return;
-        }
-
-        // NOTE: clicking near Hanbo no longer opens the trade window,
-        // so you can attack him. Press [F] to trade instead.
-
-        if (equippedSlotIndex >= 0 && player.hotbar[equippedSlotIndex] && player.hotbar[equippedSlotIndex].type === 'consumable') {
-            useActiveItem();
-            return;
-        }
-
-        if (!player.isAttacking && player.weapon) {
-            player.isAttacking = true;
-            player.attackAngle = -Math.PI / 3;
-            performAttack();
-        }
-    }
+addEventListener('keyup', e => {
+  if(['Space','ArrowUp','KeyW'].includes(e.code)) hold(false);
 });
 
-function performAttack() {
-    if (!player.weapon) return;
-    const currentWeapon = player.weapon;
-    const currentEnemies = dimEntities[currentDim].enemies;
-    const currentTraders = dimEntities[currentDim].traders;
-    const currentResources = dimEntities[currentDim].resources;
+[$('run'), cv].forEach(el => {
+  el.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    hold(true);
+  });
+});
 
-    vfx.addSwingTrail(player.x, player.y, player.facingAngle, currentWeapon.range, currentWeapon.color);
+addEventListener('pointerup', () => hold(false));
+addEventListener('pointercancel', () => hold(false));
+addEventListener('blur', () => hold(false));
 
-    // ENEMIES
-    for (let i = currentEnemies.length - 1; i >= 0; i--) {
-        const enemy = currentEnemies[i];
-        const dx = enemy.x - player.x;
-        const dy = enemy.y - player.y;
-        if (dx * dx + dy * dy <= (currentWeapon.range + enemy.radius) ** 2) {
-            enemy.hp -= currentWeapon.damage;
-            enemy.aggro = true; // getting hit always gets its attention
+// UI Button actions
+$('btn-start').addEventListener('click', startGame);
+$('btn-win-replay').addEventListener('click', startGame);
+$('btn-win-menu').addEventListener('click', openMainMenu);
+$('btn-loss-retry').addEventListener('click', startGame);
+$('btn-loss-menu').addEventListener('click', openMainMenu);
+$('home-btn').addEventListener('click', openMainMenu);
 
-            const angle = Math.atan2(dy, dx);
-            const kbForce = currentWeapon.knockback || 15;
-            enemy.vx += Math.cos(angle) * kbForce;
-            enemy.vy += Math.sin(angle) * kbForce;
-
-            vfx.createExplosion(enemy.x, enemy.y, currentWeapon.color, 8);
-
-            if (enemy.hp <= 0) {
-                enemy.onDeath(currentDim, player);
-                currentEnemies.splice(i, 1);
-                updateHUD();
-                saveData();
-            }
-        }
-    }
-
-    // TRADERS (Hanbo can be hit and killed, but never fights back)
-    for (let i = currentTraders.length - 1; i >= 0; i--) {
-        const trader = currentTraders[i];
-        const dx = trader.x - player.x;
-        const dy = trader.y - player.y;
-        if (dx * dx + dy * dy <= (currentWeapon.range + trader.radius) ** 2) {
-            trader.hp -= currentWeapon.damage;
-
-            const angle = Math.atan2(dy, dx);
-            const kbForce = currentWeapon.knockback || 15;
-            trader.vx += Math.cos(angle) * kbForce;
-            trader.vy += Math.sin(angle) * kbForce;
-
-            vfx.createExplosion(trader.x, trader.y, currentWeapon.color, 8);
-
-            if (trader.hp <= 0) {
-                trader.onDeath(currentDim, player);
-                currentTraders.splice(i, 1);
-                toggleTraderModal(false); // close the trade window if it was open
-
-                // Respawning is handled by manageSpawns()
-
-                updateHUD();
-                saveData();
-            }
-        }
-    }
-
-    // RESOURCES
-    for (let i = currentResources.length - 1; i >= 0; i--) {
-        const res = currentResources[i];
-        const dx = res.x - player.x;
-        const dy = res.y - player.y;
-        if (dx * dx + dy * dy <= (currentWeapon.range + res.radius) ** 2) {
-            res.hp -= currentWeapon.damage;
-            vfx.createExplosion(res.x, res.y, '#e2e8f0', 5);
-            if (res.hp <= 0) {
-                res.harvest(player, currentDim);
-                currentResources.splice(i, 1);
-                updateHUD();
-                saveData();
-            }
-        }
-    }
+// Animation Loop
+let last=0;
+function loop(t){
+  const dt=Math.min(.05, (t-last)/1000 || 0);
+  last=t;
+  update(dt);
+  draw();
+  requestAnimationFrame(loop);
 }
 
-// MAIN LOOP
-let lastTime = performance.now();
-const deltaStep = 1000 / 60;
-let accum = 0;
-
-function update(dt) {
-    let dx = 0; let dy = 0;
-    if (keys['w'] || keys['arrowup']) dy -= 1;
-    if (keys['s'] || keys['arrowdown']) dy += 1;
-    if (keys['a'] || keys['arrowleft']) dx -= 1;
-    if (keys['d'] || keys['arrowright']) dx += 1;
-
-    if (dx !== 0 && dy !== 0) { dx *= 0.7071; dy *= 0.7071; }
-
-    player.x = Math.max(player.radius, Math.min(WORLD_SIZE - player.radius, player.x + dx * player.speed));
-    player.y = Math.max(player.radius, Math.min(WORLD_SIZE - player.radius, player.y + dy * player.speed));
-
-    const screenCenterX = canvas.width * 0.5;
-    const screenCenterY = canvas.height * 0.5;
-    player.facingAngle = Math.atan2(mousePos.y - screenCenterY, mousePos.x - screenCenterX);
-
-    if (player.isAttacking) {
-        player.attackAngle += 0.55;
-        if (player.attackAngle >= Math.PI / 3) player.isAttacking = false;
-    }
-
-    nearbyChest = null;
-    const currentChests = dimEntities[currentDim].chests;
-    for (let chest of currentChests) {
-        if (!chest.opened && Math.hypot(chest.x - player.x, chest.y - player.y) <= player.radius + chest.radius + 30) {
-            nearbyChest = chest;
-            break;
-        }
-    }
-
-    const chestPrompt = document.getElementById('chest-prompt');
-    if (nearbyChest) chestPrompt.classList.remove('hidden');
-    else chestPrompt.classList.add('hidden');
-
-    nearbyTrader = null;
-    const currentTraders = dimEntities[currentDim].traders;
-    for (let trader of currentTraders) {
-        if (Math.hypot(trader.x - player.x, trader.y - player.y) <= player.radius + trader.radius + 40) {
-            nearbyTrader = trader;
-            break;
-        }
-    }
-
-    const traderPrompt = document.getElementById('trader-prompt');
-    if (nearbyTrader) traderPrompt.classList.remove('hidden');
-    else traderPrompt.classList.add('hidden');
-
-    const currentEnemies = dimEntities[currentDim].enemies;
-    const currentProjectiles = dimEntities[currentDim].projectiles;
-
-    for (let i = 0; i < currentEnemies.length; i++) {
-        currentEnemies[i].update(player, currentProjectiles);
-    }
-
-    for (let i = 0; i < currentTraders.length; i++) {
-        currentTraders[i].update(player, currentProjectiles);
-    }
-
-    for (let i = currentProjectiles.length - 1; i >= 0; i--) {
-        const proj = currentProjectiles[i];
-        proj.update();
-
-        if (Math.hypot(player.x - proj.x, player.y - proj.y) <= player.radius + proj.radius) {
-            player.takeDamage(proj.damage);
-            vfx.createExplosion(proj.x, proj.y, proj.color, 18);
-            proj.markedForDeletion = true;
-        }
-
-        if (proj.markedForDeletion) {
-            currentProjectiles.splice(i, 1);
-        }
-    }
-
-    manageSpawns();
-    vfx.update();
-}
-
-function render() {
-    const camX = canvas.width * 0.5 - player.x;
-    const camY = canvas.height * 0.5 - player.y;
-
-    const viewLeft = player.x - canvas.width * 0.5 - 100;
-    const viewRight = player.x + canvas.width * 0.5 + 100;
-    const viewTop = player.y - canvas.height * 0.5 - 100;
-    const viewBottom = player.y + canvas.height * 0.5 + 100;
-
-    ctx.save();
-    ctx.translate(camX, camY);
-    ctx.fillStyle = groundPatterns[currentDim] || '#030712';
-    ctx.fillRect(viewLeft, viewTop, canvas.width + 200, canvas.height + 200);
-
-    const currentResources = dimEntities[currentDim].resources;
-    for (let res of currentResources) {
-        if (res.x >= viewLeft && res.x <= viewRight && res.y >= viewTop && res.y <= viewBottom) {
-            res.render(ctx);
-        }
-    }
-
-    const currentChests = dimEntities[currentDim].chests;
-    for (let chest of currentChests) {
-        if (!chest.opened && chest.x >= viewLeft && chest.x <= viewRight && chest.y >= viewTop && chest.y <= viewBottom) {
-            chest.render(ctx);
-        }
-    }
-
-    const currentTraders = dimEntities[currentDim].traders;
-    for (let trader of currentTraders) {
-        if (trader.x >= viewLeft && trader.x <= viewRight && trader.y >= viewTop && trader.y <= viewBottom) {
-            trader.render(ctx);
-        }
-    }
-
-    const currentEnemies = dimEntities[currentDim].enemies;
-    for (let enemy of currentEnemies) {
-        if (enemy.x >= viewLeft && enemy.x <= viewRight && enemy.y >= viewTop && enemy.y <= viewBottom) {
-            enemy.render(ctx);
-        }
-    }
-
-    const currentProjectiles = dimEntities[currentDim].projectiles;
-    for (let proj of currentProjectiles) {
-        if (proj.x >= viewLeft && proj.x <= viewRight && proj.y >= viewTop && proj.y <= viewBottom) {
-            proj.render(ctx);
-        }
-    }
-
-    player.render(ctx);
-    vfx.render(ctx);
-
-    ctx.restore();
-}
-
-function gameLoop(time) {
-    const dt = time - lastTime;
-    lastTime = time;
-    accum += dt;
-
-    while (accum >= deltaStep) {
-        update(deltaStep);
-        accum -= deltaStep;
-    }
-
-    render();
-    requestAnimationFrame(gameLoop);
-}
-
-loadSavedData();
-updateHUD();
-requestAnimationFrame(gameLoop);
+openMainMenu();
+requestAnimationFrame(loop);
 </script>
 </body>
 </html>
