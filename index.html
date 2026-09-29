@@ -1120,7 +1120,29 @@ function pickOffscreenPos() {
             return { x, y };
         }
     }
-    return null;
+    // Fallback: any random spot in the world that isn't on screen
+    for (let i = 0; i < 50; i++) {
+        const x = Math.random() * (WORLD_SIZE - 200) + 100;
+        const y = Math.random() * (WORLD_SIZE - 200) + 100;
+        if (Math.abs(x - player.x) > halfW || Math.abs(y - player.y) > halfH) {
+            return { x, y };
+        }
+    }
+    // Last resort (basically impossible): spawn far to one side of the player
+    return {
+        x: Math.max(100, Math.min(WORLD_SIZE - 100, player.x + minDist)),
+        y: Math.max(100, Math.min(WORLD_SIZE - 100, player.y))
+    };
+}
+
+// Instantly tops a realm back up so it is never empty (used when entering a realm)
+function refillDimension(dimKey) {
+    const e = dimEntities[dimKey];
+    const target = Math.ceil(MOB_CAPS[dimKey] * 0.6);
+    while (e.enemies.length < target) {
+        const pos = pickOffscreenPos();
+        spawnEnemy(dimKey, pos.x, pos.y);
+    }
 }
 
 function spawnEnemy(dimKey, x, y) {
@@ -1140,7 +1162,16 @@ function manageSpawns() {
         const cap = MOB_CAPS[currentDim];
         const nearby = e.enemies.filter(m => distToPlayer(m) <= SPAWN_NEARBY_RADIUS).length;
 
-        if (nearby < MIN_NEARBY_ENEMIES || e.enemies.length < cap) {
+        // How many to spawn this check:
+        //  - realm empty / nearly empty  -> big batch so the map is never left bare
+        //  - few mobs near the player    -> refill up to the minimum
+        //  - below cap                   -> trickle in 1-2 at a time
+        let toSpawn = 0;
+        if (e.enemies.length < Math.ceil(cap * 0.25)) toSpawn = 8;
+        else if (nearby < MIN_NEARBY_ENEMIES) toSpawn = MIN_NEARBY_ENEMIES - nearby;
+        else if (e.enemies.length < cap) toSpawn = 2;
+
+        for (let n = 0; n < toSpawn; n++) {
             // At the cap? Recycle the farthest mob (only if it's far away) so the total never grows
             if (e.enemies.length >= cap) {
                 let farIdx = -1, farDist = SPAWN_NEARBY_RADIUS;
@@ -1148,13 +1179,12 @@ function manageSpawns() {
                     const d = distToPlayer(m);
                     if (d > farDist) { farDist = d; farIdx = i; }
                 });
-                if (farIdx !== -1) e.enemies.splice(farIdx, 1);
+                if (farIdx === -1) break; // everything is nearby already, nothing to recycle
+                e.enemies.splice(farIdx, 1);
             }
 
-            if (e.enemies.length < cap) {
-                const pos = pickOffscreenPos();
-                if (pos) spawnEnemy(currentDim, pos.x, pos.y);
-            }
+            const pos = pickOffscreenPos();
+            spawnEnemy(currentDim, pos.x, pos.y);
         }
     }
 
@@ -1348,6 +1378,7 @@ function switchDimension(dimKey) {
     }
 
     currentDim = dimKey;
+    refillDimension(dimKey);
     document.querySelectorAll('.dim-btn').forEach(btn => btn.classList.add('opacity-60', 'bg-white/5'));
     document.getElementById(`btn-${dimKey}`).classList.remove('opacity-60', 'bg-white/5');
     document.getElementById(`btn-${dimKey}`).classList.add('bg-indigo-600');
