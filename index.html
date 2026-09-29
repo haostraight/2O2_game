@@ -57,7 +57,7 @@
         ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.5); border-radius: 99px; }
         ::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.5); border-radius: 99px; }
 
-        .roblox-slot {
+        .hotbar-slot {
             width: 58px;
             height: 54px;
             position: relative;
@@ -73,19 +73,19 @@
             padding: 2px;
         }
 
-        .roblox-slot:hover {
+        .hotbar-slot:hover {
             border-color: rgba(255, 255, 255, 0.6);
             background: rgba(30, 41, 59, 0.9);
         }
 
-        .roblox-slot.equipped {
+        .hotbar-slot.equipped {
             border-color: #38bdf8;
             box-shadow: 0 0 18px rgba(56, 189, 248, 0.8);
             background: rgba(14, 116, 144, 0.6);
             transform: translateY(-2px);
         }
 
-        .roblox-key-num {
+        .hotbar-key-num {
             position: absolute;
             top: 2px;
             left: 4px;
@@ -194,9 +194,9 @@
         </div>
     </div>
 
-    <!-- ROBLOX-STYLE TOP HOTBAR -->
+    <!-- TOP HOTBAR -->
     <div class="pointer-events-auto flex items-center gap-1 glass-panel rounded-2xl p-1.5 border-slate-700">
-        <div id="roblox-hotbar" class="flex items-center gap-1"></div>
+        <div id="action-hotbar" class="flex items-center gap-1"></div>
     </div>
 
     <!-- CRAFTING PANEL BUTTON & DROPDOWN -->
@@ -228,7 +228,7 @@
 <div id="backpack-modal" class="glass-panel pointer-events-auto fixed inset-x-12 top-20 bottom-12 z-50 hidden flex-col rounded-3xl p-6 shadow-2xl backdrop-blur-2xl">
     <div class="flex items-center justify-between border-b border-white/10 pb-4">
         <div>
-            <h2 class="font-display text-2xl font-extrabold tracking-wide text-white">🎒 ROBLOX BACKPACK & INVENTORY</h2>
+            <h2 class="font-display text-2xl font-extrabold tracking-wide text-white">🎒 INVENTORY & STORAGE</h2>
             <p class="text-xs text-gray-400">Click items to move them into active hotbar slots!</p>
         </div>
         <button onclick="toggleBackpack(false)" class="rounded-xl bg-rose-600/30 px-4 py-2 font-display text-xs font-bold text-rose-200 border border-rose-500/40 hover:bg-rose-600/50">
@@ -316,6 +316,128 @@ let DIMENSION_SHARDS = {
 };
 
 // =============================================================================
+// PARTICLE SYSTEM CLASSES
+// =============================================================================
+
+class Particle {
+    constructor(x, y, vx, vy, color, radius, maxLife) {
+        this.x = x;
+        this.y = y;
+        this.vx = vx;
+        this.vy = vy;
+        this.color = color;
+        this.radius = radius;
+        this.life = maxLife;
+        this.maxLife = maxLife;
+        this.markedForDeletion = false;
+    }
+
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vx *= 0.95;
+        this.vy *= 0.95;
+        this.life--;
+        if (this.life <= 0) this.markedForDeletion = true;
+    }
+
+    render(ctx) {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, this.life / this.maxLife);
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, Math.max(0.1, this.radius * (this.life / this.maxLife)), 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.fill();
+        ctx.restore();
+    }
+}
+
+class VisualEffectSystem {
+    constructor() {
+        this.particles = [];
+        this.swingTrails = [];
+    }
+
+    createExplosion(x, y, color = '#f97316', count = 35) {
+        for (let i = 0; i < count; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = Math.random() * 8 + 2;
+            const vx = Math.cos(angle) * speed;
+            const vy = Math.sin(angle) * speed;
+            const radius = Math.random() * 6 + 3;
+            const life = Math.floor(Math.random() * 25) + 20;
+            const palette = [color, '#ef4444', '#facc15', '#ffffff'];
+            const chosenColor = palette[Math.floor(Math.random() * palette.length)];
+            this.particles.push(new Particle(x, y, vx, vy, chosenColor, radius, life));
+        }
+    }
+
+    createTrail(x, y, color = '#f43f5e', count = 2) {
+        for (let i = 0; i < count; i++) {
+            const vx = (Math.random() - 0.5) * 1.5;
+            const vy = (Math.random() - 0.5) * 1.5;
+            const radius = Math.random() * 3 + 1.5;
+            const life = Math.floor(Math.random() * 12) + 8;
+            this.particles.push(new Particle(x, y, vx, vy, color, radius, life));
+        }
+    }
+
+    addSwingTrail(x, y, angle, range, color) {
+        this.swingTrails.push({
+            x, y, angle, range, color,
+            alpha: 1.0,
+            life: 10
+        });
+
+        for (let i = 0; i < 5; i++) {
+            const particleAngle = angle + (Math.random() - 0.5) * 0.8;
+            const dist = Math.random() * range;
+            const px = x + Math.cos(particleAngle) * dist;
+            const py = y + Math.sin(particleAngle) * dist;
+            const vx = Math.cos(particleAngle) * 3;
+            const vy = Math.sin(particleAngle) * 3;
+            this.particles.push(new Particle(px, py, vx, vy, color, Math.random() * 2 + 1, 12));
+        }
+    }
+
+    update() {
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+            this.particles[i].update();
+            if (this.particles[i].markedForDeletion) {
+                this.particles.splice(i, 1);
+            }
+        }
+
+        for (let i = this.swingTrails.length - 1; i >= 0; i--) {
+            this.swingTrails[i].life--;
+            this.swingTrails[i].alpha = this.swingTrails[i].life / 10;
+            if (this.swingTrails[i].life <= 0) {
+                this.swingTrails.splice(i, 1);
+            }
+        }
+    }
+
+    render(ctx) {
+        for (let trail of this.swingTrails) {
+            ctx.save();
+            ctx.globalAlpha = trail.alpha;
+            ctx.beginPath();
+            ctx.arc(trail.x, trail.y, trail.range, trail.angle - 0.4, trail.angle + 0.4);
+            ctx.strokeStyle = trail.color;
+            ctx.lineWidth = 6;
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        for (let particle of this.particles) {
+            particle.render(ctx);
+        }
+    }
+}
+
+const vfx = new VisualEffectSystem();
+
+// =============================================================================
 // OBJECT-ORIENTED CLASSES
 // =============================================================================
 
@@ -343,6 +465,7 @@ class Projectile extends Entity {
         this.x += this.vx;
         this.y += this.vy;
         this.life--;
+        vfx.createTrail(this.x, this.y, this.color, 1);
         if (this.life <= 0) this.markedForDeletion = true;
     }
 
@@ -397,6 +520,8 @@ class Mob extends Entity {
         player.wood += Math.floor(Math.random() * 4) + 2;
         player.stone += Math.floor(Math.random() * 3) + 1;
         
+        vfx.createExplosion(this.x, this.y, this.color, 15);
+
         if (Math.random() < this.shardDropChance) {
             player.shards[dimension] += 1;
             showToast("✨ Shard Dropped", `Acquired +1 ${DIMENSION_SHARDS[dimension].name}!`);
@@ -473,6 +598,7 @@ class RangedMob extends Mob {
         if (this.shootCooldown >= this.shootInterval && dist < 500) {
             this.shootCooldown = 0;
             projectiles.push(new Projectile(this.x, this.y, player.x, player.y, 6, Math.round(this.damage * 0.8), '#f43f5e'));
+            vfx.createTrail(this.x, this.y, '#f43f5e', 8);
         }
     }
 }
@@ -486,7 +612,8 @@ class ExplodingMob extends Mob {
 
     onDeath(dimension, player) {
         super.onDeath(dimension, player);
-        
+        vfx.createExplosion(this.x, this.y, '#f97316', 50);
+
         const dist = Math.hypot(player.x - this.x, player.y - this.y);
         if (dist <= this.explosionRadius) {
             player.takeDamage(this.explosionDamage);
@@ -524,6 +651,7 @@ class Resource extends Entity {
             player.shards[currentDim] += 2;
             showToast("✨ Shard Harvested", `Harvested +2 ${DIMENSION_SHARDS[currentDim].name}s!`);
         }
+        vfx.createExplosion(this.x, this.y, '#38bdf8', 12);
     }
 
     render(ctx) {
@@ -592,10 +720,11 @@ class Chest extends Entity {
 
         if (Math.random() < 0.5) {
             const healItem = BASE_CRAFTABLES.find(c => c.id === 'heal');
-            addItemToRobloxInventory({ ...healItem, count: 2 });
+            addItemToInventory({ ...healItem, count: 2 });
             bonusMessage += " + 2x Health Salves!";
         }
 
+        vfx.createExplosion(this.x, this.y, '#facc15', 25);
         showToast("📦 Chest Looted!", `Obtained Wood +${wGain}, Stone +${sGain}, Ore +${oGain}${bonusMessage}`);
     }
 
@@ -889,6 +1018,7 @@ function useActiveItem() {
             showToast("🍷 Consumed Elixir", "Fully Restored Vitality!");
         }
 
+        vfx.createExplosion(player.x, player.y, '#10b981', 15);
         item.count--;
         if (item.count <= 0) player.hotbar[equippedSlotIndex] = null;
         updateHUD();
@@ -940,9 +1070,9 @@ function updateHUD() {
 
     updateHealthBarOnly();
 
-    document.getElementById('roblox-hotbar').innerHTML = player.hotbar.map((item, i) => `
-        <div onclick="pressHotbarSlot(${i})" class="roblox-slot ${i === equippedSlotIndex ? 'equipped' : ''}">
-            <span class="roblox-key-num">${i + 1}</span>${item ? `<span class="text-base leading-none mt-1">${item.icon}</span><span class="slot-title">${item.name}</span>` : '<span class="text-[9px] text-gray-500 mt-2">Empty</span>'}
+    document.getElementById('action-hotbar').innerHTML = player.hotbar.map((item, i) => `
+        <div onclick="pressHotbarSlot(${i})" class="hotbar-slot ${i === equippedSlotIndex ? 'equipped' : ''}">
+            <span class="hotbar-key-num">${i + 1}</span>${item ? `<span class="text-base leading-none mt-1">${item.icon}</span><span class="slot-title">${item.name}</span>` : '<span class="text-[9px] text-gray-500 mt-2">Empty</span>'}
             ${item && item.count > 1 ? `<span class="item-count">x${item.count}</span>` : ''}
         </div>
     `).join('');
@@ -1009,10 +1139,10 @@ function craftItem(id) {
             showToast("🛡️ Armor Equipped", `Equipped ${item.name}!`);
         } else if (item.type === 'weapon') {
             player.ownedWeapons.push(item.weaponKey);
-            addItemToRobloxInventory({ ...item, count: 1 });
+            addItemToInventory({ ...item, count: 1 });
             showToast(`${item.icon} Weapon Crafted!`, `Acquired ${item.name}! Added to hotbar.`);
         } else {
-            addItemToRobloxInventory({ ...item, count: 1 });
+            addItemToInventory({ ...item, count: 1 });
             showToast(`${item.icon} Consumable Crafted!`, `Created ${item.name}!`);
         }
 
@@ -1021,7 +1151,7 @@ function craftItem(id) {
     }
 }
 
-function addItemToRobloxInventory(newItem) {
+function addItemToInventory(newItem) {
     if (newItem.type === 'consumable') {
         let hotbarItem = player.hotbar.find(i => i && i.id === newItem.id);
         if (hotbarItem) { hotbarItem.count += (newItem.count || 1); return; }
@@ -1048,7 +1178,7 @@ function toggleBackpack(force) {
 
 function renderBackpackUI() {
     document.getElementById('backpack-grid').innerHTML = player.backpack.map((item, i) => `
-        <div onclick="equipFromBackpack(${i})" class="roblox-slot border-indigo-500/20 flex-col hover:border-indigo-400 w-full h-20">
+        <div onclick="equipFromBackpack(${i})" class="hotbar-slot border-indigo-500/20 flex-col hover:border-indigo-400 w-full h-20">
             <span class="text-xl mt-1">${item.icon}</span>
             <span class="slot-title">${item.name}</span>${item.count > 1 ? `<span class="item-count">x${item.count}</span>` : ''}
         </div>
@@ -1114,6 +1244,8 @@ function performAttack() {
     const currentEnemies = dimEntities[currentDim].enemies;
     const currentResources = dimEntities[currentDim].resources;
 
+    vfx.addSwingTrail(player.x, player.y, player.facingAngle, currentWeapon.range, currentWeapon.color);
+
     for (let i = currentEnemies.length - 1; i >= 0; i--) {
         const enemy = currentEnemies[i];
         const dx = enemy.x - player.x;
@@ -1125,6 +1257,8 @@ function performAttack() {
             const kbForce = currentWeapon.knockback || 15;
             enemy.vx += Math.cos(angle) * kbForce;
             enemy.vy += Math.sin(angle) * kbForce;
+
+            vfx.createExplosion(enemy.x, enemy.y, currentWeapon.color, 8);
 
             if (enemy.hp <= 0) {
                 enemy.onDeath(currentDim, player);
@@ -1141,6 +1275,7 @@ function performAttack() {
         const dy = res.y - player.y;
         if (dx * dx + dy * dy <= (currentWeapon.range + res.radius) ** 2) {
             res.hp -= currentWeapon.damage;
+            vfx.createExplosion(res.x, res.y, '#e2e8f0', 5);
             if (res.hp <= 0) {
                 res.harvest(player, currentDim);
                 currentResources.splice(i, 1);
@@ -1203,6 +1338,7 @@ function update(dt) {
 
         if (Math.hypot(player.x - proj.x, player.y - proj.y) <= player.radius + proj.radius) {
             player.takeDamage(proj.damage);
+            vfx.createExplosion(proj.x, proj.y, proj.color, 18);
             proj.markedForDeletion = true;
         }
 
@@ -1210,6 +1346,8 @@ function update(dt) {
             currentProjectiles.splice(i, 1);
         }
     }
+
+    vfx.update();
 }
 
 function render() {
@@ -1255,6 +1393,7 @@ function render() {
     }
 
     player.render(ctx);
+    vfx.render(ctx);
 
     ctx.restore();
 }
