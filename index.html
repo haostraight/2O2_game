@@ -131,7 +131,7 @@
     📦 Press <span class="rounded bg-amber-500/20 px-2 py-0.5 text-white border border-amber-400/50">[E]</span> to Open Loot Chest
 </div>
 
-<!-- TOP BAR: SURVIVOR HUD (LEFT) & HOTBAR (CENTER) -->
+<!-- TOP BAR: SURVIVOR HUD & CRAFTING -->
 <div class="pointer-events-none absolute top-4 left-4 right-4 z-30 flex items-start justify-between gap-4">
     <!-- SURVIVOR HUD -->
     <div id="stats-hud" class="glass-panel glass-panel-glow pointer-events-auto w-72 rounded-2xl p-3">
@@ -172,7 +172,7 @@
             </div>
             <div class="rounded-lg border border-purple-500/30 bg-purple-950/40 p-1.5 flex items-center justify-between">
                 <span id="shard-label" class="text-[11px] text-purple-200 font-medium">🌿 Shards</span>
-                <span id="shard-val" class="font-display text-xs font-bold text-emerald-300">0/3</span>
+                <span id="shard-val" class="font-display text-xs font-bold text-emerald-300">0/10</span>
             </div>
         </div>
 
@@ -199,9 +199,9 @@
         <div id="roblox-hotbar" class="flex items-center gap-1"></div>
     </div>
 
-    <!-- CRAFTING MATRIX TOGGLE BUTTON & CRAFTING PANEL -->
+    <!-- CRAFTING PANEL BUTTON & DROPDOWN -->
     <div class="pointer-events-auto relative">
-        <button onclick="toggleCraftingPanel()" class="glass-panel flex items-center gap-2 rounded-2xl px-4 py-2 font-display text-xs font-bold text-indigo-300 border-indigo-500/30 hover:border-indigo-400 transition-all">
+        <button onclick="toggleCraftingPanel()" class="glass-panel flex items-center gap-2 rounded-2xl px-3 py-2 font-display text-xs font-bold text-indigo-300 border-indigo-500/30 hover:border-indigo-400 transition-all">
             🔨 Crafting Matrix
         </button>
 
@@ -224,7 +224,7 @@
     <button id="btn-void" onclick="switchDimension('void')" class="dim-btn flex items-center gap-2 rounded-full px-4 py-1.5 font-display text-xs font-bold transition-all bg-white/5 text-gray-400 opacity-60">Void Realm (Locked)</button>
 </div>
 
-<!-- ROBLOX BACKPACK GUI MODAL -->
+<!-- BACKPACK MODAL -->
 <div id="backpack-modal" class="glass-panel pointer-events-auto fixed inset-x-12 top-20 bottom-12 z-50 hidden flex-col rounded-3xl p-6 shadow-2xl backdrop-blur-2xl">
     <div class="flex items-center justify-between border-b border-white/10 pb-4">
         <div>
@@ -245,11 +245,12 @@
 </div>
 
 <script>
+const WORLD_SIZE = 8000;
+const HALF_WORLD = WORLD_SIZE / 2;
+
 // CANVAS SETUP
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d', { alpha: false });
-const WORLD_SIZE = 8000;
-const HALF_WORLD = WORLD_SIZE / 2;
 
 function resizeCanvas() {
     canvas.width = window.innerWidth;
@@ -277,13 +278,14 @@ mobImageFiles.forEach(item => {
     img.onerror = () => { loadedMobImages[item.name] = { img: null, loaded: false }; };
 });
 
-const WEAPONS = {
-    stick:  { id: 'stick', name: 'Wooden Stick', damage: 20, range: 65, color: '#a3e635', knockback: 12 },
-    spear:  { id: 'spear', name: 'Stone Spear', damage: 40, range: 90, color: '#cbd5e1', knockback: 18 },
-    hammer: { id: 'hammer', name: 'Ore Sledge', damage: 75, range: 75, color: '#38bdf8', knockback: 30 },
-    blade:  { id: 'blade', name: 'Plasma Sword', damage: 120, range: 110, color: '#facc15', knockback: 22 },
-    scythe: { id: 'scythe', name: 'Void Scythe', damage: 190, range: 130, color: '#c084fc', knockback: 28 },
-    bow:    { id: 'bow', name: 'Frostbite Bow', damage: 95, range: 140, color: '#60a5fa', knockback: 20 }
+// WEAPON & ARMOR DATA
+const BASE_WEAPONS = {
+    stick:  { id: 'stick', name: 'Wooden Stick', damage: 15, range: 65, color: '#a3e635', knockback: 10 },
+    spear:  { id: 'spear', name: 'Stone Spear', damage: 30, range: 90, color: '#cbd5e1', knockback: 15 },
+    hammer: { id: 'hammer', name: 'Ore Sledge', damage: 60, range: 75, color: '#38bdf8', knockback: 25 },
+    blade:  { id: 'blade', name: 'Plasma Sword', damage: 95, range: 110, color: '#facc15', knockback: 18 },
+    scythe: { id: 'scythe', name: 'Void Scythe', damage: 150, range: 130, color: '#c084fc', knockback: 22 },
+    bow:    { id: 'bow', name: 'Frostbite Bow', damage: 75, range: 140, color: '#60a5fa', knockback: 15 }
 };
 
 const ARMORS = {
@@ -292,77 +294,436 @@ const ARMORS = {
     aegis:  { id: 'aegis', name: 'Aegis Plate', icon: '🦾', hpBonus: 130, desc: '+130 Max HP Aegis Barrier' }
 };
 
-const CRAFTABLES = [
-    { id: 'padded', name: 'Reinforced Plating', type: 'armor', armorKey: 'padded', icon: '🛡️', stats: '+30 Max HP', cost: { wood: 15, stone: 20, ore: 5 } },
-    { id: 'shadow', name: 'Shadow Cloak', type: 'armor', armorKey: 'shadow', icon: '🧥', stats: '+75 Max HP', cost: { wood: 25, stone: 25, ore: 20 } },
-    { id: 'aegis', name: 'Aegis Plate', type: 'armor', armorKey: 'aegis', icon: '🦾', stats: '+130 Max HP', cost: { wood: 40, stone: 40, ore: 35 } },
-    { id: 'spear', name: 'Stone Spear', type: 'weapon', weaponKey: 'spear', icon: '🗡️', stats: '+40 Damage', cost: { wood: 10, stone: 10, ore: 0 } },
-    { id: 'hammer', name: 'Ore Sledge', type: 'weapon', weaponKey: 'hammer', icon: '🔨', stats: '+75 Damage', cost: { wood: 15, stone: 0, ore: 20 } },
-    { id: 'bow', name: 'Frostbite Bow', type: 'weapon', weaponKey: 'bow', icon: '🏹', stats: '+95 Damage', cost: { wood: 30, stone: 15, ore: 10 } },
-    { id: 'blade', name: 'Plasma Sword', type: 'weapon', weaponKey: 'blade', icon: '⚡', stats: '+120 Damage', cost: { wood: 25, stone: 25, ore: 15 } },
-    { id: 'scythe', name: 'Void Scythe', type: 'weapon', weaponKey: 'scythe', icon: '🔮', stats: '+190 Damage', cost: { wood: 40, stone: 40, ore: 30 } },
-    { id: 'heal', name: 'Health Salve', type: 'consumable', icon: '🧪', stats: '+45 Vitality', cost: { wood: 5, stone: 5, ore: 0 } },
-    { id: 'elixir', name: 'Full Elixir', type: 'consumable', icon: '🍷', stats: 'Full Healing', cost: { wood: 15, stone: 15, ore: 10 } }
+// HARDCODED CRAFTING COSTS & VALUES
+const BASE_CRAFTABLES = [
+    { id: 'padded', name: 'Reinforced Plating', type: 'armor', armorKey: 'padded', icon: '🛡️', stats: '+30 Max HP', cost: { wood: 60, stone: 80, ore: 20 } },
+    { id: 'shadow', name: 'Shadow Cloak', type: 'armor', armorKey: 'shadow', icon: '🧥', stats: '+75 Max HP', cost: { wood: 100, stone: 100, ore: 80 } },
+    { id: 'aegis', name: 'Aegis Plate', type: 'armor', armorKey: 'aegis', icon: '🦾', stats: '+130 Max HP', cost: { wood: 160, stone: 160, ore: 140 } },
+    { id: 'spear', name: 'Stone Spear', type: 'weapon', weaponKey: 'spear', icon: '🗡️', stats: '+30 Damage', cost: { wood: 40, stone: 40, ore: 0 } },
+    { id: 'hammer', name: 'Ore Sledge', type: 'weapon', weaponKey: 'hammer', icon: '🔨', stats: '+60 Damage', cost: { wood: 60, stone: 0, ore: 80 } },
+    { id: 'bow', name: 'Frostbite Bow', type: 'weapon', weaponKey: 'bow', icon: '🏹', stats: '+75 Damage', cost: { wood: 120, stone: 60, ore: 40 } },
+    { id: 'blade', name: 'Plasma Sword', type: 'weapon', weaponKey: 'blade', icon: '⚡', stats: '+95 Damage', cost: { wood: 100, stone: 100, ore: 60 } },
+    { id: 'scythe', name: 'Void Scythe', type: 'weapon', weaponKey: 'scythe', icon: '🔮', stats: '+150 Damage', cost: { wood: 160, stone: 160, ore: 120 } },
+    { id: 'heal', name: 'Health Salve', type: 'consumable', icon: '🧪', stats: '+45 Vitality', cost: { wood: 20, stone: 20, ore: 0 } },
+    { id: 'elixir', name: 'Full Elixir', type: 'consumable', icon: '🍷', stats: 'Full Healing', cost: { wood: 60, stone: 60, ore: 40 } }
 ];
 
-const DIMENSION_SHARDS = {
-    overworld: { name: 'Verdant Shard', label: '🌿 Verdant Shards', req: 3, unlock: 'nether' },
-    nether:    { name: 'Crimson Shard', label: '🔥 Crimson Shards', req: 3, unlock: 'void' },
-    void:      { name: 'Astral Shard',  label: '✨ Astral Shards', req: 3, unlock: null }
+// HARDCODED SHARD REQUIREMENTS
+let DIMENSION_SHARDS = {
+    overworld: { name: 'Verdant Shard', label: '🌿 Verdant Shards', req: 10, unlock: 'nether' },
+    nether:    { name: 'Crimson Shard', label: '🔥 Crimson Shards', req: 10, unlock: 'void' },
+    void:      { name: 'Astral Shard',  label: '✨ Astral Shards', req: 10, unlock: null }
 };
 
+// =============================================================================
+// OBJECT-ORIENTED CLASSES
+// =============================================================================
+
+class Entity {
+    constructor(x, y, radius) {
+        this.x = x;
+        this.y = y;
+        this.radius = radius;
+        this.markedForDeletion = false;
+    }
+}
+
+class Projectile extends Entity {
+    constructor(x, y, targetX, targetY, speed, damage, color = '#ef4444') {
+        super(x, y, 6);
+        const angle = Math.atan2(targetY - y, targetX - x);
+        this.vx = Math.cos(angle) * speed;
+        this.vy = Math.sin(angle) * speed;
+        this.damage = damage;
+        this.color = color;
+        this.life = 180;
+    }
+
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.life--;
+        if (this.life <= 0) this.markedForDeletion = true;
+    }
+
+    render(ctx) {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+    }
+}
+
+class Mob extends Entity {
+    constructor(x, y, config) {
+        super(x, y, config.hitboxRadius);
+        this.name = config.name;
+        this.imageName = config.imageName;
+        this.color = config.color;
+        this.borderColor = config.borderColor;
+        this.maxHp = config.hp; // DIRECT HARDCODED VALUE
+        this.hp = this.maxHp;
+        this.damage = config.damage; // DIRECT HARDCODED VALUE
+        this.speed = config.speed;
+        this.visualRadius = config.visualRadius;
+        this.shardDropChance = config.shardDropChance;
+        this.vx = 0;
+        this.vy = 0;
+    }
+
+    update(player, projectiles) {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vx *= 0.82;
+        this.vy *= 0.82;
+
+        const dx = player.x - this.x;
+        const dy = player.y - this.y;
+        const angle = Math.atan2(dy, dx);
+        
+        this.x += Math.cos(angle) * this.speed;
+        this.y += Math.sin(angle) * this.speed;
+
+        const distSq = dx * dx + dy * dy;
+        if (distSq < (player.radius + this.radius) ** 2) {
+            player.takeDamage(this.damage / 60);
+        }
+    }
+
+    onDeath(dimension, player) {
+        player.wood += Math.floor(Math.random() * 4) + 2;
+        player.stone += Math.floor(Math.random() * 3) + 1;
+        
+        if (Math.random() < this.shardDropChance) {
+            player.shards[dimension] += 1;
+            showToast("✨ Shard Dropped", `Acquired +1 ${DIMENSION_SHARDS[dimension].name}!`);
+        }
+    }
+
+    render(ctx) {
+        const imgData = loadedMobImages[this.imageName];
+        if (imgData && imgData.loaded) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.visualRadius, 0, Math.PI * 2);
+            ctx.clip();
+            ctx.drawImage(imgData.img, this.x - this.visualRadius, this.y - this.visualRadius, this.visualRadius * 2, this.visualRadius * 2);
+            ctx.restore();
+
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.visualRadius, 0, Math.PI * 2);
+            ctx.strokeStyle = this.borderColor;
+            ctx.lineWidth = 3;
+            ctx.stroke();
+        } else {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.visualRadius, 0, Math.PI * 2);
+            ctx.fillStyle = this.color;
+            ctx.fill();
+        }
+
+        ctx.font = 'bold 11px sans-serif';
+        ctx.fillStyle = '#fca5a5';
+        ctx.textAlign = 'center';
+        ctx.shadowColor = 'black';
+        ctx.shadowBlur = 4;
+        ctx.fillText(this.name, this.x, this.y - this.visualRadius - 10);
+        ctx.shadowBlur = 0;
+
+        if (this.hp < this.maxHp) {
+            ctx.fillStyle = 'rgba(0,0,0,0.6)';
+            ctx.fillRect(this.x - 20, this.y - this.visualRadius - 22, 40, 4);
+            ctx.fillStyle = '#ef4444';
+            ctx.fillRect(this.x - 20, this.y - this.visualRadius - 22, (this.hp / this.maxHp) * 40, 4);
+        }
+    }
+}
+
+class RangedMob extends Mob {
+    constructor(x, y, config) {
+        super(x, y, config);
+        this.shootCooldown = 0;
+        this.shootInterval = config.shootInterval || 120;
+        this.preferredDist = 250;
+    }
+
+    update(player, projectiles) {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vx *= 0.82;
+        this.vy *= 0.82;
+
+        const dx = player.x - this.x;
+        const dy = player.y - this.y;
+        const dist = Math.hypot(dx, dy);
+        const angle = Math.atan2(dy, dx);
+
+        if (dist > this.preferredDist + 40) {
+            this.x += Math.cos(angle) * this.speed;
+            this.y += Math.sin(angle) * this.speed;
+        } else if (dist < this.preferredDist - 40) {
+            this.x -= Math.cos(angle) * this.speed;
+            this.y -= Math.sin(angle) * this.speed;
+        }
+
+        this.shootCooldown++;
+        if (this.shootCooldown >= this.shootInterval && dist < 500) {
+            this.shootCooldown = 0;
+            projectiles.push(new Projectile(this.x, this.y, player.x, player.y, 6, Math.round(this.damage * 0.8), '#f43f5e'));
+        }
+    }
+}
+
+class ExplodingMob extends Mob {
+    constructor(x, y, config) {
+        super(x, y, config);
+        this.explosionRadius = config.explosionRadius || 120;
+        this.explosionDamage = config.explosionDamage || 60;
+    }
+
+    onDeath(dimension, player) {
+        super.onDeath(dimension, player);
+        
+        const dist = Math.hypot(player.x - this.x, player.y - this.y);
+        if (dist <= this.explosionRadius) {
+            player.takeDamage(this.explosionDamage);
+            showToast("💥 BOOM!", `${this.name} exploded! Took ${this.explosionDamage} damage!`);
+        }
+    }
+
+    render(ctx) {
+        super.render(ctx);
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.visualRadius + 4, 0, Math.PI * 2);
+        ctx.strokeStyle = '#f97316';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([4, 4]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+    }
+}
+
+class Resource extends Entity {
+    constructor(id, x, y, type) {
+        super(x, y, 22);
+        this.id = id;
+        this.type = type;
+        const hpMap = { tree: 30, rock: 50, ore: 80, shard: 35 };
+        this.maxHp = hpMap[type] || 30;
+        this.hp = this.maxHp;
+    }
+
+    harvest(player, currentDim) {
+        if (this.type === 'tree') player.wood += 6;
+        else if (this.type === 'rock') player.stone += 6;
+        else if (this.type === 'ore') player.ore += 4;
+        else if (this.type === 'shard') {
+            player.shards[currentDim] += 2;
+            showToast("✨ Shard Harvested", `Harvested +2 ${DIMENSION_SHARDS[currentDim].name}s!`);
+        }
+    }
+
+    render(ctx) {
+        const RESOURCE_TYPES = {
+            tree:  { name: 'Ancient Tree', emoji: '🌳', color: '#15803d', borderColor: '#22c55e' },
+            rock:  { name: 'Granite Rock', emoji: '🪨', color: '#475569', borderColor: '#94a3b8' },
+            ore:   { name: 'Crystal Ore',  emoji: '💎', color: '#0284c7', borderColor: '#38bdf8' },
+            shard: { name: 'Shard Cluster', emoji: '🔮', color: '#7e22ce', borderColor: '#c084fc' }
+        };
+
+        const resDef = RESOURCE_TYPES[this.type];
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = resDef.color;
+        ctx.fill();
+        ctx.strokeStyle = resDef.borderColor;
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        ctx.font = '16px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(resDef.emoji, this.x, this.y);
+
+        ctx.font = 'bold 11px sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.shadowColor = 'black';
+        ctx.shadowBlur = 4;
+        ctx.fillText(resDef.name, this.x, this.y - this.radius - 8);
+        ctx.shadowBlur = 0;
+
+        if (this.hp < this.maxHp) {
+            ctx.fillStyle = 'rgba(0,0,0,0.6)';
+            ctx.fillRect(this.x - 20, this.y - this.radius - 20, 40, 4);
+            ctx.fillStyle = '#22c55e';
+            ctx.fillRect(this.x - 20, this.y - this.radius - 20, (this.hp / this.maxHp) * 40, 4);
+        }
+    }
+}
+
+class Chest extends Entity {
+    constructor(id, x, y) {
+        super(x, y, 24);
+        this.id = id;
+        this.opened = false;
+    }
+
+    open(player, currentDim) {
+        if (this.opened) return;
+        this.opened = true;
+
+        const wGain = Math.floor(Math.random() * 25) + 15;
+        const sGain = Math.floor(Math.random() * 20) + 10;
+        const oGain = Math.floor(Math.random() * 15) + 5;
+
+        player.wood += wGain;
+        player.stone += sGain;
+        player.ore += oGain;
+
+        let bonusMessage = "";
+        const currentShardInfo = DIMENSION_SHARDS[currentDim];
+        if (player.shards[currentDim] < currentShardInfo.req) {
+            player.shards[currentDim]++;
+            bonusMessage += ` +1 ${currentShardInfo.name}!`;
+        }
+
+        if (Math.random() < 0.5) {
+            const healItem = BASE_CRAFTABLES.find(c => c.id === 'heal');
+            addItemToRobloxInventory({ ...healItem, count: 2 });
+            bonusMessage += " + 2x Health Salves!";
+        }
+
+        showToast("📦 Chest Looted!", `Obtained Wood +${wGain}, Stone +${sGain}, Ore +${oGain}${bonusMessage}`);
+    }
+
+    render(ctx) {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = '#854d0e';
+        ctx.fill();
+        ctx.strokeStyle = '#facc15';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        ctx.font = '18px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('📦', this.x, this.y);
+
+        ctx.font = 'bold 11px sans-serif';
+        ctx.fillStyle = '#fde047';
+        ctx.shadowColor = 'black';
+        ctx.shadowBlur = 4;
+        ctx.fillText('Loot Chest', this.x, this.y - this.radius - 8);
+        ctx.shadowBlur = 0;
+    }
+}
+
+class Player extends Entity {
+    constructor(x, y) {
+        super(x, y, 20);
+        this.speed = 5.2;
+        this.hp = 100;
+        this.maxHp = 100;
+        this.baseMaxHp = 100;
+        this.wood = 0;
+        this.stone = 0;
+        this.ore = 0;
+        this.shards = { overworld: 0, nether: 0, void: 0 };
+        this.unlockedDims = { overworld: true, nether: false, void: false };
+        this.hotbar = [
+            { id: 'stick', name: 'Wooden Stick', type: 'weapon', weaponKey: 'stick', icon: '🪵', count: 1 },
+            null, null, null, null, null, null, null, null
+        ];
+        this.backpack = [];
+        this.ownedWeapons = ['stick'];
+        this.ownedArmors = [];
+        this.armorKey = null;
+        this.armor = null;
+        this.weaponKey = 'stick';
+        this.weapon = BASE_WEAPONS.stick;
+        this.facingAngle = 0;
+        this.isAttacking = false;
+        this.attackAngle = 0;
+    }
+
+    takeDamage(amount) {
+        this.hp -= amount;
+        if (this.hp <= 0) {
+            this.hp = this.maxHp;
+            this.x = HALF_WORLD;
+            this.y = HALF_WORLD;
+            showToast("☠️ Respawned", "Respawned at home base.");
+        }
+        updateHealthBarOnly();
+    }
+
+    render(ctx) {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = '#6366f1';
+        ctx.fill();
+        ctx.strokeStyle = '#818cf8';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        ctx.font = 'bold 12px sans-serif';
+        ctx.fillStyle = '#6366f1';
+        ctx.textAlign = 'center';
+        ctx.shadowColor = 'black';
+        ctx.shadowBlur = 4;
+        ctx.fillText('You', this.x, this.y - this.radius - 10);
+        ctx.shadowBlur = 0;
+
+        if (this.weapon) {
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            ctx.rotate(this.facingAngle + (this.isAttacking ? this.attackAngle : 0));
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(this.weapon.range, 0);
+            ctx.strokeStyle = this.weapon.color;
+            ctx.lineWidth = this.isAttacking ? 6 : 3;
+            ctx.stroke();
+            ctx.restore();
+        }
+    }
+}
+
+// DIRECT HARDCODED MOB TEMPLATES AND STATS
+const MOB_TEMPLATES = {
+    overworld: [
+        { classType: Mob, config: { name: 'Gerard', imageName: 'Gerard', color: '#15803d', borderColor: '#4ade80', hp: 100, damage: 12, speed: 2.2, shardDropChance: 0.25, hitboxRadius: 22, visualRadius: 33 } },
+        { classType: ExplodingMob, config: { name: 'Jason (Exploder)', imageName: 'Jason', color: '#047857', borderColor: '#34d399', hp: 130, damage: 20, speed: 2.5, shardDropChance: 0.35, hitboxRadius: 24, visualRadius: 36, explosionRadius: 130, explosionDamage: 50 } }
+    ],
+    nether: [
+        { classType: RangedMob, config: { name: 'Liu-Ji (Ranged)', imageName: 'Liu-Ji', color: '#b91c1c', borderColor: '#fca5a5', hp: 220, damage: 32, speed: 2.4, shardDropChance: 0.4, hitboxRadius: 26, visualRadius: 39, shootInterval: 90 } },
+        { classType: Mob, config: { name: 'Matthew', imageName: 'Matthew', color: '#c2410c', borderColor: '#fdba74', hp: 190, damage: 28, speed: 3.1, shardDropChance: 0.3, hitboxRadius: 22, visualRadius: 33 } },
+        { classType: ExplodingMob, config: { name: 'Travia (Exploder)', imageName: 'Travia', color: '#9a3412', borderColor: '#fb923c', hp: 200, damage: 36, speed: 2.9, shardDropChance: 0.35, hitboxRadius: 25, visualRadius: 37.5, explosionRadius: 150, explosionDamage: 75 } }
+    ],
+    void: [
+        { classType: RangedMob, config: { name: 'Xayven (Ranged)', imageName: 'Xayven', color: '#581c87', borderColor: '#e9d5ff', hp: 400, damage: 48, speed: 2.8, shardDropChance: 0.5, hitboxRadius: 30, visualRadius: 45, shootInterval: 70 } },
+        { classType: Mob, config: { name: 'Xuchen', imageName: 'Xuchen', color: '#312e81', borderColor: '#a5b4fc', hp: 360, damage: 56, speed: 3.5, shardDropChance: 0.45, hitboxRadius: 28, visualRadius: 42 } }
+    ]
+};
+
+// =============================================================================
+// GAME STATE MANAGEMENT
+// =============================================================================
+let player = new Player(HALF_WORLD, HALF_WORLD);
 let currentDim = 'overworld';
 let equippedSlotIndex = 0;
 let keys = {};
 let mousePos = { x: 0, y: 0 };
 let nearbyChest = null;
 
-let player = {
-    x: HALF_WORLD, y: HALF_WORLD, radius: 20, speed: 5.2,
-    hp: 100, maxHp: 100, baseMaxHp: 100, wood: 0, stone: 0, ore: 0,
-    shards: { overworld: 0, nether: 0, void: 0 },
-    unlockedDims: { overworld: true, nether: false, void: false },
-    hotbar: [
-        { id: 'stick', name: 'Wooden Stick', type: 'weapon', weaponKey: 'stick', icon: '🪵', count: 1 },
-        null, null, null, null, null, null, null, null
-    ],
-    backpack: [],
-    ownedWeapons: ['stick'],
-    ownedArmors: [],
-    armorKey: null, armor: null,
-    weaponKey: 'stick', weapon: WEAPONS.stick,
-    facingAngle: 0, isAttacking: false, attackAngle: 0
-};
-
 let dimEntities = {
-    overworld: { resources: [], enemies: [], chests: [] },
-    nether: { resources: [], enemies: [], chests: [] },
-    void: { resources: [], enemies: [], chests: [] }
-};
-
-const RESOURCE_TYPES = {
-    tree:  { name: 'Ancient Tree', emoji: '🌳', color: '#15803d', borderColor: '#22c55e' },
-    rock:  { name: 'Granite Rock', emoji: '🪨', color: '#475569', borderColor: '#94a3b8' },
-    ore:   { name: 'Crystal Ore',  emoji: '💎', color: '#0284c7', borderColor: '#38bdf8' },
-    shard: { name: 'Shard Cluster', emoji: '🔮', color: '#7e22ce', borderColor: '#c084fc' }
-};
-
-// INDIVIDUAL HITBOX & VISUAL RADIUS PER MOB
-// visualRadius is set to ~1.5x hitboxRadius by default
-const MOB_TYPES = {
-    overworld: [
-        { name: 'Gerard', imageName: 'Gerard', color: '#15803d', borderColor: '#4ade80', hp: 50, damage: 6, speed: 2.2, shardDropChance: 0.25, hitboxRadius: 22, visualRadius: 33 },
-        { name: 'Jason', imageName: 'Jason', color: '#047857', borderColor: '#34d399', hp: 75, damage: 10, speed: 2.4, shardDropChance: 0.35, hitboxRadius: 24, visualRadius: 36 }
-    ],
-    nether: [
-        { name: 'Liu-Ji', imageName: 'Liu-Ji', color: '#b91c1c', borderColor: '#fca5a5', hp: 130, damage: 16, speed: 2.7, shardDropChance: 0.4, hitboxRadius: 26, visualRadius: 39 },
-        { name: 'Matthew', imageName: 'Matthew', color: '#c2410c', borderColor: '#fdba74', hp: 95, damage: 14, speed: 3.1, shardDropChance: 0.3, hitboxRadius: 22, visualRadius: 33 },
-        { name: 'Travia', imageName: 'Travia', color: '#9a3412', borderColor: '#fb923c', hp: 110, damage: 18, speed: 2.9, shardDropChance: 0.35, hitboxRadius: 25, visualRadius: 37.5 }
-    ],
-    void: [
-        { name: 'Xayven', imageName: 'Xayven', color: '#581c87', borderColor: '#e9d5ff', hp: 220, damage: 24, speed: 3.0, shardDropChance: 0.5, hitboxRadius: 30, visualRadius: 45 },
-        { name: 'Xuchen', imageName: 'Xuchen', color: '#312e81', borderColor: '#a5b4fc', hp: 180, damage: 28, speed: 3.5, shardDropChance: 0.45, hitboxRadius: 28, visualRadius: 42 }
-    ]
+    overworld: { resources: [], enemies: [], chests: [], projectiles: [] },
+    nether:    { resources: [], enemies: [], chests: [], projectiles: [] },
+    void:      { resources: [], enemies: [], chests: [], projectiles: [] }
 };
 
 // GROUND PATTERNS
@@ -391,8 +752,59 @@ function createGroundPatterns() {
 }
 createGroundPatterns();
 
+function generateDimension(dimKey) {
+    const res = [];
+    const count = dimKey === 'overworld' ? 320 : dimKey === 'nether' ? 280 : 240;
+    
+    for (let i = 0; i < count; i++) {
+        let type = 'tree';
+        let r = Math.random();
+        if (dimKey === 'overworld') type = r < 0.4 ? 'tree' : r < 0.7 ? 'rock' : r < 0.85 ? 'ore' : 'shard';
+        else if (dimKey === 'nether') type = r < 0.3 ? 'rock' : r < 0.6 ? 'ore' : 'shard';
+        else type = r < 0.2 ? 'rock' : r < 0.5 ? 'ore' : 'shard';
+
+        res.push(new Resource(
+            i,
+            Math.random() * (WORLD_SIZE - 200) + 100,
+            Math.random() * (WORLD_SIZE - 200) + 100,
+            type
+        ));
+    }
+
+    const enemies = [];
+    const mobPool = MOB_TEMPLATES[dimKey];
+    const eCount = dimKey === 'overworld' ? 45 : dimKey === 'nether' ? 70 : 90;
+
+    for (let i = 0; i < eCount; i++) {
+        const mobTemplate = mobPool[Math.floor(Math.random() * mobPool.length)];
+        const MobClass = mobTemplate.classType;
+        
+        enemies.push(new MobClass(
+            Math.random() * (WORLD_SIZE - 200) + 100,
+            Math.random() * (WORLD_SIZE - 200) + 100,
+            mobTemplate.config
+        ));
+    }
+
+    const chests = [];
+    const chestCount = dimKey === 'overworld' ? 22 : dimKey === 'nether' ? 28 : 35;
+    for (let i = 0; i < chestCount; i++) {
+        chests.push(new Chest(
+            i,
+            Math.random() * (WORLD_SIZE - 200) + 100,
+            Math.random() * (WORLD_SIZE - 200) + 100
+        ));
+    }
+
+    dimEntities[dimKey] = { resources: res, enemies: enemies, chests: chests, projectiles: [] };
+}
+
+generateDimension('overworld');
+generateDimension('nether');
+generateDimension('void');
+
 function loadSavedData() {
-    const saved = localStorage.getItem('survival_realm_v6');
+    const saved = localStorage.getItem('survival_realm_v8');
     if (saved) {
         try {
             const data = JSON.parse(saved);
@@ -421,12 +833,12 @@ function saveData() {
         hotbar: player.hotbar, backpack: player.backpack,
         ownedWeapons: player.ownedWeapons, ownedArmors: player.ownedArmors, armorKey: player.armorKey
     };
-    localStorage.setItem('survival_realm_v6', JSON.stringify(data));
+    localStorage.setItem('survival_realm_v8', JSON.stringify(data));
 }
 
 function resetGameData() {
     if (confirm("Reset ALL progress, inventory, and unlocked gear?")) {
-        localStorage.removeItem('survival_realm_v6');
+        localStorage.removeItem('survival_realm_v8');
         location.reload();
     }
 }
@@ -440,66 +852,8 @@ function showToast(title, msg) {
     setTimeout(() => toast.remove(), 2500);
 }
 
-function generateDimension(dimKey) {
-    const res = [];
-    const count = dimKey === 'overworld' ? 320 : dimKey === 'nether' ? 280 : 240;
-    
-    for (let i = 0; i < count; i++) {
-        let type = 'tree';
-        let r = Math.random();
-        if (dimKey === 'overworld') type = r < 0.4 ? 'tree' : r < 0.7 ? 'rock' : r < 0.85 ? 'ore' : 'shard';
-        else if (dimKey === 'nether') type = r < 0.3 ? 'rock' : r < 0.6 ? 'ore' : 'shard';
-        else type = r < 0.2 ? 'rock' : r < 0.5 ? 'ore' : 'shard';
-
-        res.push({
-            id: i,
-            x: Math.random() * (WORLD_SIZE - 200) + 100,
-            y: Math.random() * (WORLD_SIZE - 200) + 100,
-            type: type,
-            hp: type === 'tree' ? 30 : type === 'rock' ? 50 : type === 'ore' ? 80 : 35,
-            maxHp: type === 'tree' ? 30 : type === 'rock' ? 50 : type === 'ore' ? 80 : 35,
-            radius: 22
-        });
-    }
-
-    const enemies = [];
-    const mobPool = MOB_TYPES[dimKey];
-    const eCount = dimKey === 'overworld' ? 45 : dimKey === 'nether' ? 70 : 90;
-
-    for (let i = 0; i < eCount; i++) {
-        const mobTemplate = mobPool[Math.floor(Math.random() * mobPool.length)];
-        enemies.push({
-            id: i,
-            x: Math.random() * (WORLD_SIZE - 200) + 100,
-            y: Math.random() * (WORLD_SIZE - 200) + 100,
-            vx: 0, vy: 0,
-            hp: mobTemplate.hp,
-            maxHp: mobTemplate.hp,
-            speed: mobTemplate.speed,
-            damage: mobTemplate.damage,
-            hitboxRadius: mobTemplate.hitboxRadius,
-            visualRadius: mobTemplate.visualRadius,
-            shardDropChance: mobTemplate.shardDropChance,
-            typeData: mobTemplate
-        });
-    }
-
-    const chests = [];
-    const chestCount = dimKey === 'overworld' ? 22 : dimKey === 'nether' ? 28 : 35;
-    for (let i = 0; i < chestCount; i++) {
-        chests.push({ id: i, name: 'Loot Chest', x: Math.random() * (WORLD_SIZE - 200) + 100, y: Math.random() * (WORLD_SIZE - 200) + 100, radius: 24, opened: false });
-    }
-
-    dimEntities[dimKey] = { resources: res, enemies: enemies, chests: chests };
-}
-
-generateDimension('overworld');
-generateDimension('nether');
-generateDimension('void');
-
 function toggleCraftingPanel() {
-    const panel = document.getElementById('crafting-panel');
-    panel.classList.toggle('hidden');
+    document.getElementById('crafting-panel').classList.toggle('hidden');
 }
 
 function pressHotbarSlot(index) {
@@ -510,9 +864,9 @@ function pressHotbarSlot(index) {
     } else {
         equippedSlotIndex = index;
         const item = player.hotbar[index];
-        if (item && item.type === 'weapon' && WEAPONS[item.weaponKey]) {
+        if (item && item.type === 'weapon' && BASE_WEAPONS[item.weaponKey]) {
             player.weaponKey = item.weaponKey;
-            player.weapon = WEAPONS[item.weaponKey];
+            player.weapon = BASE_WEAPONS[item.weaponKey];
         } else {
             player.weapon = null;
             player.weaponKey = null;
@@ -536,9 +890,7 @@ function useActiveItem() {
         }
 
         item.count--;
-        if (item.count <= 0) {
-            player.hotbar[equippedSlotIndex] = null;
-        }
+        if (item.count <= 0) player.hotbar[equippedSlotIndex] = null;
         updateHUD();
         saveData();
     }
@@ -567,41 +919,6 @@ function switchDimension(dimKey) {
     updateHUD();
 }
 
-function openChest(chest) {
-    if (!chest || chest.opened) return;
-    chest.opened = true;
-
-    const wGain = Math.floor(Math.random() * 25) + 15;
-    const sGain = Math.floor(Math.random() * 20) + 10;
-    const oGain = Math.floor(Math.random() * 15) + 5;
-
-    player.wood += wGain;
-    player.stone += sGain;
-    player.ore += oGain;
-
-    let bonusMessage = "";
-    const currentShardInfo = DIMENSION_SHARDS[currentDim];
-    if (player.shards[currentDim] < currentShardInfo.req) {
-        player.shards[currentDim]++;
-        bonusMessage += ` +1 ${currentShardInfo.name}!`;
-    }
-
-    if (Math.random() < 0.5) {
-        const healItem = CRAFTABLES.find(c => c.id === 'heal');
-        addItemToRobloxInventory({ ...healItem, count: 2 });
-        bonusMessage += " + 2x Health Salves!";
-    }
-
-    showToast("📦 Chest Looted!", `Obtained Wood +${wGain}, Stone +${sGain}, Ore +${oGain}${bonusMessage}`);
-
-    const chests = dimEntities[currentDim].chests;
-    const idx = chests.indexOf(chest);
-    if (idx !== -1) chests.splice(idx, 1);
-
-    updateHUD();
-    saveData();
-}
-
 function updateHUD() {
     document.getElementById('wood-val').textContent = player.wood;
     document.getElementById('stone-val').textContent = player.stone;
@@ -623,7 +940,6 @@ function updateHUD() {
 
     updateHealthBarOnly();
 
-    // RENDER HOTBAR
     document.getElementById('roblox-hotbar').innerHTML = player.hotbar.map((item, i) => `
         <div onclick="pressHotbarSlot(${i})" class="roblox-slot ${i === equippedSlotIndex ? 'equipped' : ''}">
             <span class="roblox-key-num">${i + 1}</span>${item ? `<span class="text-base leading-none mt-1">${item.icon}</span><span class="slot-title">${item.name}</span>` : '<span class="text-[9px] text-gray-500 mt-2">Empty</span>'}
@@ -632,8 +948,8 @@ function updateHUD() {
     `).join('');
 
     document.getElementById('btn-overworld').textContent = player.unlockedDims.overworld ? 'Overworld' : 'Overworld (Locked)';
-    document.getElementById('btn-nether').textContent = player.unlockedDims.nether ? 'Nether Realm' : 'Nether (3x Shards Needed)';
-    document.getElementById('btn-void').textContent = player.unlockedDims.void ? 'Void Realm' : 'Void (3x Shards Needed)';
+    document.getElementById('btn-nether').textContent = player.unlockedDims.nether ? 'Nether Realm' : 'Nether (10x Shards Needed)';
+    document.getElementById('btn-void').textContent = player.unlockedDims.void ? 'Void Realm' : 'Void (10x Shards Needed)';
 
     renderCraftingUI();
     renderBackpackUI();
@@ -645,7 +961,7 @@ function updateHealthBarOnly() {
 }
 
 function renderCraftingUI() {
-    document.getElementById('compact-craft-list').innerHTML = CRAFTABLES.map(item => {
+    document.getElementById('compact-craft-list').innerHTML = BASE_CRAFTABLES.map(item => {
         const isToolOwned = (item.type === 'weapon' && player.ownedWeapons.includes(item.weaponKey)) ||
                             (item.type === 'armor' && player.ownedArmors.includes(item.armorKey));
 
@@ -668,7 +984,7 @@ function renderCraftingUI() {
 }
 
 function craftItem(id) {
-    const item = CRAFTABLES.find(c => c.id === id);
+    const item = BASE_CRAFTABLES.find(c => c.id === id);
     if (!item) return;
 
     if (item.type === 'weapon' && player.ownedWeapons.includes(item.weaponKey)) {
@@ -757,11 +1073,12 @@ function equipFromBackpack(backpackIdx) {
     saveData();
 }
 
+// INPUT EVENTS
 window.addEventListener('keydown', e => {
     keys[e.key.toLowerCase()] = true;
     if (e.key === '`' || e.key === '~') { e.preventDefault(); toggleBackpack(); }
     if (e.key === 'Escape') toggleBackpack(false);
-    if (e.key.toLowerCase() === 'e' && nearbyChest) openChest(nearbyChest);
+    if (e.key.toLowerCase() === 'e' && nearbyChest) nearbyChest.open(player, currentDim);
 
     if (['1','2','3','4','5','6','7','8','9'].includes(e.key)) {
         pressHotbarSlot(parseInt(e.key) - 1);
@@ -774,7 +1091,7 @@ window.addEventListener('mousemove', e => { mousePos = { x: e.clientX, y: e.clie
 window.addEventListener('mousedown', e => {
     if (e.button === 0) {
         if (nearbyChest) {
-            openChest(nearbyChest);
+            nearbyChest.open(player, currentDim);
             return;
         }
 
@@ -797,12 +1114,11 @@ function performAttack() {
     const currentEnemies = dimEntities[currentDim].enemies;
     const currentResources = dimEntities[currentDim].resources;
 
-    // Hit calculation now uses the enemy's HITBOX radius
     for (let i = currentEnemies.length - 1; i >= 0; i--) {
         const enemy = currentEnemies[i];
         const dx = enemy.x - player.x;
         const dy = enemy.y - player.y;
-        if (dx * dx + dy * dy <= (currentWeapon.range + enemy.hitboxRadius) ** 2) {
+        if (dx * dx + dy * dy <= (currentWeapon.range + enemy.radius) ** 2) {
             enemy.hp -= currentWeapon.damage;
 
             const angle = Math.atan2(dy, dx);
@@ -811,15 +1127,8 @@ function performAttack() {
             enemy.vy += Math.sin(angle) * kbForce;
 
             if (enemy.hp <= 0) {
+                enemy.onDeath(currentDim, player);
                 currentEnemies.splice(i, 1);
-                player.wood += Math.floor(Math.random() * 4) + 2;
-                player.stone += Math.floor(Math.random() * 3) + 1;
-                
-                if (Math.random() < enemy.shardDropChance) {
-                    player.shards[currentDim] += 1;
-                    showToast("✨ Shard Dropped", `Acquired +1 ${DIMENSION_SHARDS[currentDim].name}!`);
-                }
-
                 updateHUD();
                 saveData();
             }
@@ -833,14 +1142,7 @@ function performAttack() {
         if (dx * dx + dy * dy <= (currentWeapon.range + res.radius) ** 2) {
             res.hp -= currentWeapon.damage;
             if (res.hp <= 0) {
-                if (res.type === 'tree') player.wood += 6;
-                else if (res.type === 'rock') player.stone += 6;
-                else if (res.type === 'ore') player.ore += 4;
-                else if (res.type === 'shard') {
-                    player.shards[currentDim] += 2;
-                    showToast("✨ Shard Harvested", `Harvested +2 ${DIMENSION_SHARDS[currentDim].name}s!`);
-                }
-
+                res.harvest(player, currentDim);
                 currentResources.splice(i, 1);
                 updateHUD();
                 saveData();
@@ -849,6 +1151,7 @@ function performAttack() {
     }
 }
 
+// MAIN LOOP
 let lastTime = performance.now();
 const deltaStep = 1000 / 60;
 let accum = 0;
@@ -877,7 +1180,7 @@ function update(dt) {
     nearbyChest = null;
     const currentChests = dimEntities[currentDim].chests;
     for (let chest of currentChests) {
-        if (Math.hypot(chest.x - player.x, chest.y - player.y) <= player.radius + chest.radius + 30) {
+        if (!chest.opened && Math.hypot(chest.x - player.x, chest.y - player.y) <= player.radius + chest.radius + 30) {
             nearbyChest = chest;
             break;
         }
@@ -888,35 +1191,27 @@ function update(dt) {
     else chestPrompt.classList.add('hidden');
 
     const currentEnemies = dimEntities[currentDim].enemies;
-    let tookDamage = false;
+    const currentProjectiles = dimEntities[currentDim].projectiles;
 
     for (let i = 0; i < currentEnemies.length; i++) {
-        const enemy = currentEnemies[i];
-        enemy.x += enemy.vx; enemy.y += enemy.vy;
-        enemy.vx *= 0.82; enemy.vy *= 0.82;
-
-        const edx = player.x - enemy.x;
-        const edy = player.y - enemy.y;
-        const angle = Math.atan2(edy, edx);
-        enemy.x += Math.cos(angle) * enemy.speed;
-        enemy.y += Math.sin(angle) * enemy.speed;
-
-        // Player collision uses the mob HITBOX radius
-        if (edx * edx + edy * edy < (player.radius + enemy.hitboxRadius) ** 2) {
-            player.hp -= enemy.damage / 60;
-            tookDamage = true;
-            if (player.hp <= 0) {
-                player.hp = player.maxHp;
-                player.x = HALF_WORLD; player.y = HALF_WORLD;
-                showToast("☠️ Respawned", "Respawned at home base.");
-            }
-        }
+        currentEnemies[i].update(player, currentProjectiles);
     }
 
-    if (tookDamage) updateHealthBarOnly();
+    for (let i = currentProjectiles.length - 1; i >= 0; i--) {
+        const proj = currentProjectiles[i];
+        proj.update();
+
+        if (Math.hypot(player.x - proj.x, player.y - proj.y) <= player.radius + proj.radius) {
+            player.takeDamage(proj.damage);
+            proj.markedForDeletion = true;
+        }
+
+        if (proj.markedForDeletion) {
+            currentProjectiles.splice(i, 1);
+        }
+    }
 }
 
-// RENDER ENGINE WITH SEPARATE VISUAL & HITBOX SIZES
 function render() {
     const camX = canvas.width * 0.5 - player.x;
     const camY = canvas.height * 0.5 - player.y;
@@ -931,150 +1226,35 @@ function render() {
     ctx.fillStyle = groundPatterns[currentDim] || '#030712';
     ctx.fillRect(viewLeft, viewTop, canvas.width + 200, canvas.height + 200);
 
-    // Resources
     const currentResources = dimEntities[currentDim].resources;
-    for (let i = 0; i < currentResources.length; i++) {
-        const res = currentResources[i];
-        if (res.x < viewLeft || res.x > viewRight || res.y < viewTop || res.y > viewBottom) continue;
-
-        const resDef = RESOURCE_TYPES[res.type];
-        ctx.beginPath();
-        ctx.arc(res.x, res.y, res.radius, 0, Math.PI * 2);
-        ctx.fillStyle = resDef.color;
-        ctx.fill();
-        ctx.strokeStyle = resDef.borderColor;
-        ctx.lineWidth = 3;
-        ctx.stroke();
-
-        ctx.font = '16px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(resDef.emoji, res.x, res.y);
-
-        ctx.font = 'bold 11px sans-serif';
-        ctx.fillStyle = '#ffffff';
-        ctx.shadowColor = 'black';
-        ctx.shadowBlur = 4;
-        ctx.fillText(resDef.name, res.x, res.y - res.radius - 8);
-        ctx.shadowBlur = 0;
-
-        if (res.hp < res.maxHp) {
-            ctx.fillStyle = 'rgba(0,0,0,0.6)';
-            ctx.fillRect(res.x - 20, res.y - res.radius - 20, 40, 4);
-            ctx.fillStyle = '#22c55e';
-            ctx.fillRect(res.x - 20, res.y - res.radius - 20, (res.hp / res.maxHp) * 40, 4);
+    for (let res of currentResources) {
+        if (res.x >= viewLeft && res.x <= viewRight && res.y >= viewTop && res.y <= viewBottom) {
+            res.render(ctx);
         }
     }
 
-    // Chests
     const currentChests = dimEntities[currentDim].chests;
     for (let chest of currentChests) {
-        if (chest.x < viewLeft || chest.x > viewRight || chest.y < viewTop || chest.y > viewBottom) continue;
-
-        ctx.beginPath();
-        ctx.arc(chest.x, chest.y, chest.radius, 0, Math.PI * 2);
-        ctx.fillStyle = '#854d0e';
-        ctx.fill();
-        ctx.strokeStyle = '#facc15';
-        ctx.lineWidth = 3;
-        ctx.stroke();
-
-        ctx.font = '18px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('📦', chest.x, chest.y);
-
-        ctx.font = 'bold 11px sans-serif';
-        ctx.fillStyle = '#fde047';
-        ctx.shadowColor = 'black';
-        ctx.shadowBlur = 4;
-        ctx.fillText('Loot Chest', chest.x, chest.y - chest.radius - 8);
-        ctx.shadowBlur = 0;
+        if (!chest.opened && chest.x >= viewLeft && chest.x <= viewRight && chest.y >= viewTop && chest.y <= viewBottom) {
+            chest.render(ctx);
+        }
     }
 
-    // Enemies (Rendered using visualRadius; damage/collision uses hitboxRadius)
     const currentEnemies = dimEntities[currentDim].enemies;
-    for (let i = 0; i < currentEnemies.length; i++) {
-        const enemy = currentEnemies[i];
-        if (enemy.x < viewLeft || enemy.x > viewRight || enemy.y < viewTop || enemy.y > viewBottom) continue;
-
-        const mobDef = enemy.typeData;
-        const imgData = loadedMobImages[mobDef.imageName];
-        const vRad = enemy.visualRadius; // Rendered size (1.5x bigger)
-
-        if (imgData && imgData.loaded) {
-            ctx.save();
-            ctx.beginPath();
-            ctx.arc(enemy.x, enemy.y, vRad, 0, Math.PI * 2);
-            ctx.clip();
-            ctx.drawImage(imgData.img, enemy.x - vRad, enemy.y - vRad, vRad * 2, vRad * 2);
-            ctx.restore();
-
-            ctx.beginPath();
-            ctx.arc(enemy.x, enemy.y, vRad, 0, Math.PI * 2);
-            ctx.strokeStyle = mobDef.borderColor;
-            ctx.lineWidth = 3;
-            ctx.stroke();
-        } else {
-            ctx.beginPath();
-            ctx.arc(enemy.x, enemy.y, vRad + 2, 0, Math.PI * 2);
-            ctx.fillStyle = mobDef.borderColor;
-            ctx.fill();
-
-            ctx.beginPath();
-            ctx.arc(enemy.x, enemy.y, vRad, 0, Math.PI * 2);
-            ctx.fillStyle = mobDef.color;
-            ctx.fill();
-        }
-
-        // TEXT LABEL OVER MOB
-        ctx.font = 'bold 11px sans-serif';
-        ctx.fillStyle = '#fca5a5';
-        ctx.shadowColor = 'black';
-        ctx.shadowBlur = 4;
-        ctx.textAlign = 'center';
-        ctx.fillText(mobDef.name, enemy.x, enemy.y - vRad - 10);
-        ctx.shadowBlur = 0;
-
-        if (enemy.hp < enemy.maxHp) {
-            ctx.fillStyle = 'rgba(0,0,0,0.6)';
-            ctx.fillRect(enemy.x - 20, enemy.y - vRad - 22, 40, 4);
-            ctx.fillStyle = '#ef4444';
-            ctx.fillRect(enemy.x - 20, enemy.y - vRad - 22, (enemy.hp / enemy.maxHp) * 40, 4);
+    for (let enemy of currentEnemies) {
+        if (enemy.x >= viewLeft && enemy.x <= viewRight && enemy.y >= viewTop && enemy.y <= viewBottom) {
+            enemy.render(ctx);
         }
     }
 
-    // Player
-    ctx.beginPath();
-    ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
-    ctx.fillStyle = '#6366f1';
-    ctx.fill();
-    ctx.strokeStyle = '#818cf8';
-    ctx.lineWidth = 3;
-    ctx.stroke();
-
-    ctx.font = 'bold 12px sans-serif';
-    ctx.fillStyle = '#6366f1';
-    ctx.textAlign = 'center';
-    ctx.shadowColor = 'black';
-    ctx.shadowBlur = 4;
-    ctx.fillText('You', player.x, player.y - player.radius - 10);
-    ctx.shadowBlur = 0;
-
-    // Weapon Render
-    if (player.weapon) {
-        const activeWeapon = player.weapon;
-        ctx.save();
-        ctx.translate(player.x, player.y);
-        ctx.rotate(player.facingAngle + (player.isAttacking ? player.attackAngle : 0));
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.lineTo(activeWeapon.range, 0);
-        ctx.strokeStyle = activeWeapon.color;
-        ctx.lineWidth = player.isAttacking ? 6 : 3;
-        ctx.stroke();
-        ctx.restore();
+    const currentProjectiles = dimEntities[currentDim].projectiles;
+    for (let proj of currentProjectiles) {
+        if (proj.x >= viewLeft && proj.x <= viewRight && proj.y >= viewTop && proj.y <= viewBottom) {
+            proj.render(ctx);
+        }
     }
+
+    player.render(ctx);
 
     ctx.restore();
 }
