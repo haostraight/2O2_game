@@ -396,9 +396,9 @@ const TRADER_OFFERS = [
 
 // HARDCODED SHARD REQUIREMENTS
 let DIMENSION_SHARDS = {
-    overworld: { name: 'Verdant Shard', label: '🌿 Verdant Shards', req: 100, unlock: 'nether' },
-    nether:    { name: 'Crimson Shard', label: '🔥 Crimson Shards', req: 150, unlock: 'void' },
-    void:      { name: 'Astral Shard',  label: '✨ Astral Shards', req: 250, unlock: null }
+    overworld: { name: 'Verdant Shard', label: '🌿 Verdant Shards', req: 10, unlock: 'nether' },
+    nether:    { name: 'Crimson Shard', label: '🔥 Crimson Shards', req: 10, unlock: 'void' },
+    void:      { name: 'Astral Shard',  label: '✨ Astral Shards', req: 10, unlock: null }
 };
 
 // =============================================================================
@@ -581,23 +581,79 @@ class Mob extends Entity {
         this.shardDropChance = config.shardDropChance;
         this.vx = 0;
         this.vy = 0;
+
+        // Line of sight: mobs only chase the player inside this range
+        this.detectRange = config.detectRange || 450;
+        this.aggro = false;
+
+        // Wandering (used while no player is detected)
+        this.wanderState = 'idle';
+        this.wanderTimer = Math.floor(Math.random() * 120);
+        this.wanderAngle = Math.random() * Math.PI * 2;
+        this.wanderSpeed = this.speed * 0.4;
     }
 
-    update(player, projectiles) {
+    applyKnockback() {
         this.x += this.vx;
         this.y += this.vy;
         this.vx *= 0.82;
         this.vy *= 0.82;
+    }
+
+    // Aggro on when the player enters detectRange; drops when they get well outside it
+    updateAggro(dist) {
+        if (!this.aggro && dist <= this.detectRange) {
+            this.aggro = true;
+        } else if (this.aggro && dist > this.detectRange * 1.5) {
+            this.aggro = false;
+        }
+    }
+
+    // Idle for a bit, then stroll in a random direction, repeat
+    wander() {
+        this.wanderTimer--;
+        if (this.wanderTimer <= 0) {
+            if (this.wanderState === 'idle') {
+                this.wanderState = 'walk';
+                this.wanderTimer = 60 + Math.random() * 120;
+                this.wanderAngle = Math.random() * Math.PI * 2;
+            } else {
+                this.wanderState = 'idle';
+                this.wanderTimer = 40 + Math.random() * 100;
+            }
+        }
+
+        if (this.wanderState === 'walk') {
+            this.x += Math.cos(this.wanderAngle) * this.wanderSpeed;
+            this.y += Math.sin(this.wanderAngle) * this.wanderSpeed;
+        }
+
+        this.x = Math.max(100, Math.min(WORLD_SIZE - 100, this.x));
+        this.y = Math.max(100, Math.min(WORLD_SIZE - 100, this.y));
+    }
+
+    update(player, projectiles) {
+        this.applyKnockback();
 
         const dx = player.x - this.x;
         const dy = player.y - this.y;
-        const angle = Math.atan2(dy, dx);
-        
-        this.x += Math.cos(angle) * this.speed;
-        this.y += Math.sin(angle) * this.speed;
+        const dist = Math.hypot(dx, dy);
 
-        const distSq = dx * dx + dy * dy;
-        if (distSq < (player.radius + this.radius) ** 2) {
+        this.updateAggro(dist);
+
+        if (this.aggro) {
+            // Player detected: head straight for them
+            const angle = Math.atan2(dy, dx);
+            this.x += Math.cos(angle) * this.speed;
+            this.y += Math.sin(angle) * this.speed;
+        } else {
+            // Nobody in sight: wander around
+            this.wander();
+        }
+
+        // Touching the player hurts (even if the mob was just wandering)
+        if (dist * dist < (player.radius + this.radius) ** 2) {
+            this.aggro = true;
             player.takeDamage(this.damage / 60);
         }
     }
@@ -766,19 +822,27 @@ class RangedMob extends Mob {
         this.shootCooldown = 0;
         this.shootInterval = 90;
         this.preferredDist = 250;
+        this.detectRange = config.detectRange || 600; // ranged mobs see a bit further
     }
 
     update(player, projectiles) {
-        this.x += this.vx;
-        this.y += this.vy;
-        this.vx *= 0.82;
-        this.vy *= 0.82;
+        this.applyKnockback();
 
         const dx = player.x - this.x;
         const dy = player.y - this.y;
         const dist = Math.hypot(dx, dy);
         const angle = Math.atan2(dy, dx);
 
+        this.updateAggro(dist);
+
+        if (!this.aggro) {
+            // Nobody in sight: wander around
+            this.wander();
+            this.shootCooldown = 0;
+            return;
+        }
+
+        // Player detected: keep a preferred distance and shoot
         if (dist > this.preferredDist + 40) {
             this.x += Math.cos(angle) * this.speed;
             this.y += Math.sin(angle) * this.speed;
@@ -1721,6 +1785,7 @@ function performAttack() {
         const dy = enemy.y - player.y;
         if (dx * dx + dy * dy <= (currentWeapon.range + enemy.radius) ** 2) {
             enemy.hp -= currentWeapon.damage;
+            enemy.aggro = true; // getting hit always gets its attention
 
             const angle = Math.atan2(dy, dx);
             const kbForce = currentWeapon.knockback || 15;
