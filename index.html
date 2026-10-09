@@ -29,7 +29,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;ma
 .board-top{position:absolute;top:10px;left:10px;right:10px;display:flex;justify-content:flex-end;align-items:flex-start;pointer-events:none;gap:8px}
 .pill{border:1px solid #ffffff20;background:#140e20c9;border-radius:12px;padding:7px 10px;font-size:12px;backdrop-filter:blur(8px)}
 .nextbox{display:flex;align-items:center;gap:8px}.nextbox img{width:43px;height:43px;object-fit:cover;border-radius:50%;border:2px solid var(--pink);box-shadow:0 0 15px color-mix(in srgb,var(--pink) 35%,transparent)}
-#toast{position:absolute;left:50%;top:48%;transform:translate(-50%,-50%) scale(.9);opacity:0;pointer-events:none;background:#100d1de8;border:1px solid var(--pink);border-radius:14px;padding:10px 16px;font-weight:700;white-space:nowrap;transition:opacity .15s,transform .15s;z-index:5}
+#toast{position:absolute;left:50%;top:48%;transform:translate(-50%,-50%) scale(.9);opacity:0;pointer-events:none;background:#100d1de8;border:1px solid var(--pink);border-radius:14px;padding:10px 16px;font-weight:700;white-space:nowrap;transition:opacity .15s,transform .15s;z-index:30}
 #toast.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
 .controls{display:flex;gap:8px;margin:10px auto 0;max-width:430px}.controls button{flex:1}
 .side{display:none}
@@ -37,18 +37,25 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;ma
 .tier-list{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}
 .tier-chip{aspect-ratio:1;border-radius:10px;background:#ffffff0c;border:1px solid #ffffff15;display:grid;place-items:center;overflow:hidden}
 .tier-chip img{width:100%;height:100%;object-fit:cover}.tier-chip span{font-size:10px;color:var(--muted)}
-.tip{background:#ffffff09;border-radius:12px;padding:10px;font-size:12px;color:#d9cce8;line-height:1.45}
-.overlay{position:fixed;inset:0;z-index:20;background:#090611d9;display:grid;place-items:center;padding:16px;overflow:auto;backdrop-filter:blur(8px)}
-.hidden{display:none!important}
-.modal{width:min(600px,100%);max-height:min(88vh,850px);overflow:auto;background:linear-gradient(145deg,#2b2040,#171122);border:1px solid #ffffff24;border-radius:23px;padding:clamp(18px,4vw,28px);box-shadow:0 25px 80px #0009}
+
+/* Animated Smooth Overlays */
+.overlay{position:fixed;inset:0;z-index:20;background:#090611d9;display:grid;place-items:center;padding:16px;overflow:auto;backdrop-filter:blur(10px);opacity:1;visibility:visible;transition:opacity .25s cubic-bezier(.4,0,.2,1),visibility .25s cubic-bezier(.4,0,.2,1)}
+.overlay.hidden{opacity:0;visibility:hidden;pointer-events:none}
+.modal{width:min(600px,100%);max-height:min(88vh,850px);overflow:auto;background:linear-gradient(145deg,#2b2040,#171122);border:1px solid #ffffff24;border-radius:23px;padding:clamp(18px,4vw,28px);box-shadow:0 25px 80px #0009;transform:scale(1) translateY(0);transition:transform .3s cubic-bezier(.175,.885,.32,1.275)}
+.overlay.hidden .modal{transform:scale(.88) translateY(20px)}
+
 .modal h1{font-size:clamp(27px,5vw,40px);margin:0 0 7px}.modal h2{margin:0 0 10px}.modal p{color:var(--muted);line-height:1.55}.modal-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:18px}.modal-actions button{flex:1;min-width:110px}
 .hero-mark{font-size:48px;margin-bottom:4px}.eyebrow{font-size:11px;letter-spacing:2px;color:var(--pink);font-weight:700;text-transform:uppercase}
 .item-list{display:grid;gap:9px;margin-top:15px}.item{display:flex;align-items:center;gap:11px;padding:10px;background:#ffffff08;border:1px solid #ffffff12;border-radius:13px}.item-icon{font-size:25px;width:36px;text-align:center}.item-info{flex:1;min-width:0}.item-info strong{display:block}.item-info small{display:block;color:var(--muted);font-size:12px;margin-top:2px}.item-status{font-size:10px;letter-spacing:.5px;color:var(--pink);font-weight:700}.progress{height:4px;background:#ffffff15;border-radius:4px;margin-top:7px;overflow:hidden}.progress div{height:100%;background:var(--pink)}
 .theme-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:15px}.theme-card{border:1px solid #ffffff17;background:#ffffff08;border-radius:14px;padding:10px;min-width:0}.theme-preview{height:62px;border-radius:9px;margin-bottom:9px}.theme-card strong{display:block}.theme-card small{display:block;color:var(--muted);font-size:11px;min-height:30px;margin:4px 0 9px}.theme-card button{width:100%;padding:8px;font-size:12px}
+.stats-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:15px}
+.stat-card{background:#ffffff08;border:1px solid #ffffff15;border-radius:14px;padding:12px 14px}
+.stat-card small{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+.stat-card strong{display:block;font-size:22px;color:#fff;margin-top:4px}
 .setting-row{display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px solid #ffffff13;gap:10px}.setting-row:last-child{border-bottom:0}.setting-row span{color:#e9dff4}
 footer{max-width:920px;margin:10px auto 0;text-align:center;color:#8e829f;font-size:11px}
 @media(max-width:760px){body{padding:8px}.header-actions{gap:5px}.header-actions button{padding:8px 10px;font-size:11px}#board{height:min(76vh,700px);min-height:390px}.game-panel{padding:4px}.brand{font-size:clamp(24px,5vw,32px)}}
-@media(max-width:430px){.nextbox img{width:38px;height:38px}header{align-items:flex-start}.brand{font-size:25px}.sub{font-size:10px}.header-actions{max-width:145px;justify-content:flex-end}.header-actions button{padding:7px 8px;font-size:10px}#board{height:72vh;min-height:360px}.stats{gap:4px;margin-top:7px}.stat{padding:5px 2px}.stat small{font-size:9px;letter-spacing:.5px}.stat strong{font-size:17px}.theme-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:430px){.nextbox img{width:38px;height:38px}header{align-items:flex-start}.brand{font-size:25px}.sub{font-size:10px}.header-actions{max-width:145px;justify-content:flex-end}.header-actions button{padding:7px 8px;font-size:10px}#board{height:72vh;min-height:360px}.stats{gap:4px;margin-top:7px}.stat{padding:5px 2px}.stat small{font-size:9px;letter-spacing:.5px}.stat strong{font-size:17px}.theme-grid{grid-template-columns:1fr 1fr}.stats-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -57,6 +64,7 @@ footer{max-width:920px;margin:10px auto 0;text-align:center;color:#8e829f;font-s
   <div><div class="brand">FRIEND <span>DROP</span></div><div class="sub">Drop friends. Merge them. Make the ultimate friend.</div></div>
   <div class="header-actions">
     <button class="secondary" id="howBtn">Guide</button>
+    <button class="secondary" id="statsBtn">📊 Stats</button>
     <button class="secondary" id="collectionBtn">Friends</button>
     <button class="secondary" id="achBtn">🏆 Awards</button>
     <button class="secondary" id="themesBtn">🎨 Themes</button>
@@ -110,6 +118,25 @@ footer{max-width:920px;margin:10px auto 0;text-align:center;color:#8e829f;font-s
     <div class="item"><div class="item-icon">⚠️</div><div class="item-info"><strong>4. Avoid the danger line</strong><small>If a friend stays over the danger line for too long, your run ends.</small></div></div>
   </div><div class="modal-actions"><button data-close="howOverlay">Got it!</button></div></div>
 </div>
+
+<div class="overlay hidden" id="statsOverlay">
+  <div class="modal">
+    <div class="eyebrow">Career Performance</div>
+    <h1>Player Stats 📊</h1>
+    <div class="stats-grid">
+      <div class="stat-card"><small>Total Runs Played</small><strong id="stRuns">0</strong></div>
+      <div class="stat-card"><small>Highest Score</small><strong id="stBest">0</strong></div>
+      <div class="stat-card"><small>Lifetime Score</small><strong id="stLifetime">0</strong></div>
+      <div class="stat-card"><small>Max Combo</small><strong id="stMaxCombo">x0</strong></div>
+      <div class="stat-card"><small>Total Merges</small><strong id="stMerges">0</strong></div>
+      <div class="stat-card"><small>Total Drops</small><strong id="stDrops">0</strong></div>
+      <div class="stat-card"><small>Rare Friends Found</small><strong id="stRares">0</strong></div>
+      <div class="stat-card"><small>Ultimate Friends</small><strong id="stUltimate">0</strong></div>
+    </div>
+    <div class="modal-actions"><button data-close="statsOverlay">Close</button></div>
+  </div>
+</div>
+
 <div class="overlay hidden" id="collectionOverlay">
   <div class="modal"><div class="eyebrow">Your collection</div><h1>Friends</h1><p>Merge two matching faces to create the next friend. The final tier is the Ultimate Friend!</p><div id="tierList" class="tier-list" style="margin-top:14px"></div><div class="modal-actions"><button data-close="collectionOverlay">Close</button></div></div>
 </div>
@@ -117,7 +144,7 @@ footer{max-width:920px;margin:10px auto 0;text-align:center;color:#8e829f;font-s
   <div class="modal"><div class="eyebrow">Your milestones</div><h1>Achievements 🏆</h1><p id="achCount">0 unlocked</p><div id="achList" class="item-list"></div><div class="modal-actions"><button data-close="achOverlay">Close</button></div></div>
 </div>
 <div class="overlay hidden" id="themesOverlay">
-  <div class="modal"><div class="eyebrow">Make it yours</div><h1>Themes 🎨</h1><p>Unlock themes using lifetime points. Your points are saved across runs.</p><div id="themeGrid" class="theme-grid"></div><div class="modal-actions"><button data-close="themesOverlay">Close</button></div></div>
+  <div class="modal"><div class="eyebrow">Make it yours</div><h1>Themes 🎨</h1><p>Unlock themes by reaching career milestones.</p><div id="themeGrid" class="theme-grid"></div><div class="modal-actions"><button data-close="themesOverlay">Close</button></div></div>
 </div>
 <div class="overlay hidden" id="settingsOverlay">
   <div class="modal"><div class="eyebrow">Your preferences</div><h1>Settings</h1>
@@ -134,47 +161,121 @@ footer{max-width:920px;margin:10px auto 0;text-align:center;color:#8e829f;font-s
 
 // =========================================================================
 // ⚙️ CUSTOMIZABLE GAME CONFIGURATION
-// Adjust any of these values to tweak game scaling, odds, physics, and gameplay!
 // =========================================================================
 const GAME_CONFIG = {
-  // Marble Size & Scaling Configuration
   marbleScale: {
-    baseRadius: 36,        // Size of tier 0 (smallest marble) in pixels
-    growthPerTier: 3.2,     // How many pixels larger each tier gets
-    maxRadius: 82           // Max size for the Ultimate final marble
+    baseRadius: 36,
+    growthPerTier: 6,
+    maxRadius: 182
   },
-
-  // Drop Spawn Probabilities
-  // Higher weight = higher chance to spawn when dropping a new marble.
-  // Add tier indexes (0-indexed) with relative weight numbers.
   spawnChances: [
-    { tier: 0, weight: 80 },  // 80% weight for Tier 0
-    { tier: 1, weight: 15 },  // 15% weight for Tier 1
-    { tier: 2, weight: 5 }    // 5% weight for Tier 2
+    { tier: 0, weight: 65 },
+    { tier: 1, weight: 25 },
+    { tier: 2, weight: 9 },
+    { tier: 3, weight: 1 }
   ],
-
-  // Special Variant Spawn Odds on Merges (values between 0.0 and 1.0)
   variantChances: {
-    gold: 0.005,      // 0.5% chance
-    diamond: 0.02,    // 2% chance
-    rainbow: 0.05     // 5% chance
+    gold: 0.005,
+    diamond: 0.02,
+    rainbow: 0.05
   },
-
-  // Physics & Gameplay Tuning
   physics: {
-    gravity: 1250,           // Falling speed/gravity strength
-    bounceRestitution: 0.13, // Floor bounce damping factor
-    dropCooldown: 0.18,      // Minimum delay between drops in seconds
-    dangerLimitTime: 1.15    // Time allowed in the danger zone before game over
+    gravity: 1350,
+    friction: 0.988,          // Rolling friction
+    angularDamping: 0.95,     // Rotational slowing factor
+    restitution: 0.18,        // Collision elasticity/bounce
+    dropCooldown: 0.18,
+    dangerLimitTime: 1.15
   },
-
-  // Combo Tuning
   combo: {
-    decayTime: 1.6,          // Seconds before a combo resets
-    multiplierStep: 0.12     // Score bonus factor per combo tier
+    decayTime: 1.3,
+    multiplierStep: 0.1
   }
 };
+
 // =========================================================================
+// 🎨 EDITABLE THEMES
+// Add or edit requirements using different metrics (points, merges, combo, ultimate)
+// =========================================================================
+const THEMES_CONFIG = [
+  {
+    id: "default",
+    name: "Neon Night",
+    desc: "The original arcade",
+    bg: "#191229", glow: "#ff4fa3",
+    preview: "linear-gradient(135deg,#191229,#713f91)",
+    check: () => true,
+    reqText: "Unlocked"
+  },
+  {
+    id: "ocean",
+    name: "Dream Ocean",
+    desc: "Reach 2,500 lifetime points",
+    bg: "#0c2338", glow: "#45ddff",
+    preview: "linear-gradient(135deg,#0c2338,#2186a8)",
+    check: s => s.lifetime >= 2500,
+    reqText: s => `2,500 Lifetime Points (${s.lifetime.toLocaleString()}/2,500)`
+  },
+  {
+    id: "sunset",
+    name: "Pink Sunset",
+    desc: "Complete 50 merges",
+    bg: "#35182c", glow: "#ff8cba",
+    preview: "linear-gradient(135deg,#35182c,#d65b7f)",
+    check: s => s.merges >= 50,
+    reqText: s => `50 Total Merges (${s.merges}/50)`
+  },
+  {
+    id: "forest",
+    name: "Magic Forest",
+    desc: "Achieve a x5 Combo",
+    bg: "#102820", glow: "#65ffb1",
+    preview: "linear-gradient(135deg,#102820,#27865e)",
+    check: s => s.maxCombo >= 5,
+    reqText: s => `x5 Max Combo (${s.maxCombo}/5)`
+  },
+  {
+    id: "galaxy",
+    name: "BLACKPINK Galaxy",
+    desc: "Create 1 Ultimate Friend",
+    bg: "#170e2e", glow: "#e59cff",
+    preview: "linear-gradient(135deg,#090816,#ff4fa3,#753cff)",
+    check: s => s.ultimate >= 1,
+    reqText: s => `1 Ultimate Friend (${s.ultimate}/1)`
+  },
+  {
+    id: "gold",
+    name: "Golden Legend",
+    desc: "Reach 100,000 lifetime points",
+    bg: "#2c2110", glow: "#ffe08b",
+    preview: "linear-gradient(135deg,#2c2110,#b78a24)",
+    check: s => s.lifetime >= 100000,
+    reqText: s => `100,000 Lifetime Points (${s.lifetime.toLocaleString()}/100,000)`
+  }
+];
+
+// =========================================================================
+// 🏆 EDITABLE ACHIEVEMENTS
+// =========================================================================
+const ACHIEVEMENTS_CONFIG = [
+  {id:"first", icon:"🍇", name:"First Drop", desc:"Drop your first friend.", test:s=>s.drops>=1},
+  {id:"merges10", icon:"🫂", name:"Getting Together", desc:"Complete 10 merges across all runs.", test:s=>s.merges>=10},
+  {id:"merges50", icon:"✨", name:"Merge Enthusiast", desc:"Complete 50 lifetime merges.", test:s=>s.merges>=50},
+  {id:"merges250", icon:"🌟", name:"Merge Master", desc:"Complete 250 lifetime merges.", test:s=>s.merges>=250},
+  {id:"score500", icon:"💯", name:"Promising Start", desc:"Score 500 points in one run.", test:s=>s.runScore>=500},
+  {id:"score2500", icon:"🏆", name:"Big Run", desc:"Score 2,500 points in one run.", test:s=>s.runScore>=2500},
+  {id:"score10k", icon:"👑", name:"Arcade Royalty", desc:"Score 10,000 points in one run.", test:s=>s.runScore>=10000},
+  {id:"combo4", icon:"🔥", name:"Chain Reaction", desc:"Reach a x4 combo.", test:s=>s.bestCombo>=4},
+  {id:"combo7", icon:"🌋", name:"Unstoppable", desc:"Reach a x7 combo.", test:s=>s.bestCombo>=7},
+  {id:"combo10", icon:"⚡", name:"Godlike Combo", desc:"Reach a x10 combo.", test:s=>s.bestCombo>=10},
+  {id:"rare", icon:"💎", name:"Lucky Find", desc:"Discover your first rare friend.", test:s=>s.rares>=1},
+  {id:"gold", icon:"👑", name:"Golden Hour", desc:"Discover a golden friend.", test:s=>s.gold>=1},
+  {id:"ultimate", icon:"🌈", name:"Ultimate Friendship", desc:"Create the ultimate friend.", test:s=>s.ultimate>=1},
+  {id:"runs10", icon:"🎮", name:"Regular Player", desc:"Play 10 total runs.", test:s=>s.runs>=10},
+  {id:"runs50", icon:"🕹️", name:"Dedicated Gamer", desc:"Play 50 total runs.", test:s=>s.runs>=50},
+  {id:"lifetime10k", icon:"💰", name:"Dedicated", desc:"Earn 10,000 lifetime points.", test:s=>s.lifetime>=10000},
+  {id:"lifetime50k", icon:"💫", name:"Legend", desc:"Earn 50,000 lifetime points.", test:s=>s.lifetime>=50000}
+];
 
 const friends = [
  ["Hanbo","Hanbo.jpeg","#ffb6dc"],["Asher","asher.jpeg","#a5e9ff"],
@@ -186,49 +287,39 @@ const friends = [
  ["Xayven","xayven.jpeg","#ffb68f"],["Xuchen","xuchen.jpeg","#a7e5a5"],
  ["Yichen","yichen.jpeg","#ffc1ea"]
 ];
-const themes = [
- {id:"default",name:"Neon Night",need:0,desc:"The original arcade",bg:"#191229",glow:"#ff4fa3",preview:"linear-gradient(135deg,#191229,#713f91)"},
- {id:"ocean",name:"Dream Ocean",need:2500,desc:"Reach 2,500 lifetime points",bg:"#0c2338",glow:"#45ddff",preview:"linear-gradient(135deg,#0c2338,#2186a8)"},
- {id:"sunset",name:"Pink Sunset",need:8000,desc:"Reach 8,000 lifetime points",bg:"#35182c",glow:"#ff8cba",preview:"linear-gradient(135deg,#35182c,#d65b7f)"},
- {id:"forest",name:"Magic Forest",need:20000,desc:"Reach 20,000 lifetime points",bg:"#102820",glow:"#65ffb1",preview:"linear-gradient(135deg,#102820,#27865e)"},
- {id:"galaxy",name:"BLACKPINK Galaxy",need:50000,desc:"Reach 50,000 lifetime points",bg:"#170e2e",glow:"#e59cff",preview:"linear-gradient(135deg,#090816,#ff4fa3,#753cff)"},
- {id:"gold",name:"Golden Legend",need:100000,desc:"Reach 100,000 lifetime points",bg:"#2c2110",glow:"#ffe08b",preview:"linear-gradient(135deg,#2c2110,#b78a24)"}
-];
-const achievements = [
- {id:"first",icon:"🍇",name:"First Drop",desc:"Drop your first friend.",test:s=>s.drops>=1},
- {id:"merges10",icon:"🫂",name:"Getting Together",desc:"Complete 10 merges across all runs.",test:s=>s.merges>=10},
- {id:"score500",icon:"💯",name:"Promising Start",desc:"Score 500 points in one run.",test:s=>s.runScore>=500},
- {id:"score2500",icon:"🏆",name:"Big Run",desc:"Score 2,500 points in one run.",test:s=>s.runScore>=2500},
- {id:"combo4",icon:"🔥",name:"Chain Reaction",desc:"Reach a x4 combo.",test:s=>s.bestCombo>=4},
- {id:"combo7",icon:"🌋",name:"Unstoppable",desc:"Reach a x7 combo.",test:s=>s.bestCombo>=7},
- {id:"rare",icon:"💎",name:"Lucky Find",desc:"Discover your first rare friend.",test:s=>s.rares>=1},
- {id:"gold",icon:"👑",name:"Golden Hour",desc:"Discover a golden friend.",test:s=>s.gold>=1},
- {id:"merges100",icon:"🌟",name:"Regular Player",desc:"Complete 100 lifetime merges.",test:s=>s.merges>=100},
- {id:"ultimate",icon:"🌈",name:"Ultimate Friendship",desc:"Create the ultimate friend.",test:s=>s.ultimate>=1},
- {id:"lifetime10k",icon:"💰",name:"Dedicated",desc:"Earn 10,000 lifetime points.",test:s=>s.lifetime>=10000},
- {id:"lifetime50k",icon:"💫",name:"Legend",desc:"Earn 50,000 lifetime points.",test:s=>s.lifetime>=50000}
-];
+
 const $ = id => document.getElementById(id);
 const canvas=$("game"),ctx=canvas.getContext("2d"),board=$("board");
 const images=friends.map(f=>{const im=new Image();im.src="images/"+f[1];return im;});
-const SAVE_KEY="friendDropProgressV3",OLD_KEY="friendDropProgressV2";
-function defaultData(){return {version:3,best:0,lifetime:0,merges:0,drops:0,rares:0,gold:0,ultimate:0,achievements:[],themes:["default"],selectedTheme:"default",sound:true,shake:true,guide:true};}
-function loadData(){
- try{const d=JSON.parse(localStorage.getItem(SAVE_KEY)||"null");if(d&&d.version===3)return {...defaultData(),...d};}catch(e){}
- try{const old=JSON.parse(localStorage.getItem(OLD_KEY)||"null");if(old&&old.version===2)return {...defaultData(),...old,version:3};}catch(e){}
- const d=defaultData();try{d.best=Number(localStorage.getItem("fd_best"))||0;}catch(e){}return d;
+const SAVE_KEY="friendDropProgressV4";
+
+function defaultData(){
+  return {
+    version:4, best:0, lifetime:0, merges:0, drops:0,
+    rares:0, gold:0, ultimate:0, runs:0, maxCombo:0,
+    achievements:[], themes:["default"], selectedTheme:"default",
+    sound:true, shake:true, guide:true
+  };
 }
+
+function loadData(){
+  try{
+    const d=JSON.parse(localStorage.getItem(SAVE_KEY)||"null");
+    if(d) return {...defaultData(), ...d};
+  }catch(e){}
+  return defaultData();
+}
+
 let data=loadData(),W=0,H=0,dpr=1,fruits=[],particles=[],texts=[];
 let score=0,combo=0,bestCombo=0,nextTier=0,dropX=0,pointerX=null;
 let running=false,paused=false,over=false,dangerTime=0,shake=0,mergeClock=0,dropCooldown=0,lastTime=0,audio=null,activePanel=null,toastExpiry=0;
 let sound=data.sound!==false,shakeEnabled=data.shake!==false,guideEnabled=data.guide!==false;
 
-// Generate scaled radii array from GAME_CONFIG
 const radii=friends.map((_,i)=>GAME_CONFIG.marbleScale.baseRadius + i * GAME_CONFIG.marbleScale.growthPerTier).concat([GAME_CONFIG.marbleScale.maxRadius]);
 const radius=t=>radii[Math.min(t,radii.length-1)],dangerY=()=>105,floorY=()=>H-5,spawnY=()=>24;
-const currentTheme=()=>themes.find(t=>t.id===data.selectedTheme)||themes[0];
+const currentTheme=()=>THEMES_CONFIG.find(t=>t.id===data.selectedTheme)||THEMES_CONFIG[0];
 
-function saveData(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(data));localStorage.setItem("fd_best",String(data.best));}catch(e){toast("Progress could not be saved");}}
+function saveData(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(data));}catch(e){toast("Progress could not be saved");}}
 function resize(){const r=board.getBoundingClientRect();W=r.width;H=r.height;dpr=Math.min(devicePixelRatio||1,2);canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);dropX=Math.max(25,Math.min(W-25,dropX||W/2));}
 addEventListener("resize",resize);resize();
 
@@ -236,7 +327,6 @@ function playSound(freq=440,duration=.08,type="sine",volume=.025){if(!sound)retu
 function updateStats(){$("score").textContent=score.toLocaleString();$("best").textContent=data.best.toLocaleString();$("combo").textContent="x"+combo;}
 function toast(msg){$("toast").textContent=msg;$("toast").classList.add("show");toastExpiry=performance.now()+1400;}
 
-// Configurable Drop Picker
 function getWeightedRandomTier(){
   const totalWeight = GAME_CONFIG.spawnChances.reduce((acc, c) => acc + c.weight, 0);
   let random = Math.random() * totalWeight;
@@ -253,13 +343,19 @@ function setNext(){
   $("nextPreview").src=images[nextTier].src;
 }
 
-function spawnFruit(x,y,tier,variant="normal"){const r=radius(tier);fruits.push({x:Math.max(r+3,Math.min(W-r-3,x)),y,vx:0,vy:0,tier,r,variant,age:0,lock:.18,dead:false,squish:.15});}
+function spawnFruit(x,y,tier,variant="normal"){
+  const r=radius(tier);
+  fruits.push({
+    x:Math.max(r+3,Math.min(W-r-3,x)), y, vx:0, vy:0,
+    angle: 0, va: 0, tier, r, variant, age:0, lock:.18, dead:false, squish:.15
+  });
+}
+
 function drop(){if(!running||paused||over||dropCooldown>0)return;const r=radius(nextTier),x=Math.max(r+3,Math.min(W-r-3,pointerX??dropX));spawnFruit(x,spawnY()+r,nextTier);data.drops++;saveData();dropCooldown=GAME_CONFIG.physics.dropCooldown;pointerX=null;setNext();checkAchievements();playSound(280,.06,"triangle",.02);}
 function burst(x,y,color,n=12){for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,v=45+Math.random()*170;particles.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:.4+Math.random()*.35,max:.8,size:2+Math.random()*3,color});}}
 function floating(x,y,text,color="#fff"){texts.push({x,y,text,color,life:.85,max:.85});}
 function variantColor(v,normal){return v==="gold"?"#ffe08b":v==="diamond"?"#76efff":v==="rainbow"?"#ff80e5":normal;}
 
-// Configurable Roll Variant
 function rollVariant(){
   const n = Math.random();
   if (n < GAME_CONFIG.variantChances.gold) return "gold";
@@ -269,104 +365,345 @@ function rollVariant(){
 }
 
 function addPoints(n){score+=n;data.lifetime+=n;if(score>data.best)data.best=score;unlockThemes();updateStats();}
-function merge(a,b){if(a.dead||b.dead||a.tier!==b.tier)return false;a.dead=b.dead=true;const tier=Math.min(a.tier+1,friends.length),x=(a.x+b.x)/2,y=(a.y+b.y)/2,variant=rollVariant(),r=radius(tier);spawnFruit(x,y,tier,variant);const nf=fruits[fruits.length-1];nf.vy=-65;nf.lock=.2;data.merges++;combo++;mergeClock=GAME_CONFIG.combo.decayTime;bestCombo=Math.max(bestCombo,combo);let points=Math.round((tier+1)*5*(1+Math.min(combo-1,4)*GAME_CONFIG.combo.multiplierStep));if(variant!=="normal"){points*=variant==="gold"?5:variant==="diamond"?3:2;data.rares++;if(variant==="gold")data.gold++;burst(x,y,variantColor(variant,"#fff"),variant==="gold"?32:18);floating(x,y-r,variant.toUpperCase(),variantColor(variant,"#fff"));toast(variant==="gold"?"GOLDEN FRIEND!":variant==="diamond"?"DIAMOND FRIEND!":"RAINBOW FRIEND!");}addPoints(points);if(tier===friends.length){data.ultimate++;addPoints(250);floating(x,y-35,"ULTIMATE! +250","#ffe08b");burst(x,y,"#ffe08b",35);toast("ULTIMATE FRIEND!");}floating(x,y-r,"+"+points,variantColor(variant,tier>=friends.length?"#ffe08b":friends[tier][2]));burst(x,y,variantColor(variant,"#fff"),10+tier);if(shakeEnabled)shake=Math.min(5,shake+1+tier*.1);playSound(400+tier*35,.1);if(combo>=4)toast("🔥 "+combo+"x COMBO!");saveData();checkAchievements();return true;}
-function unlockThemes(){let changed=false;for(const t of themes){if(data.lifetime>=t.need&&!data.themes.includes(t.id)){data.themes.push(t.id);changed=true;toast("THEME UNLOCKED: "+t.name);}}if(changed){saveData();renderThemes();}}
-function checkAchievements(){const s={drops:data.drops,merges:data.merges,runScore:score,bestCombo,rares:data.rares,gold:data.gold,ultimate:data.ultimate,lifetime:data.lifetime};let changed=false;for(const a of achievements){if(!data.achievements.includes(a.id)&&a.test(s)){data.achievements.push(a.id);changed=true;toast("🏆 "+a.name);}}if(changed){saveData();renderAchievements();}}
-function renderAchievements(){$("achCount").textContent=data.achievements.length+" / "+achievements.length+" unlocked";$("achList").innerHTML=achievements.map(a=>{const done=data.achievements.includes(a.id);return `<div class="item"><div class="item-icon">${done?a.icon:"🔒"}</div><div class="item-info"><strong>${a.name}</strong><small>${a.desc}</small><div class="progress"><div style="width:${done?100:0}%"></div></div></div><div class="item-status">${done?"UNLOCKED":"LOCKED"}</div></div>`;}).join("");}
-function renderThemes(){$("themeGrid").innerHTML=themes.map(t=>{const own=data.themes.includes(t.id),active=data.selectedTheme===t.id;return `<div class="theme-card"><div class="theme-preview" style="background:${t.preview}"></div><strong>${t.name}</strong><small>${own?t.desc:"Lifetime points: "+data.lifetime.toLocaleString()+" / "+t.need.toLocaleString()}</small><button data-theme="${t.id}" ${own?"":"disabled"}>${active?"✓ EQUIPPED":own?"EQUIP":"🔒 LOCKED"}</button></div>`;}).join("");document.querySelectorAll("[data-theme]").forEach(b=>b.onclick=()=>{if(!data.themes.includes(b.dataset.theme))return;data.selectedTheme=b.dataset.theme;saveData();applyTheme();renderThemes();});}
+
+function merge(a,b){
+  if(a.dead||b.dead||a.tier!==b.tier)return false;
+  a.dead=b.dead=true;
+  const tier=Math.min(a.tier+1,friends.length),x=(a.x+b.x)/2,y=(a.y+b.y)/2,variant=rollVariant();
+  spawnFruit(x,y,tier,variant);
+  const nf=fruits[fruits.length-1];
+  nf.vy=-65; nf.lock=.2;
+  data.merges++; combo++; mergeClock=GAME_CONFIG.combo.decayTime;
+  bestCombo=Math.max(bestCombo,combo);
+  if(bestCombo > data.maxCombo) data.maxCombo = bestCombo;
+
+  let points=Math.round((tier+1)*5*(1+Math.min(combo-1,4)*GAME_CONFIG.combo.multiplierStep));
+  if(variant!=="normal"){
+    points*=variant==="gold"?5:variant==="diamond"?3:2;
+    data.rares++;
+    if(variant==="gold")data.gold++;
+    burst(x,y,variantColor(variant,"#fff"),variant==="gold"?32:18);
+    floating(x,y-nf.r,variant.toUpperCase(),variantColor(variant,"#fff"));
+    toast(variant==="gold"?"GOLDEN FRIEND!":variant==="diamond"?"DIAMOND FRIEND!":"RAINBOW FRIEND!");
+  }
+  addPoints(points);
+  if(tier===friends.length){
+    data.ultimate++;
+    addPoints(250);
+    floating(x,y-35,"ULTIMATE! +250","#ffe08b");
+    burst(x,y,"#ffe08b",35);
+    toast("ULTIMATE FRIEND!");
+  }
+  floating(x,y-nf.r,"+"+points,variantColor(variant,tier>=friends.length?"#ffe08b":friends[tier][2]));
+  burst(x,y,variantColor(variant,"#fff"),10+tier);
+  if(shakeEnabled)shake=Math.min(5,shake+1+tier*.1);
+  playSound(400+tier*35,.1);
+  if(combo>=4)toast("🔥 "+combo+"x COMBO!");
+  saveData();
+  checkAchievements();
+  return true;
+}
+
+function unlockThemes(){
+  let changed=false;
+  for(const t of THEMES_CONFIG){
+    if(t.check(data) && !data.themes.includes(t.id)){
+      data.themes.push(t.id);
+      changed=true;
+      toast("THEME UNLOCKED: "+t.name);
+    }
+  }
+  if(changed){saveData();renderThemes();}
+}
+
+function checkAchievements(){
+  const s={
+    drops:data.drops, merges:data.merges, runScore:score,
+    bestCombo, rares:data.rares, gold:data.gold, ultimate:data.ultimate,
+    lifetime:data.lifetime, runs:data.runs
+  };
+  let changed=false;
+  for(const a of ACHIEVEMENTS_CONFIG){
+    if(!data.achievements.includes(a.id)&&a.test(s)){
+      data.achievements.push(a.id);
+      changed=true;
+      toast("🏆 "+a.name);
+    }
+  }
+  if(changed){saveData();renderAchievements();}
+}
+
+function renderAchievements(){
+  $("achCount").textContent=data.achievements.length+" / "+ACHIEVEMENTS_CONFIG.length+" unlocked";
+  $("achList").innerHTML=ACHIEVEMENTS_CONFIG.map(a=>{
+    const done=data.achievements.includes(a.id);
+    return `<div class="item"><div class="item-icon">${done?a.icon:"🔒"}</div><div class="item-info"><strong>${a.name}</strong><small>${a.desc}</small><div class="progress"><div style="width:${done?100:0}%"></div></div></div><div class="item-status">${done?"UNLOCKED":"LOCKED"}</div></div>`;
+  }).join("");
+}
+
+function renderThemes(){
+  $("themeGrid").innerHTML=THEMES_CONFIG.map(t=>{
+    const own=data.themes.includes(t.id),active=data.selectedTheme===t.id;
+    const req = typeof t.reqText === 'function' ? t.reqText(data) : t.reqText;
+    return `<div class="theme-card"><div class="theme-preview" style="background:${t.preview}"></div><strong>${t.name}</strong><small>${own?t.desc:req}</small><button data-theme="${t.id}" ${own?"":"disabled"}>${active?"✓ EQUIPPED":own?"EQUIP":"🔒 LOCKED"}</button></div>`;
+  }).join("");
+  document.querySelectorAll("[data-theme]").forEach(b=>b.onclick=()=>{
+    if(!data.themes.includes(b.dataset.theme))return;
+    data.selectedTheme=b.dataset.theme;
+    saveData();
+    applyTheme();
+    renderThemes();
+  });
+}
+
+function renderStats(){
+  $("stRuns").textContent = data.runs.toLocaleString();
+  $("stBest").textContent = data.best.toLocaleString();
+  $("stLifetime").textContent = data.lifetime.toLocaleString();
+  $("stMaxCombo").textContent = "x" + data.maxCombo;
+  $("stMerges").textContent = data.merges.toLocaleString();
+  $("stDrops").textContent = data.drops.toLocaleString();
+  $("stRares").textContent = data.rares.toLocaleString();
+  $("stUltimate").textContent = data.ultimate.toLocaleString();
+}
+
 function applyTheme(){const t=currentTheme();board.style.background=`radial-gradient(ellipse at center,${t.bg},#100d1d 120%)`;document.documentElement.style.setProperty("--pink",t.glow);}
 function renderTierList(){$("tierList").innerHTML=friends.map((f,i)=>`<div class="tier-chip" title="${f[0]}"><img src="images/${f[1]}" alt="${f[0]}" loading="lazy" onerror="this.remove();this.parentNode.innerHTML='<span>${i+1}</span>'"></div>`).join("");}
-function resetRun(){fruits=[];particles=[];texts=[];score=0;combo=0;bestCombo=0;dangerTime=0;shake=0;mergeClock=0;dropCooldown=0;running=true;paused=false;over=false;dropX=W/2;pointerX=null;setNext();updateStats();closeAll();$("pauseBtn").textContent="Ⅱ";$("startBtn").textContent="▶ Playing";$("startOverlay").classList.add("hidden");$("overOverlay").classList.add("hidden");lastTime=performance.now();playSound(520,.1);}
-function endGame(){if(over)return;over=true;running=false;const isNewBest=score>data.best;if(isNewBest)data.best=score;saveData();$("finalScore").textContent=score.toLocaleString();$("newRecord").textContent=isNewBest?"🏆 PERSONAL BEST!":"";$("overEmoji").textContent=isNewBest?"👑":"💥";$("overTitle").textContent="PILE UP!";$("overDetails").textContent=`Best combo: x${bestCombo} · Lifetime points: ${data.lifetime.toLocaleString()}`;$("overOverlay").classList.remove("hidden");$("startBtn").textContent="▶ Start game";updateStats();playSound(160,.3,"sawtooth",.02);}
+
+function resetRun(){
+  fruits=[];particles=[];texts=[];score=0;combo=0;bestCombo=0;dangerTime=0;shake=0;mergeClock=0;dropCooldown=0;
+  running=true;paused=false;over=false;dropX=W/2;pointerX=null;
+  data.runs++; saveData();
+  setNext();updateStats();closeAll();
+  $("pauseBtn").textContent="Ⅱ";$("startBtn").textContent="▶ Playing";
+  $("startOverlay").classList.add("hidden");$("overOverlay").classList.add("hidden");
+  lastTime=performance.now();playSound(520,.1);
+}
+
+function endGame(){
+  if(over)return;
+  over=true;running=false;
+  const isNewBest=score>data.best;
+  if(isNewBest)data.best=score;
+  saveData();
+  $("finalScore").textContent=score.toLocaleString();
+  $("newRecord").textContent=isNewBest?"🏆 PERSONAL BEST!":"";
+  $("overEmoji").textContent=isNewBest?"👑":"💥";
+  $("overTitle").textContent="PILE UP!";
+  $("overDetails").textContent=`Best combo: x${bestCombo} · Lifetime points: ${data.lifetime.toLocaleString()}`;
+  openPanel("overOverlay");
+  $("startBtn").textContent="▶ Start game";
+  updateStats();
+  playSound(160,.3,"sawtooth",.02);
+}
+
 function togglePause(){if(!running||over)return;paused=!paused;$("pauseOverlay").classList.toggle("hidden",!paused);$("pauseBtn").textContent=paused?"▶":"Ⅱ";lastTime=performance.now();}
-function openPanel(id){if(running&&!paused)togglePause();activePanel=id;$(id).classList.remove("hidden");if(id==="achOverlay")renderAchievements();if(id==="themesOverlay")renderThemes();}
+function openPanel(id){if(running&&!paused&&id!=="pauseOverlay")togglePause();activePanel=id;$(id).classList.remove("hidden");if(id==="achOverlay")renderAchievements();if(id==="themesOverlay")renderThemes();if(id==="statsOverlay")renderStats();}
 function closeAll(){document.querySelectorAll(".overlay").forEach(o=>o.classList.add("hidden"));activePanel=null;}
 function closePanel(id){$(id).classList.add("hidden");activePanel=null;if(paused)$("pauseOverlay").classList.remove("hidden");}
 
+// =========================================================================
+// 🧮 IMPROVED ROTATIONAL PHYSICS & COLLISION SOLVER
+// =========================================================================
 function update(dt){
   if(!running||paused||over)return;
   dt=Math.min(dt,.025);
   dropCooldown=Math.max(0,dropCooldown-dt);
   mergeClock=Math.max(0,mergeClock-dt);
   const gravity=GAME_CONFIG.physics.gravity;
+
   for(const f of fruits){
     if(f.dead)continue;
     f.age+=dt;
     f.lock=Math.max(0,f.lock-dt);
     f.squish=Math.max(0,f.squish-dt);
-    f.vy+=gravity*dt;
-    f.vx*=Math.pow(.992,dt*60);
-    f.x+=f.vx*dt;
-    f.y+=f.vy*dt;
-    if(f.x-f.r<2){f.x=f.r+2;f.vx=Math.abs(f.vx)*.2;}
-    if(f.x+f.r>W-2){f.x=W-f.r-2;f.vx=-Math.abs(f.vx)*.2;}
-    if(f.y+f.r>floorY()){
-      f.y=floorY()-f.r;
-      f.vy*= -GAME_CONFIG.physics.bounceRestitution;
-      if(Math.abs(f.vy)<25)f.vy=0;
-      f.vx*=.97;
+
+    f.vy += gravity * dt;
+    f.vx *= Math.pow(GAME_CONFIG.physics.friction, dt*60);
+    f.va *= Math.pow(GAME_CONFIG.physics.angularDamping, dt*60);
+
+    f.x += f.vx * dt;
+    f.y += f.vy * dt;
+    f.angle += f.va * dt;
+
+    // Wall Bounds
+    if(f.x - f.r < 2){
+      f.x = f.r + 2;
+      f.vx = Math.abs(f.vx) * 0.3;
+      f.va = f.vy * 0.05;
+    }
+    if(f.x + f.r > W - 2){
+      f.x = W - f.r - 2;
+      f.vx = -Math.abs(f.vx) * 0.3;
+      f.va = -f.vy * 0.05;
+    }
+    if(f.y + f.r > floorY()){
+      f.y = floorY() - f.r;
+      f.vy *= -GAME_CONFIG.physics.restitution;
+      if(Math.abs(f.vy) < 25) f.vy = 0;
+      f.vx *= 0.95;
+      f.va = -f.vx * 0.08;
     }
   }
-  for(let i=0;i<fruits.length;i++){
-    const a=fruits[i];if(a.dead)continue;
-    for(let j=i+1;j<fruits.length;j++){
-      const b=fruits[j];if(b.dead)continue;
-      let dx=b.x-a.x,dy=b.y-a.y,dist=Math.hypot(dx,dy),min=a.r+b.r;
-      if(dist>=min)continue;
-      if(dist<.001){dx=.01;dist=.01;}
-      if(a.tier===b.tier&&a.lock<=0&&b.lock<=0){if(merge(a,b))continue;}
-      const nx=dx/dist,ny=dy/dist,overlap=min-dist;
-      a.x-=nx*overlap*.5;
-      a.y-=ny*overlap*.5;
-      b.x+=nx*overlap*.5;
-      b.y+=ny*overlap*.5;
-      const rv=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;
-      if(rv<0){
-        const impulse=-rv*.22;
-        a.vx-=impulse*nx;
-        a.vy-=impulse*ny;
-        b.vx+=impulse*nx;
-        b.vy+=impulse*ny;
+
+  // Marble Collisions
+  for(let i=0; i<fruits.length; i++){
+    const a = fruits[i]; if(a.dead) continue;
+    for(let j=i+1; j<fruits.length; j++){
+      const b = fruits[j]; if(b.dead) continue;
+      let dx = b.x - a.x, dy = b.y - a.y, dist = Math.hypot(dx,dy), min = a.r + b.r;
+      if(dist >= min) continue;
+
+      if(dist < 0.001){ dx = 0.01; dist = 0.01; }
+
+      if(a.tier === b.tier && a.lock <= 0 && b.lock <= 0){
+        if(merge(a,b)) continue;
+      }
+
+      const nx = dx / dist, ny = dy / dist, overlap = min - dist;
+      a.x -= nx * overlap * 0.5;
+      a.y -= ny * overlap * 0.5;
+      b.x += nx * overlap * 0.5;
+      b.y += ny * overlap * 0.5;
+
+      const rv = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
+      if(rv < 0){
+        const impulse = -rv * (1 + GAME_CONFIG.physics.restitution) * 0.5;
+        a.vx -= impulse * nx;
+        a.vy -= impulse * ny;
+        b.vx += impulse * nx;
+        b.vy += impulse * ny;
+
+        // Tangential rotational friction transfer
+        const tangentX = -ny, tangentY = nx;
+        const tangentVel = (b.vx - a.vx) * tangentX + (b.vy - a.vy) * tangentY;
+        a.va += tangentVel * 0.002;
+        b.va -= tangentVel * 0.002;
       }
     }
   }
-  fruits=fruits.filter(f=>!f.dead);
-  if(mergeClock<=0&&combo!==0){combo=0;updateStats();}
-  for(const p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=Math.pow(.94,dt*60);p.vy+=300*dt;p.life-=dt;}
-  particles=particles.filter(p=>p.life>0);
-  for(const t of texts){t.y-=30*dt;t.life-=dt;}
-  texts=texts.filter(t=>t.life>0);
 
-  const danger=fruits.some(f=>f.age>.7&&f.y-f.r<dangerY()&&f.y+f.r>dangerY()-18);
-  dangerTime=danger?dangerTime+dt:Math.max(0,dangerTime-dt*1.5);
-  if(dangerTime>GAME_CONFIG.physics.dangerLimitTime)endGame();
-  shake=Math.max(0,shake-dt*18);
+  fruits = fruits.filter(f => !f.dead);
+  if(mergeClock <= 0 && combo !== 0){ combo = 0; updateStats(); }
+
+  for(const p of particles){ p.x += p.vx*dt; p.y += p.vy*dt; p.vx *= Math.pow(.94, dt*60); p.vy += 300*dt; p.life -= dt; }
+  particles = particles.filter(p => p.life > 0);
+  for(const t of texts){ t.y -= 30*dt; t.life -= dt; }
+  texts = texts.filter(t => t.life > 0);
+
+  const danger = fruits.some(f => f.age > .7 && f.y - f.r < dangerY() && f.y + f.r > dangerY() - 18);
+  dangerTime = danger ? dangerTime + dt : Math.max(0, dangerTime - dt * 1.5);
+  if(dangerTime > GAME_CONFIG.physics.dangerLimitTime) endGame();
+  shake = Math.max(0, shake - dt * 18);
 }
 
-function drawFruit(f){const r=f.r,t=f.tier,normal=t>=friends.length?"#ffe08b":friends[t][2],color=variantColor(f.variant,normal);ctx.save();ctx.translate(f.x,f.y);if(f.squish>0){const k=Math.sin(f.squish*18)*.06;ctx.scale(1+k,1-k);}ctx.shadowColor=color;ctx.shadowBlur=f.variant==="normal"?7:15;ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();ctx.shadowBlur=0;ctx.save();ctx.beginPath();ctx.arc(0,0,r-2,0,Math.PI*2);ctx.clip();if(t>=friends.length){const g=ctx.createLinearGradient(-r,-r,r,r);g.addColorStop(0,"#ffb7e2");g.addColorStop(.5,"#b69bff");g.addColorStop(1,"#ffe08b");ctx.fillStyle=g;ctx.fillRect(-r,-r,2*r,2*r);for(let i=0;i<images.length;i++){const im=images[i];if(!im.complete||!im.naturalWidth)continue;const a=i/images.length*Math.PI*2,x=Math.cos(a)*r*.45,y=Math.sin(a)*r*.45;ctx.save();ctx.beginPath();ctx.arc(x,y,r*.3,0,Math.PI*2);ctx.clip();ctx.drawImage(im,x-r*.3,y-r*.3,r*.6,r*.6);ctx.restore();}}else{const im=images[t];if(im.complete&&im.naturalWidth){const side=Math.min(im.naturalWidth,im.naturalHeight);ctx.drawImage(im,(im.naturalWidth-side)/2,(im.naturalHeight-side)/2,side,side,-r+1,-r+1,2*r-2,2*r-2);}else{ctx.fillStyle="#49315d";ctx.fillRect(-r,-r,2*r,2*r);ctx.fillStyle="#fff";ctx.font=`bold ${r}px Fredoka`;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("?",0,0);}}ctx.restore();ctx.beginPath();ctx.arc(0,0,r-1,0,Math.PI*2);ctx.lineWidth=f.variant==="normal"?2.5:4;ctx.strokeStyle=f.variant==="normal"?"#ffffffcc":color;ctx.stroke();ctx.beginPath();ctx.ellipse(-r*.28,-r*.48,r*.24,r*.1,-.5,0,Math.PI*2);ctx.fillStyle="#ffffff99";ctx.fill();
-if(t<friends.length){
- const badgeR=Math.max(9,r*.19);
- const badgeY=r*.69;
- ctx.beginPath();ctx.arc(0,badgeY,badgeR,0,Math.PI*2);
- ctx.fillStyle="#180f26";ctx.fill();
- ctx.lineWidth=Math.max(1.5,r*.035);ctx.strokeStyle="#ffffff";ctx.stroke();
- ctx.fillStyle="#ffffff";ctx.font=`bold ${Math.max(10,badgeR*1.15)}px Fredoka`;
- ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(String(t+1),0,badgeY);
-}
-if(f.variant!=="normal"||t>=friends.length){
- ctx.fillStyle="#fff";ctx.font=`bold ${Math.max(12,r*.55)}px Fredoka`;ctx.textAlign="center";
- ctx.strokeStyle="#180f26";ctx.lineWidth=3;
- const symbol=f.variant==="gold"?"★":f.variant==="diamond"?"◆":"✦";
- ctx.strokeText(symbol,0,-r-4);ctx.fillText(symbol,0,-r-4);
-}
-ctx.restore();}
+function drawFruit(f){
+  const r=f.r,t=f.tier,normal=t>=friends.length?"#ffe08b":friends[t][2],color=variantColor(f.variant,normal);
+  ctx.save();
+  ctx.translate(f.x,f.y);
+  ctx.rotate(f.angle);
+  if(f.squish>0){const k=Math.sin(f.squish*18)*.06;ctx.scale(1+k,1-k);}
+  ctx.shadowColor=color;ctx.shadowBlur=f.variant==="normal"?7:15;
+  ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();
+  ctx.shadowBlur=0;ctx.save();ctx.beginPath();ctx.arc(0,0,r-2,0,Math.PI*2);ctx.clip();
+  if(t>=friends.length){
+    const g=ctx.createLinearGradient(-r,-r,r,r);
+    g.addColorStop(0,"#ffb7e2");g.addColorStop(.5,"#b69bff");g.addColorStop(1,"#ffe08b");
+    ctx.fillStyle=g;ctx.fillRect(-r,-r,2*r,2*r);
+    for(let i=0;i<images.length;i++){
+      const im=images[i];if(!im.complete||!im.naturalWidth)continue;
+      const a=i/images.length*Math.PI*2,x=Math.cos(a)*r*.45,y=Math.sin(a)*r*.45;
+      ctx.save();ctx.beginPath();ctx.arc(x,y,r*.3,0,Math.PI*2);ctx.clip();
+      ctx.drawImage(im,x-r*.3,y-r*.3,r*.6,r*.6);ctx.restore();
+    }
+  }else{
+    const im=images[t];
+    if(im.complete&&im.naturalWidth){
+      const side=Math.min(im.naturalWidth,im.naturalHeight);
+      ctx.drawImage(im,(im.naturalWidth-side)/2,(im.naturalHeight-side)/2,side,side,-r+1,-r+1,2*r-2,2*r-2);
+    }else{
+      ctx.fillStyle="#49315d";ctx.fillRect(-r,-r,2*r,2*r);ctx.fillStyle="#fff";
+      ctx.font=`bold ${r}px Fredoka`;ctx.textAlign="center";ctx.textBaseline="middle";
+      ctx.fillText("?",0,0);
+    }
+  }
+  ctx.restore();
+  ctx.beginPath();ctx.arc(0,0,r-1,0,Math.PI*2);
+  ctx.lineWidth=f.variant==="normal"?2.5:4;
+  ctx.strokeStyle=f.variant==="normal"?"#ffffffcc":color;ctx.stroke();
+  ctx.beginPath();ctx.ellipse(-r*.28,-r*.48,r*.24,r*.1,-.5,0,Math.PI*2);
+  ctx.fillStyle="#ffffff99";ctx.fill();
 
-function draw(){if(!W||!H)return;ctx.clearRect(0,0,W,H);ctx.save();if(shakeEnabled&&shake>.1)ctx.translate((Math.random()-.5)*shake,(Math.random()-.5)*shake);for(let x=20;x<W;x+=38)for(let y=20;y<H;y+=38){ctx.fillStyle="#ffffff09";ctx.beginPath();ctx.arc(x,y,1,0,Math.PI*2);ctx.fill();}ctx.save();ctx.setLineDash([7,6]);ctx.lineWidth=2;ctx.strokeStyle=dangerTime>.3?"#ff476f":currentTheme().glow+"99";ctx.beginPath();ctx.moveTo(0,dangerY());ctx.lineTo(W,dangerY());ctx.stroke();ctx.setLineDash([]);ctx.fillStyle=dangerTime>.3?"#ff476f":currentTheme().glow;ctx.font="bold 10px Fredoka";ctx.textAlign="left";ctx.fillText("DANGER ZONE",9,dangerY()-7);ctx.restore();if(running&&!paused&&!over&&guideEnabled){const r=radius(nextTier),x=Math.max(r+3,Math.min(W-r-3,pointerX??dropX));ctx.save();ctx.strokeStyle=currentTheme().glow+"55";ctx.setLineDash([4,5]);ctx.beginPath();ctx.moveTo(x,spawnY());ctx.lineTo(x,H);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=.35;drawFruit({x,y:spawnY()+r,r,tier:nextTier,variant:"normal",squish:0});ctx.restore();}fruits.forEach(drawFruit);for(const p of particles){ctx.globalAlpha=Math.max(0,p.life/p.max);ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,Math.PI*2);ctx.fill();}ctx.globalAlpha=1;for(const t of texts){ctx.globalAlpha=Math.min(1,t.life/.25);ctx.font="bold 17px Fredoka";ctx.textAlign="center";ctx.lineWidth=3;ctx.strokeStyle="#180f26";ctx.strokeText(t.text,t.x,t.y);ctx.fillStyle=t.color;ctx.fillText(t.text,t.x,t.y);}ctx.globalAlpha=1;ctx.restore();}
-function frame(now){const dt=Math.min((now-lastTime)/1000||0,.025);lastTime=now;if(!paused&&running)update(dt);draw();if(toastExpiry&&now>toastExpiry){$("toast").classList.remove("show");toastExpiry=0;}requestAnimationFrame(frame);}
+  if(t<friends.length){
+   const badgeR=Math.max(9,r*.19);
+   const badgeY=r*.69;
+   ctx.beginPath();ctx.arc(0,badgeY,badgeR,0,Math.PI*2);
+   ctx.fillStyle="#180f26";ctx.fill();
+   ctx.lineWidth=Math.max(1.5,r*.035);ctx.strokeStyle="#ffffff";ctx.stroke();
+   ctx.fillStyle="#ffffff";ctx.font=`bold ${Math.max(10,badgeR*1.15)}px Fredoka`;
+   ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(String(t+1),0,badgeY);
+  }
+  if(f.variant!=="normal"||t>=friends.length){
+   ctx.fillStyle="#fff";ctx.font=`bold ${Math.max(12,r*.55)}px Fredoka`;ctx.textAlign="center";
+   ctx.strokeStyle="#180f26";ctx.lineWidth=3;
+   const symbol=f.variant==="gold"?"★":f.variant==="diamond"?"◆":"✦";
+   ctx.strokeText(symbol,0,-r-4);ctx.fillText(symbol,0,-r-4);
+  }
+  ctx.restore();
+}
+
+function draw(){
+  if(!W||!H)return;
+  ctx.clearRect(0,0,W,H);
+  ctx.save();
+  if(shakeEnabled&&shake>.1)ctx.translate((Math.random()-.5)*shake,(Math.random()-.5)*shake);
+  for(let x=20;x<W;x+=38)for(let y=20;y<H;y+=38){
+    ctx.fillStyle="#ffffff09";ctx.beginPath();ctx.arc(x,y,1,0,Math.PI*2);ctx.fill();
+  }
+  ctx.save();ctx.setLineDash([7,6]);ctx.lineWidth=2;
+  ctx.strokeStyle=dangerTime>.3?"#ff476f":currentTheme().glow+"99";
+  ctx.beginPath();ctx.moveTo(0,dangerY());ctx.lineTo(W,dangerY());ctx.stroke();
+  ctx.setLineDash([]);ctx.fillStyle=dangerTime>.3?"#ff476f":currentTheme().glow;
+  ctx.font="bold 10px Fredoka";ctx.textAlign="left";ctx.fillText("DANGER ZONE",9,dangerY()-7);
+  ctx.restore();
+
+  if(running&&!paused&&!over&&guideEnabled){
+    const r=radius(nextTier),x=Math.max(r+3,Math.min(W-r-3,pointerX??dropX));
+    ctx.save();ctx.strokeStyle=currentTheme().glow+"55";ctx.setLineDash([4,5]);
+    ctx.beginPath();ctx.moveTo(x,spawnY());ctx.lineTo(x,H);ctx.stroke();
+    ctx.setLineDash([]);ctx.globalAlpha=.35;
+    drawFruit({x,y:spawnY()+r,r,tier:nextTier,variant:"normal",squish:0,angle:0});
+    ctx.restore();
+  }
+
+  fruits.forEach(drawFruit);
+  for(const p of particles){
+    ctx.globalAlpha=Math.max(0,p.life/p.max);ctx.fillStyle=p.color;
+    ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,Math.PI*2);ctx.fill();
+  }
+  ctx.globalAlpha=1;
+  for(const t of texts){
+    ctx.globalAlpha=Math.min(1,t.life/.25);ctx.font="bold 17px Fredoka";
+    ctx.textAlign="center";ctx.lineWidth=3;ctx.strokeStyle="#180f26";
+    ctx.strokeText(t.text,t.x,t.y);ctx.fillStyle=t.color;ctx.fillText(t.text,t.x,t.y);
+  }
+  ctx.globalAlpha=1;
+  ctx.restore();
+}
+
+function frame(now){
+  const dt=Math.min((now-lastTime)/1000||0,.025);
+  lastTime=now;
+  if(!paused&&running)update(dt);
+  draw();
+  if(toastExpiry&&now>toastExpiry){$("toast").classList.remove("show");toastExpiry=0;}
+  requestAnimationFrame(frame);
+}
 
 $("startBtn").onclick=resetRun;$("startOverlayBtn").onclick=resetRun;$("restartBtn").onclick=resetRun;$("newRunBtn").onclick=resetRun;$("resumeBtn").onclick=togglePause;$("pauseBtn").onclick=togglePause;
 $("quitBtn").onclick=()=>{paused=false;$("pauseOverlay").classList.add("hidden");endGame();};
 $("howBtn").onclick=()=>openPanel("howOverlay");$("startHowBtn").onclick=()=>openPanel("howOverlay");$("pauseHowBtn").onclick=()=>openPanel("howOverlay");$("collectionBtn").onclick=()=>openPanel("collectionOverlay");$("themesBtn").onclick=()=>openPanel("themesOverlay");$("pauseThemesBtn").onclick=()=>openPanel("themesOverlay");$("achBtn").onclick=()=>openPanel("achOverlay");$("overAchBtn").onclick=()=>openPanel("achOverlay");
+$("statsBtn")?.addEventListener("click",()=>openPanel("statsOverlay"));
 $("settingsBtn")?.addEventListener("click",()=>openPanel("settingsOverlay"));
 document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>closePanel(b.dataset.close));
 
