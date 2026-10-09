@@ -1,687 +1,1050 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-<title>Red Light, Green Light</title>
-<script src="https://cdn.tailwindcss.com"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FRIEND DROP 🍇</title>
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap');
+
 :root {
-  --pink: #ed1b76;
-  --pink-dark: #9c0f4f;
-  --teal: #0f9a86;
-  --teal-dark: #075248;
-  --ink: #15151a;
-  --gold: #f7d64a;
-  --gold-dark: #b89614;
+  --pink: #ff4fa3;
+  --purple: #9b5cff;
+  --bg: #100d1d;
+  --panel: #1c1730;
+  --white: #fff6ff;
 }
 
-* {
-  box-sizing: border-box;
-  -webkit-tap-highlight-color: transparent;
-}
+* { box-sizing: border-box; }
 
-html, body {
+body {
   margin: 0;
-  background: var(--ink);
-  color: #fff;
-  font-family: "Trebuchet MS", Verdana, sans-serif;
-  user-select: none;
-  -webkit-user-select: none;
+  min-height: 100vh;
+  color: var(--white);
+  background:
+    radial-gradient(ellipse at 50% 0%, #42204d 0%, transparent 55%),
+    var(--bg);
+  font-family: 'Fredoka', system-ui, sans-serif;
+  display: flex;
+  justify-content: center;
+  padding: 18px 12px;
   overflow-x: hidden;
 }
 
-body {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-height: 100vh;
+button { font: inherit; }
+
+.app {
+  width: min(100%, 510px);
 }
 
-#wrap {
+header { text-align: center; }
+
+.logo {
+  font-size: clamp(32px, 8vw, 48px);
+  font-weight: 700;
+  letter-spacing: -2px;
+  margin: 0;
+  text-shadow: 0 0 25px #ff4fa377;
+}
+
+.logo span { color: var(--pink); }
+
+.subtitle {
+  color: #bcb0d5;
+  margin: 2px 0 17px;
+  font-size: 13px;
+  letter-spacing: 3px;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.stat {
+  background: #211a36;
+  border: 1px solid #49345d;
+  border-radius: 15px;
+  padding: 10px 4px;
+  text-align: center;
+}
+
+.stat small {
+  display: block;
+  color: #b9a9d0;
+  font-size: 10px;
+  letter-spacing: 1.4px;
+  margin-bottom: 3px;
+}
+
+.stat strong {
+  font-size: 23px;
+  font-weight: 700;
+}
+
+#score { color: #ff77c5; }
+#best { color: #f5d477; }
+#combo { color: #a990ff; }
+
+.game-shell {
   position: relative;
-  width: min(100vw, 900px);
+  border: 2px solid #634177;
+  border-radius: 23px;
+  overflow: hidden;
+  background: #171126;
+  box-shadow:
+    0 0 35px #b345ff19,
+    inset 0 0 30px #0004;
+}
+
+.topbar {
+  height: 57px;
+  padding: 8px 13px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #211831;
+  border-bottom: 1px solid #443253;
+}
+
+.next-box {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.next-label {
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: #bcaed2;
+}
+
+#nextPreview {
+  width: 39px;
+  height: 39px;
+  border: 2px solid #6d527f;
+  border-radius: 50%;
+  background: #322344;
+  object-fit: cover;
+}
+
+#nextName {
+  font-size: 12px;
+  color: #ffb6dc;
+  max-width: 95px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.controls {
+  display: flex;
+  gap: 6px;
+}
+
+.icon-btn {
+  width: 36px;
+  height: 34px;
+  border-radius: 10px;
+  background: #342443;
+  border: 1px solid #634777;
+  color: white;
+  cursor: pointer;
+  transition: .15s;
+}
+
+.icon-btn:hover { background: #58386c; }
+.icon-btn:active { transform: scale(.92); }
+
+.board {
+  position: relative;
+  height: min(65vh, 590px);
+  min-height: 390px;
+  touch-action: none;
+  cursor: crosshair;
+  background:
+    radial-gradient(ellipse at 50% 45%, #30203f 0%, #191229 75%);
 }
 
 canvas {
-  display: block;
   width: 100%;
-  height: auto;
-  touch-action: none;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  height: 100%;
+  display: block;
 }
 
-#hud {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  justify-content: space-between;
-  width: min(100vw, 900px);
-  padding: 12px 16px;
-  font-size: 15px;
-}
-
-#hud b {
-  font-size: 20px;
-  font-weight: 800;
-}
-
-#light {
-  padding: 6px 18px;
-  border-radius: 999px;
-  font-weight: 900;
-  letter-spacing: .08em;
-  background: #333;
-  min-width: 150px;
+.hint {
   text-align: center;
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
-  transition: background 0.2s ease, transform 0.2s ease;
+  color: #a89abf;
+  font-size: 12px;
+  padding: 12px 8px;
+  background: #211831;
+  border-top: 1px solid #443253;
 }
 
-#light.g { background: #12a150; transform: scale(1.03); }
-#light.r { background: #e0213b; transform: scale(1.03); }
+.bottom {
+  display: flex;
+  gap: 9px;
+  margin-top: 12px;
+}
 
-#run {
-  width: min(92vw, 600px);
-  margin: 12px 0 22px;
-  padding: 20px;
+.action {
   border: 0;
-  border-radius: 18px;
-  background: var(--pink);
-  color: #fff;
-  font: 900 24px "Trebuchet MS", Verdana, sans-serif;
-  touch-action: none;
-  box-shadow: 0 6px 0 var(--pink-dark);
+  border-radius: 14px;
+  padding: 13px 12px;
   cursor: pointer;
-  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  font-weight: 700;
+  transition: transform .12s, filter .12s;
 }
 
-#run:active, #run.on {
-  transform: translateY(4px);
-  box-shadow: 0 2px 0 var(--pink-dark);
+.action:active { transform: scale(.96); }
+.action:hover { filter: brightness(1.12); }
+
+.primary {
+  flex: 1;
+  color: white;
+  background: linear-gradient(120deg, #ff419e, #a34cff);
+  box-shadow: 0 5px 20px #db48ff28;
 }
 
-/* Overlays */
+.secondary {
+  color: #e7d9ff;
+  background: #29203e;
+  border: 1px solid #514064;
+}
+
+.footer {
+  text-align: center;
+  color: #766989;
+  font-size: 11px;
+  margin: 15px 0 5px;
+}
+
 .overlay {
   position: absolute;
   inset: 0;
-  background: rgba(15, 15, 26, 0.94);
-  backdrop-filter: blur(8px);
+  z-index: 5;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
+  padding: 20px;
+  background: #100a1bd9;
+  backdrop-filter: blur(7px);
+}
+
+.overlay.hidden { display: none; }
+
+.modal {
+  width: 100%;
+  max-width: 300px;
+  padding: 25px 20px;
   text-align: center;
-  padding: 24px;
-  gap: 16px;
-  border-radius: 12px;
-  z-index: 10;
-  animation: fadeIn 0.3s ease-out;
+  border-radius: 23px;
+  background: linear-gradient(145deg, #332044, #1d1730);
+  border: 1px solid #8953a7;
+  box-shadow: 0 0 55px #a83cff24;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.97); }
-  to { opacity: 1; transform: scale(1); }
+.modal-emoji { font-size: 44px; }
+
+.modal h2 {
+  font-size: 31px;
+  margin: 5px 0;
 }
 
-.overlay.hide {
-  display: none !important;
+.modal p {
+  color: #c3b5d7;
+  font-size: 13px;
+  line-height: 1.6;
 }
 
-/* Victory styling */
-.overlay.victory {
-  background: rgba(10, 30, 20, 0.95);
-  border: 2px solid var(--gold);
+.modal-score {
+  font-size: 42px;
+  font-weight: 700;
+  color: #ff77c5;
+  margin: 10px 0;
 }
 
-.overlay.victory h1 {
-  color: var(--gold) !important;
-  text-shadow: 0 0 15px rgba(247, 214, 74, 0.5);
+#newRecord {
+  color: #ffe08b;
+  font-weight: 700;
+  margin: 8px 0;
 }
 
-/* Defeat styling */
-.overlay.defeat {
-  background: rgba(30, 10, 15, 0.95);
-  border: 2px solid #e0213b;
+.modal .action { width: 100%; margin-top: 10px; }
+
+#toast {
+  position: absolute;
+  z-index: 4;
+  left: 50%;
+  top: 23%;
+  transform: translate(-50%, -10px);
+  padding: 9px 17px;
+  border-radius: 30px;
+  color: white;
+  font-weight: 700;
+  background: linear-gradient(100deg, #ff419e, #9854ff);
+  box-shadow: 0 0 25px #d747ff55;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .15s, transform .15s;
+  white-space: nowrap;
 }
 
-.overlay.defeat h1 {
-  color: #e0213b !important;
-  text-shadow: 0 0 15px rgba(224, 33, 59, 0.5);
+#toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
 }
 
-.squid-shapes {
-  font-size: 36px;
-  letter-spacing: .4em;
-  color: var(--pink);
-}
-
-.btn-primary {
-  padding: 14px 38px;
-  border: 3px solid var(--pink);
-  border-radius: 10px;
-  background: var(--pink);
-  color: #fff;
-  font: 900 18px "Trebuchet MS", Verdana, sans-serif;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(237, 27, 118, 0.4);
-  transition: all 0.2s ease;
-}
-
-.btn-primary:hover {
-  background: #ff2a89;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(237, 27, 118, 0.6);
-}
-
-.btn-secondary {
-  padding: 12px 28px;
-  border: 2px solid #666;
-  border-radius: 10px;
-  background: transparent;
-  color: #ccc;
-  font: 800 16px "Trebuchet MS", Verdana, sans-serif;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-secondary:hover {
-  border-color: #fff;
-  color: #fff;
-  background: rgba(255,255,255,0.1);
-}
-
-/* Home button on HUD */
-#home-btn {
-  background: #2a2a35;
-  border: 1px solid #444;
-  padding: 6px 14px;
-  border-radius: 8px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-#home-btn:hover {
-  background: #3a3a48;
+@media (max-width: 380px) {
+  .board { min-height: 360px; }
+  .stat strong { font-size: 19px; }
+  .subtitle { font-size: 11px; }
 }
 </style>
 </head>
 <body>
+<div class="app">
+  <header>
+    <h1 class="logo">FRIEND <span>DROP!</span></h1>
+    <p class="subtitle">DROP. MERGE. DOMINATE.</p>
+  </header>
 
-<div id="hud">
-  <button id="home-btn" title="Exit to Main Menu">🏠 MENU</button>
-  <div id="light">READY</div>
-  <div>Time <b id="time">45</b>s</div>
-  <div>Alive <b id="alive">16</b></div>
-  <div>Safe <b id="safe">0</b></div>
+  <div class="stats">
+    <div class="stat">
+      <small>SCORE</small>
+      <strong id="score">0</strong>
+    </div>
+    <div class="stat">
+      <small>PERSONAL BEST</small>
+      <strong id="best">0</strong>
+    </div>
+    <div class="stat">
+      <small>BEST COMBO</small>
+      <strong id="combo">x0</strong>
+    </div>
+  </div>
+
+  <div class="game-shell">
+    <div class="topbar">
+      <div class="next-box">
+        <div>
+          <div class="next-label">UP NEXT</div>
+          <div id="nextName">Loading...</div>
+        </div>
+        <img id="nextPreview" src="images/hanbo.jpeg" alt="Next friend">
+      </div>
+      <div class="controls">
+        <button class="icon-btn" id="soundBtn" title="Toggle sound">🔊</button>
+        <button class="icon-btn" id="pauseBtn" title="Pause game">Ⅱ</button>
+      </div>
+    </div>
+
+    <div class="board" id="board">
+      <canvas id="game"></canvas>
+      <div id="toast">NICE COMBO!</div>
+
+      <div class="overlay" id="startOverlay">
+        <div class="modal">
+          <div class="modal-emoji">🍇</div>
+          <h2>READY?</h2>
+          <p>Merge your friends into bigger friends.<br>Don't let the pile reach the danger line!</p>
+          <button class="action primary" id="startBtn">LET'S PLAY!</button>
+        </div>
+      </div>
+
+      <div class="overlay hidden" id="pauseOverlay">
+        <div class="modal">
+          <div class="modal-emoji">⏸️</div>
+          <h2>PAUSED</h2>
+          <p>Your friends can wait. Probably.</p>
+          <button class="action primary" id="resumeBtn">CONTINUE</button>
+        </div>
+      </div>
+
+      <div class="overlay hidden" id="overOverlay">
+        <div class="modal">
+          <div class="modal-emoji" id="overEmoji">💥</div>
+          <h2>PILE UP!</h2>
+          <p>Those friendships got out of hand.</p>
+          <div class="modal-score" id="finalScore">0</div>
+          <div id="newRecord"></div>
+          <p id="overDetails"></p>
+          <button class="action primary" id="restartBtn">RUN IT BACK ↻</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="hint">TAP OR CLICK TO DROP · MATCH FRIENDS TO MERGE</div>
+  </div>
+
+  <div class="bottom">
+    <button class="action primary" id="playAgainBtn">↻ NEW RUN</button>
+    <button class="action secondary" id="howBtn">HOW TO PLAY</button>
+  </div>
+  <div class="footer">MADE WITH FRIENDSHIP & QUESTIONABLE COMPETITIVE INSTINCTS</div>
 </div>
-
-<div id="wrap">
-  <canvas id="c" width="900" height="640"></canvas>
-  
-  <!-- Main Menu Overlay -->
-  <div id="ov-menu" class="overlay">
-    <div class="squid-shapes">○ △ □</div>
-    <h1 class="text-4xl sm:text-5xl font-black text-[var(--pink)] tracking-wider my-1">RED LIGHT<br>GREEN LIGHT</h1>
-    
-    <div class="bg-black/40 p-4 rounded-xl max-w-md text-left text-sm text-gray-300 space-y-2 border border-white/10 my-2">
-      <div class="font-bold text-white text-base mb-1 border-b border-gray-700 pb-1">📜 How to Play:</div>
-      <p>• <b>Hold</b> <span class="bg-gray-800 px-2 py-0.5 rounded text-pink-400">Space</span>, <span class="bg-gray-800 px-2 py-0.5 rounded text-pink-400">W</span>, <span class="bg-gray-800 px-2 py-0.5 rounded text-pink-400">↑ Arrow</span> or the <span class="bg-pink-600 px-2 py-0.5 rounded text-white">PINK BUTTON</span> to run.</p>
-      <p>• Move ONLY during <span class="text-green-400 font-bold">GREEN LIGHT</span> while the doll looks away.</p>
-      <p>• <b>STOP IMMEDIATELY</b> when the doll turns for <span class="text-red-400 font-bold">RED LIGHT</span>!</p>
-      <p>• Cross the red finish line before the timer reaches 0.</p>
-    </div>
-
-    <button id="btn-start" class="btn-primary mt-2">START GAME</button>
-  </div>
-
-  <!-- Win Overlay -->
-  <div id="ov-win" class="overlay victory hide">
-    <div class="squid-shapes text-yellow-400">○ ○ ○</div>
-    <h1 class="text-4xl sm:text-6xl font-black">YOU SURVIVED!</h1>
-    
-    <div class="bg-black/50 p-5 rounded-xl min-w-[280px] border border-yellow-500/30 text-left my-2 space-y-2">
-      <div class="text-center font-bold text-yellow-400 text-lg border-b border-yellow-500/20 pb-1">GAME SUMMARY</div>
-      <div class="flex justify-between"><span>Time Left:</span> <b id="win-time" class="text-green-400">0s</b></div>
-      <div class="flex justify-between"><span>Survivors:</span> <b id="win-survivors" class="text-yellow-400">0 / 16</b></div>
-      <div class="flex justify-between"><span>Status:</span> <b class="text-green-400">PASSED TO ROUND 2</b></div>
-    </div>
-
-    <div class="flex gap-4 mt-2">
-      <button id="btn-win-replay" class="btn-primary">PLAY AGAIN</button>
-      <button id="btn-win-menu" class="btn-secondary">MAIN MENU</button>
-    </div>
-  </div>
-
-  <!-- Loss Overlay -->
-  <div id="ov-loss" class="overlay defeat hide">
-    <div class="squid-shapes text-red-500">✕ ✕ ✕</div>
-    <h1 class="text-4xl sm:text-6xl font-black">ELIMINATED</h1>
-    
-    <p id="loss-reason" class="text-lg text-red-200 font-semibold max-w-md">You moved during Red Light!</p>
-
-    <div class="bg-black/50 p-4 rounded-xl min-w-[260px] border border-red-500/30 text-left my-1 space-y-1 text-sm">
-      <div class="flex justify-between"><span>Other Survivors:</span> <b id="loss-survivors" class="text-white">0 / 16</b></div>
-    </div>
-
-    <div class="flex gap-4 mt-4">
-      <button id="btn-loss-retry" class="btn-primary">TRY AGAIN</button>
-      <button id="btn-loss-menu" class="btn-secondary">MAIN MENU</button>
-    </div>
-  </div>
-</div>
-
-<button id="run">HOLD TO RUN</button>
 
 <script>
-const W=900, H=640, FINISH=125, START=H-85, TIME=45, GRACE=0.35;
+(() => {
+  const friends = [
+    { name: "Hanbo", file: "Hanbo.jpeg", color: "#ffb6dc" },
+    { name: "Asher", file: "asher.jpeg", color: "#a5e9ff" },
+    { name: "Callum", file: "callum.jpeg", color: "#c4a2ff" },
+    { name: "Gerard", file: "gerard.jpeg", color: "#ffcf94" },
+    { name: "Guangyan", file: "guangyan.jpeg", color: "#a8f0c6" },
+    { name: "Ivan", file: "ivan.jpeg", color: "#ffaaa9" },
+    { name: "Jason", file: "jason.jpeg", color: "#9ed7ff" },
+    { name: "Liu-Ji", file: "liu-ji.jpeg", color: "#e5a6ff" },
+    { name: "Matthew", file: "matthew.jpeg", color: "#ffe6a1" },
+    { name: "Travia", file: "travia.jpeg", color: "#ffacd5" },
+    { name: "Travis", file: "travis.jpeg", color: "#a9f4ee" },
+    { name: "Winston", file: "winston.jpeg", color: "#c4b6ff" },
+    { name: "Xayven", file: "xayven.jpeg", color: "#ffb68f" },
+    { name: "Xuchen", file: "xuchen.jpeg", color: "#a7e5a5" },
+    { name: "Yichen", file: "yichen.jpeg", color: "#ffc1ea" }
+  ];
 
-const FILES=['Hanbo','asher','callum','gerard','guangyan','ivan','jason','liu-ji','matthew','travia','travis','winston','xayven','xuchen','yichen'];
-const label=f=>f.split('-').map(s=>s[0].toUpperCase()+s.slice(1)).join('-');
-const imgs={};
-FILES.forEach(f=>{
-  const i=new Image();
-  i.src='images/'+f+'.jpeg';
-  imgs[f]=i;
-});
+  // The image files stay in your existing images folder.
+  // The 16th tier is the ultimate fruit, combining everyone's pictures.
+  const images = friends.map(f => {
+    const img = new Image();
+    img.src = "images/" + f.file;
+    return img;
+  });
 
-const cv=document.getElementById('c'), ctx=cv.getContext('2d');
-const $=id=>document.getElementById(id);
+  const $ = id => document.getElementById(id);
+  const canvas = $("game");
+  const ctx = canvas.getContext("2d");
+  const board = $("board");
 
-let P=[], phase='idle', phaseT=0, phaseDur=0, redT=0, headTurn=0, timeLeft=TIME, held=false, beams=[], flash=0, endT=null, running=false, reason='';
+  let W = 0, H = 0, dpr = 1;
+  let fruits = [];
+  let particles = [];
+  let texts = [];
+  let score = 0;
+  let best = Number(localStorage.getItem("friendDropBest") || 0);
+  let bestCombo = 0;
+  let combo = 0;
+  let nextTier = 0;
+  let currentTier = 0;
+  let dropX = 0;
+  let running = false;
+  let paused = false;
+  let over = false;
+  let sound = true;
+  let audio = null;
+  let lastTime = 0;
+  let dangerTime = 0;
+  let shake = 0;
+  let toastTimer = null;
+  let mergeEvents = [];
+  let pointerX = null;
 
-// Web Audio API Synth Sounds
-let ac;
-function initAudio() {
-  if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
-}
+  $("best").textContent = best;
 
-function tone(f, d, type='sine', v=0.08) {
-  if(!ac) return;
-  try {
-    const o=ac.createOscillator(), g=ac.createGain();
-    o.type=type;
-    o.frequency.value=f;
-    g.gain.setValueAtTime(v, ac.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime+d);
-    o.connect(g);
-    g.connect(ac.destination);
-    o.start();
-    o.stop(ac.currentTime+d);
-  } catch(e){}
-}
+  // Fruit sizes are capped so later tiers stay manageable.
+  const radii = friends.map((_, i) => 17 + i * 2.0);
+  radii.push(49);
 
-const shot=()=>{
-  tone(90,.25,'sawtooth',.25);
-  tone(55,.3,'square',.15);
-};
+  const dangerY = () => 83;
+  const floorY = () => H - 5;
+  const spawnY = () => 44;
 
-// Setup Game State
-function init(){
-  const slots=FILES.map(f=>({f})).concat([{you:true}]);
-  for(let i=slots.length-1; i>0; i--){
-    const j=Math.floor(Math.random()*(i+1));
-    [slots[i], slots[j]]=[slots[j], slots[i]];
+  function resize() {
+    const rect = board.getBoundingClientRect();
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = rect.width;
+    H = rect.height;
+    canvas.width = Math.round(W * dpr);
+    canvas.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    dropX = Math.max(30, Math.min(W - 30, dropX || W / 2));
+    if (running && !paused) draw();
   }
-  const used=new Set([456]);
-  
-  P=slots.map((s,i)=>{
-    let n=456;
-    if(!s.you){
-      do { n=1+Math.floor(Math.random()*455); } while(used.has(n));
-      used.add(n);
+
+  window.addEventListener("resize", resize);
+  resize();
+
+  function radius(tier) {
+    return radii[Math.min(tier, radii.length - 1)];
+  }
+
+  function randomTier() {
+    // Early fruit tiers keep the opening fun and merges achievable.
+    return Math.random() < .75 ? 0 : 1;
+  }
+
+  function setNext() {
+    nextTier = randomTier();
+    updateNext();
+  }
+
+  function updateNext() {
+    const f = friends[nextTier % friends.length];
+    $("nextName").textContent = f.name;
+    $("nextPreview").src = "images/" + f.file;
+  }
+
+  function playSound(freq = 440, duration = .08, type = "sine", volume = .04) {
+    if (!sound) return;
+    try {
+      audio ||= new (window.AudioContext || window.webkitAudioContext)();
+      if (audio.state === "suspended") audio.resume();
+      const osc = audio.createOscillator();
+      const gain = audio.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, audio.currentTime);
+      gain.gain.setValueAtTime(volume, audio.currentTime);
+      gain.gain.exponentialRampToValueAtTime(.001, audio.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(audio.destination);
+      osc.start();
+      osc.stop(audio.currentTime + duration);
+    } catch (_) {}
+  }
+
+  function updateStats() {
+    $("score").textContent = score.toLocaleString();
+    $("best").textContent = best.toLocaleString();
+    $("combo").textContent = "x" + bestCombo;
+  }
+
+  function startGame() {
+    fruits = [];
+    particles = [];
+    texts = [];
+    score = 0;
+    combo = 0;
+    bestCombo = 0;
+    dangerTime = 0;
+    shake = 0;
+    paused = false;
+    over = false;
+    running = true;
+    currentTier = 0;
+    dropX = W / 2;
+    setNext();
+    updateStats();
+    $("startOverlay").classList.add("hidden");
+    $("pauseOverlay").classList.add("hidden");
+    $("overOverlay").classList.add("hidden");
+    $("pauseBtn").textContent = "Ⅱ";
+    lastTime = performance.now();
+    playSound(550, .12);
+  }
+
+  function spawnFruit(x, y, tier) {
+    const r = radius(tier);
+    fruits.push({
+      x: Math.max(r + 4, Math.min(W - r - 4, x)),
+      y,
+      vx: 0,
+      vy: 0,
+      tier,
+      r,
+      id: Math.random(),
+      age: 0,
+      mergeLock: 0,
+      squish: 0,
+      dead: false
+    });
+  }
+
+  function drop() {
+    if (!running || paused || over) return;
+    const r = radius(nextTier);
+    const x = Math.max(r + 4, Math.min(W - r - 4, pointerX ?? dropX));
+
+    // Prevent impossible drops through the ceiling of the pile.
+    if (fruits.some(f => Math.abs(f.x - x) < f.r + r - 4 && f.y < 110)) {
+      // Still allow drops, but at a safe minimum height.
     }
-    return {
-      x: 50 + i*(W-100)/(slots.length-1),
-      y: START + Math.random()*16 - 8,
-      you: !!s.you,
-      name: s.you ? 'YOU' : label(s.f),
-      img: s.f ? imgs[s.f] : null,
-      num: n,
-      speed: s.you ? 108 : 82 + Math.random()*28,
-      skill: .3 + Math.random()*.8,
-      st: 'alive',
-      mv: false,
-      delay: 0,
-      goAt: 0,
-      restT: 0,
-      ph: Math.random()*6,
-      was: false
-    };
-  });
 
-  phase='green'; phaseT=0; phaseDur=3+Math.random()*1.5;
-  redT=0; headTurn=0; timeLeft=TIME; beams=[]; flash=0;
-  endT=null; held=false; reason=''; running=true;
-}
-
-function startRed(){
-  phase='red'; phaseT=0; redT=0; phaseDur=2.2+Math.random()*1.6;
-  tone(220, .35, 'square', .09);
-  P.forEach(p => {
-    p.was = p.mv;
-    p.delay = .05 + p.skill * Math.random() * .55;
-  });
-}
-
-function startGreen(){
-  phase='green'; phaseT=0; phaseDur=1.8+Math.random()*2.7;
-  tone(660, .15);
-  P.forEach(p => {
-    p.goAt = Math.random() * .5;
-    p.restT = 0;
-  });
-}
-
-function kill(p){
-  p.st='dead';
-  beams.push({x:p.x, y:p.y, t:.3});
-  flash=.5;
-  shot();
-  if(p.you){
-    endT=1.4;
-    reason='shot';
-  }
-}
-
-function update(dt){
-  if(!running) return;
-
-  timeLeft -= dt;
-  phaseT += dt;
-
-  if(phase === 'green'){
-    if(phaseT >= phaseDur) startRed();
-  } else {
-    redT += dt;
-    if(phaseT >= phaseDur) startGreen();
+    spawnFruit(x, spawnY() + r, nextTier);
+    currentTier = nextTier;
+    setNext();
+    playSound(280, .07, "triangle", .025);
+    pointerX = null;
   }
 
-  headTurn += Math.max(-dt/.3, Math.min(dt/.3, (phase==='red'?1:0) - headTurn));
+  function burst(x, y, color, amount = 12) {
+    for (let i = 0; i < amount; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const speed = 60 + Math.random() * 230;
+      particles.push({
+        x, y,
+        vx: Math.cos(a) * speed,
+        vy: Math.sin(a) * speed,
+        life: .35 + Math.random() * .45,
+        maxLife: .8,
+        size: 2 + Math.random() * 5,
+        color
+      });
+    }
+  }
 
-  for(const p of P){
-    if(p.st !== 'alive') continue;
+  function floatingText(x, y, text, color = "#fff") {
+    texts.push({ x, y, text, color, life: .9, maxLife: .9 });
+  }
 
-    let mv;
-    if(p.you) mv = held;
-    else if(phase === 'green'){
-      if(p.restT > 0){
-        p.restT -= dt;
-        mv = false;
-      } else {
-        mv = phaseT >= p.goAt;
-        if(mv && Math.random() < dt*.3) p.restT = .3 + Math.random()*.5;
+  function showToast(text) {
+    $("toast").textContent = text;
+    $("toast").classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => $("toast").classList.remove("show"), 950);
+  }
+
+  function merge(a, b) {
+    if (a.dead || b.dead || a.tier !== b.tier) return false;
+    a.dead = true;
+    b.dead = true;
+
+    const tier = Math.min(a.tier + 1, friends.length);
+    const r = radius(tier);
+    const x = (a.x + b.x) / 2;
+    const y = (a.y + b.y) / 2;
+    const color = tier >= friends.length
+      ? "#ffe08b"
+      : friends[tier].color;
+
+    spawnFruit(x, y, tier);
+    const newFruit = fruits[fruits.length - 1];
+    newFruit.vy = -90;
+    newFruit.squish = .2;
+    newFruit.mergeLock = .2;
+
+    combo++;
+    bestCombo = Math.max(bestCombo, combo);
+    const points = Math.round((tier + 1) * 10 * (1 + Math.max(0, combo - 1) * .35));
+    score += points;
+
+    burst(x, y, color, 12 + tier);
+    floatingText(x, y - r, "+" + points, color);
+    shake = Math.min(7, shake + 1.5 + tier * .2);
+    playSound(420 + tier * 55, .13, "sine", .035);
+
+    if (combo >= 3) {
+      showToast("🔥 " + combo + "x COMBO!");
+      playSound(750 + combo * 35, .2, "triangle", .04);
+    }
+
+    if (tier === friends.length) {
+      score += 500;
+      floatingText(x, y - 35, "ULTIMATE FRIEND! +500", "#ffe08b");
+      burst(x, y, "#ffe08b", 55);
+      showToast("👑 ULTIMATE FRIEND!");
+      playSound(880, .35, "triangle", .07);
+    }
+
+    if (score > best) {
+      best = score;
+      localStorage.setItem("friendDropBest", best);
+    }
+    updateStats();
+    return true;
+  }
+
+  function update(dt) {
+    if (!running || paused || over) return;
+
+    // Cap time steps to keep physics stable after tab switching.
+    dt = Math.min(dt, .025);
+    const gravity = 1250;
+    const friction = .992;
+
+    for (const f of fruits) {
+      if (f.dead) continue;
+      f.age += dt;
+      f.mergeLock = Math.max(0, f.mergeLock - dt);
+      f.squish = Math.max(0, f.squish - dt);
+
+      f.vy += gravity * dt;
+      f.vx *= Math.pow(friction, dt * 60);
+      f.x += f.vx * dt;
+      f.y += f.vy * dt;
+
+      if (f.x - f.r < 2) {
+        f.x = f.r + 2;
+        f.vx = Math.abs(f.vx) * .22;
       }
-    } else {
-      mv = p.was && redT < p.delay;
+      if (f.x + f.r > W - 2) {
+        f.x = W - f.r - 2;
+        f.vx = -Math.abs(f.vx) * .22;
+      }
+      if (f.y + f.r > floorY()) {
+        f.y = floorY() - f.r;
+        f.vy *= -.13;
+        if (Math.abs(f.vy) < 25) f.vy = 0;
+        f.vx *= .97;
+      }
     }
 
-    if(phase === 'red' && redT > GRACE && mv){
-      kill(p);
-      p.mv = false;
-      continue;
-    }
+    // Circle collision resolution and matching fruit merges.
+    for (let i = 0; i < fruits.length; i++) {
+      const a = fruits[i];
+      if (a.dead) continue;
 
-    if(mv){
-      p.y -= p.speed * dt;
-      p.ph += dt * 12;
-      if(p.y <= FINISH + 8){
-        p.y = FINISH + 8;
-        p.st = 'safe';
-        mv = false;
-        tone(880, .12, 'triangle', .07);
-        if(p.you){
-          endT = 1.0;
-          reason = 'safe';
+      for (let j = i + 1; j < fruits.length; j++) {
+        const b = fruits[j];
+        if (b.dead) continue;
+
+        let dx = b.x - a.x;
+        let dy = b.y - a.y;
+        let dist = Math.hypot(dx, dy);
+        const minDist = a.r + b.r;
+
+        if (dist >= minDist) continue;
+        if (dist < .001) {
+          dx = .01;
+          dist = .01;
+        }
+
+        if (a.tier === b.tier && a.mergeLock <= 0 && b.mergeLock <= 0) {
+          if (merge(a, b)) continue;
+        }
+
+        const nx = dx / dist;
+        const ny = dy / dist;
+        const overlap = minDist - dist;
+        const moveA = b.r / minDist;
+        const moveB = a.r / minDist;
+
+        a.x -= nx * overlap * moveA * .52;
+        a.y -= ny * overlap * moveA * .52;
+        b.x += nx * overlap * moveB * .52;
+        b.y += ny * overlap * moveB * .52;
+
+        const relV = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
+        if (relV < 0) {
+          const impulse = -relV * .23;
+          a.vx -= impulse * nx;
+          a.vy -= impulse * ny;
+          b.vx += impulse * nx;
+          b.vy += impulse * ny;
         }
       }
     }
-    p.mv = mv;
-  }
 
-  // Time limit expired logic
-  if(timeLeft <= 0 && running && endT === null){
-    timeLeft = 0;
-    P.forEach(p => {
-      if(p.st === 'alive'){
-        p.st = 'dead';
-        if(p.you) reason = 'time';
-      }
-    });
-    if(reason !== 'safe') reason = reason || 'time';
-    endT = endT ?? 1.2;
-  }
+    fruits = fruits.filter(f => !f.dead);
 
-  for(const b of beams) b.t -= dt;
-  beams = beams.filter(b => b.t > 0);
-  flash = Math.max(0, flash - dt*1.5);
-
-  if(endT !== null){
-    endT -= dt;
-    if(endT <= 0) finish();
-  }
-}
-
-function finish(){
-  running = false;
-  endT = null;
-  const safeCount = P.filter(p => p.st === 'safe').length;
-
-  if(reason === 'safe'){
-    $('win-time').textContent = Math.ceil(Math.max(0, timeLeft)) + 's';
-    $('win-survivors').textContent = safeCount + ' / ' + P.length;
-    showOverlay('ov-win');
-  } else {
-    $('loss-reason').textContent = reason === 'time' 
-      ? 'Time ran out before reaching the finish line!' 
-      : 'You moved while the doll was looking!';
-    $('loss-survivors').textContent = safeCount + ' / ' + P.length;
-    showOverlay('ov-loss');
-  }
-}
-
-function drawBG(){
-  ctx.fillStyle='#d9b382'; ctx.fillRect(0,0,W,H);
-  ctx.fillStyle='rgba(120,80,40,.08)';
-  for(let y=FINISH+20; y<H; y+=28) ctx.fillRect(0,y,W,2);
-
-  const g=ctx.createLinearGradient(0,0,0,FINISH);
-  g.addColorStop(0,'#8fd3e8'); g.addColorStop(1,'#f4a6c0');
-  ctx.fillStyle=g; ctx.fillRect(0,0,W,FINISH-8);
-
-  ctx.fillStyle='rgba(255,255,255,.2)';
-  for(let x=0; x<W; x+=60) ctx.fillRect(x,0,30,FINISH-8);
-
-  for(let x=0; x<W; x+=24){
-    ctx.fillStyle=(x/24)%2?'#fff':'#e0213b';
-    ctx.fillRect(x,FINISH-8,24,8);
-  }
-
-  ctx.fillStyle='rgba(255,255,255,.85)';
-  ctx.fillRect(0,START+38,W,4);
-  ctx.fillStyle='rgba(0,0,0,.3)';
-  ctx.font='bold 13px Trebuchet MS,sans-serif';
-  ctx.textAlign='left';
-  ctx.fillText('START LINE', 10, START+56);
-}
-
-function drawDoll(){
-  const cx = W/2;
-  ctx.fillStyle='#f0842c'; ctx.beginPath(); ctx.moveTo(cx-32,FINISH-14); ctx.lineTo(cx+32,FINISH-14); ctx.lineTo(cx+14,50); ctx.lineTo(cx-14,50); ctx.fill();
-  ctx.fillStyle='#f7d64a'; ctx.fillRect(cx-15,44,30,14);
-
-  const sx=Math.max(.05, Math.abs(Math.cos(Math.PI*headTurn)));
-  ctx.save(); ctx.translate(cx,28); ctx.scale(sx,1);
-  ctx.fillStyle='#111'; ctx.beginPath(); ctx.arc(0,0,23,0,7); ctx.fill();
-
-  if(headTurn>=.5){
-    ctx.fillStyle='#f2c9a0'; ctx.beginPath(); ctx.ellipse(0,5,18,17,0,0,7); ctx.fill();
-    ctx.fillStyle='rgba(240,120,150,.7)'; [-12,12].forEach(x=>{ctx.beginPath();ctx.arc(x,10,3.5,0,7);ctx.fill();});
-    ctx.fillStyle=headTurn>.9?'#ff1a3c':'#111';
-    ctx.shadowColor='#f00'; ctx.shadowBlur=headTurn>.9?12:0;
-    [-7,7].forEach(x=>{ctx.beginPath();ctx.arc(x,3,3,0,7);ctx.fill();});
-  }
-  ctx.restore();
-}
-
-function rr(x,y,w,h,r){
-  ctx.beginPath();
-  ctx.roundRect(x,y,w,h,r);
-}
-
-function drawP(p){
-  const bob = p.st==='alive' && p.mv ? -Math.abs(Math.sin(p.ph))*3 : 0;
-  const x=p.x, y=p.y+bob, r=17, hy=y-6, leg=p.mv?Math.sin(p.ph)*5:0;
-
-  ctx.globalAlpha = p.st==='dead' ? 0.75 : 1;
-
-  ctx.fillStyle='rgba(0,0,0,.2)'; ctx.beginPath(); ctx.ellipse(x,p.y+32,17,6,0,0,7); ctx.fill();
-  ctx.fillStyle='#0a6b5f'; ctx.fillRect(x-9,y+20+leg,7,12); ctx.fillRect(x+2,y+20-leg,7,12);
-  ctx.fillStyle=p.st==='dead'?'#5d7d78':'#0f9a86'; rr(x-16,y+2,32,24,8); ctx.fill();
-  ctx.fillStyle='#fff'; rr(x-10,y+10,20,12,3); ctx.fill();
-  ctx.fillStyle='#111'; ctx.font='bold 9px Trebuchet MS,sans-serif'; ctx.textAlign='center'; ctx.fillText(p.num,x,y+19.5);
-
-  ctx.save(); ctx.beginPath(); ctx.arc(x,hy,r,0,7); ctx.clip();
-  const im=p.img;
-  if(im && im.complete && im.naturalWidth){
-    const s=Math.max(2*r/im.naturalWidth, 2*r/im.naturalHeight), w=im.naturalWidth*s, h=im.naturalHeight*s;
-    ctx.drawImage(im, x-w/2, hy-r-(h-2*r)*.3, w, h);
-  } else {
-    ctx.fillStyle=p.you?'#f2c9a0':'#777'; ctx.fillRect(x-r,hy-r,2*r,2*r);
-    ctx.fillStyle='#222';
-    if(p.you){
-      ctx.beginPath(); ctx.arc(x-5,hy-1,2,0,7); ctx.arc(x+5,hy-1,2,0,7); ctx.fill();
-      ctx.fillRect(x-8,hy+6,16,2);
-    } else {
-      ctx.font='bold 14px sans-serif'; ctx.fillText(p.name[0],x,hy+5);
+    for (const p of particles) {
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vx *= Math.pow(.94, dt * 60);
+      p.vy += 350 * dt;
+      p.life -= dt;
     }
-  }
-  ctx.restore();
+    particles = particles.filter(p => p.life > 0);
 
-  ctx.lineWidth=3;
-  ctx.strokeStyle = p.you ? '#ffd84a' : (p.st==='safe' ? '#7CFFB2' : '#fff');
-  ctx.beginPath(); ctx.arc(x,hy,r,0,7); ctx.stroke();
+    for (const t of texts) {
+      t.y -= 32 * dt;
+      t.life -= dt;
+    }
+    texts = texts.filter(t => t.life > 0);
 
-  if(p.st==='dead'){
-    ctx.fillStyle='rgba(20,20,20,.5)'; ctx.beginPath(); ctx.arc(x,hy,r,0,7); ctx.fill();
-    ctx.strokeStyle='#e0213b'; ctx.lineWidth=4;
-    ctx.beginPath(); ctx.moveTo(x-10,hy-10); ctx.lineTo(x+10,hy+10); ctx.moveTo(x+10,hy-10); ctx.lineTo(x-10,hy+10); ctx.stroke();
-  }
+    // Reset the combo if no merge happens for a while.
+    if (mergeEvents.length === 0) {
+      combo = 0;
+    }
+    mergeEvents = [];
 
-  ctx.globalAlpha=1;
-  ctx.font='bold 11px Trebuchet MS,sans-serif'; ctx.textAlign='center'; ctx.lineWidth=3; ctx.strokeStyle='rgba(0,0,0,.6)';
-  ctx.strokeText(p.name,x,p.y+46); ctx.fillStyle=p.you?'#ffd84a':'#fff'; ctx.fillText(p.name,x,p.y+46);
+    // The danger line gives players a little time to recover.
+    const threatening = fruits.some(f =>
+      f.age > .7 && f.y - f.r < dangerY() && f.y + f.r > dangerY() - 18
+    );
 
-  if(p.you && p.st==='alive'){
-    ctx.fillStyle='#ffd84a';
-    const b=Math.sin(performance.now()/200)*3;
-    ctx.beginPath(); ctx.moveTo(x-6,hy-r-14+b); ctx.lineTo(x+6,hy-r-14+b); ctx.lineTo(x,hy-r-6+b); ctx.fill();
-  }
-}
+    if (threatening) {
+      dangerTime += dt;
+    } else {
+      dangerTime = Math.max(0, dangerTime - dt * 1.6);
+    }
 
-function draw(){
-  drawBG();
-  drawDoll();
-  P.slice().sort((a,b)=>a.y-b.y).forEach(drawP);
-
-  if(headTurn>0){
-    ctx.fillStyle='rgba(255,0,40,'+(.14*headTurn)+')';
-    ctx.fillRect(0,0,W,H);
+    if (dangerTime > 1.15) endGame();
+    shake = Math.max(0, shake - dt * 20);
   }
 
-  for(const b of beams){
-    ctx.strokeStyle='rgba(255,40,60,'+(b.t/.3)+')';
-    ctx.lineWidth=4;
-    ctx.beginPath(); ctx.moveTo(W/2,30); ctx.lineTo(b.x,b.y-6); ctx.stroke();
+  function drawFruit(f) {
+    const r = f.r;
+    const tier = f.tier;
+    const img = tier >= friends.length
+      ? null
+      : images[tier];
+
+    ctx.save();
+    ctx.translate(f.x, f.y);
+    if (f.squish > 0) {
+      const k = Math.sin(f.squish * 18) * .07;
+      ctx.scale(1 + k, 1 - k);
+    }
+
+    const color = tier >= friends.length
+      ? "#ffe08b"
+      : friends[tier].color;
+
+    // Outer glow and fruit rim.
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 12;
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Clip friend photos into circles.
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(0, 0, r - 2, 0, Math.PI * 2);
+    ctx.clip();
+
+    if (tier >= friends.length) {
+      const grd = ctx.createLinearGradient(-r, -r, r, r);
+      grd.addColorStop(0, "#ffb7e2");
+      grd.addColorStop(.5, "#b69bff");
+      grd.addColorStop(1, "#ffe08b");
+      ctx.fillStyle = grd;
+      ctx.fillRect(-r, -r, r * 2, r * 2);
+
+      // The final tier is a collage of all friends.
+      for (let i = 0; i < images.length; i++) {
+        const im = images[i];
+        if (!im.complete || !im.naturalWidth) continue;
+        const a = i / images.length * Math.PI * 2;
+        const x = Math.cos(a) * r * .45;
+        const y = Math.sin(a) * r * .45;
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(x, y, r * .30, 0, Math.PI * 2);
+        ctx.clip();
+        ctx.drawImage(im, x - r * .3, y - r * .3, r * .6, r * .6);
+        ctx.restore();
+      }
+    } else if (img && img.complete && img.naturalWidth) {
+      // Center-crop to preserve a circular portrait.
+      const iw = img.naturalWidth;
+      const ih = img.naturalHeight;
+      const side = Math.min(iw, ih);
+      ctx.drawImage(img, (iw - side) / 2, (ih - side) / 2,
+        side, side, -r + 1, -r + 1, (r - 1) * 2, (r - 1) * 2);
+    } else {
+      ctx.fillStyle = "#49315d";
+      ctx.fillRect(-r, -r, r * 2, r * 2);
+      ctx.fillStyle = "#fff";
+      ctx.font = `bold ${r}px Fredoka`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("?", 0, 0);
+    }
+    ctx.restore();
+
+    // Thick outline.
+    ctx.beginPath();
+    ctx.arc(0, 0, r - 1, 0, Math.PI * 2);
+    ctx.lineWidth = Math.max(2, r * .09);
+    ctx.strokeStyle = tier >= friends.length ? "#fff0b5" : "#ffffffcc";
+    ctx.stroke();
+
+    // Shine.
+    ctx.beginPath();
+    ctx.ellipse(-r * .28, -r * .48, r * .24, r * .10, -.5, 0, Math.PI * 2);
+    ctx.fillStyle = "#ffffff99";
+    ctx.fill();
+
+    if (tier >= friends.length) {
+      ctx.fillStyle = "#fff8d5";
+      ctx.font = "bold 16px Fredoka";
+      ctx.textAlign = "center";
+      ctx.fillText("★", 0, -r - 5);
+    }
+
+    ctx.restore();
   }
 
-  if(flash>0){
-    ctx.fillStyle='rgba(255,255,255,'+flash*.5+')';
-    ctx.fillRect(0,0,W,H);
+  function draw() {
+    if (!W || !H) return;
+
+    ctx.clearRect(0, 0, W, H);
+    ctx.save();
+
+    if (shake > .1) {
+      ctx.translate(
+        (Math.random() - .5) * shake,
+        (Math.random() - .5) * shake
+      );
+    }
+
+    // Subtle background dots.
+    for (let x = 20; x < W; x += 38) {
+      for (let y = 20; y < H; y += 38) {
+        ctx.fillStyle = "#ffffff09";
+        ctx.beginPath();
+        ctx.arc(x, y, 1, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // Danger line.
+    ctx.save();
+    ctx.setLineDash([7, 6]);
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = dangerTime > .3 ? "#ff476f" : "#ff639f88";
+    ctx.beginPath();
+    ctx.moveTo(0, dangerY());
+    ctx.lineTo(W, dangerY());
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = dangerTime > .3 ? "#ff476f" : "#ff93c5";
+    ctx.font = "bold 10px Fredoka";
+    ctx.textAlign = "left";
+    ctx.fillText("DANGER ZONE", 9, dangerY() - 7);
+    ctx.restore();
+
+    // Drop guide and ghost fruit.
+    if (running && !paused && !over) {
+      const tier = nextTier;
+      const r = radius(tier);
+      const x = Math.max(r + 3, Math.min(W - r - 3, pointerX ?? dropX));
+
+      ctx.save();
+      ctx.strokeStyle = "#ff9ed455";
+      ctx.setLineDash([4, 5]);
+      ctx.beginPath();
+      ctx.moveTo(x, spawnY());
+      ctx.lineTo(x, H);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.globalAlpha = .38;
+      drawFruit({ x, y: spawnY() + r, r, tier, squish: 0 });
+      ctx.restore();
+    }
+
+    for (const f of fruits) drawFruit(f);
+
+    for (const p of particles) {
+      ctx.globalAlpha = Math.max(0, p.life / p.maxLife);
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    for (const t of texts) {
+      ctx.globalAlpha = Math.min(1, t.life / .3);
+      ctx.font = "bold 19px Fredoka";
+      ctx.textAlign = "center";
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = "#180f26";
+      ctx.strokeText(t.text, t.x, t.y);
+      ctx.fillStyle = t.color;
+      ctx.fillText(t.text, t.x, t.y);
+    }
+    ctx.globalAlpha = 1;
+
+    ctx.restore();
   }
 
-  // HUD sync
-  const L=$('light');
-  if(!running && phase==='idle'){
-    L.textContent='READY'; L.className='';
-  } else if(phase==='red'){
-    L.textContent='RED LIGHT'; L.className='r';
-  } else {
-    L.textContent='GREEN LIGHT'; L.className='g';
+  function endGame() {
+    if (over) return;
+    over = true;
+    running = false;
+
+    const record = score >= best && score > 0;
+    if (record) {
+      best = score;
+      localStorage.setItem("friendDropBest", best);
+    }
+    updateStats();
+
+    $("finalScore").textContent = score.toLocaleString();
+    $("newRecord").textContent = record ? "🏆 NEW PERSONAL BEST!" : "";
+    $("overEmoji").textContent = record ? "👑" : "💥";
+    $("overDetails").textContent =
+      `Best combo: x${bestCombo} · Friends on board: ${fruits.length}`;
+
+    $("overOverlay").classList.remove("hidden");
+    playSound(160, .4, "sawtooth", .025);
   }
 
-  $('time').textContent=Math.ceil(Math.max(0,timeLeft));
-  $('alive').textContent=P.filter(p=>p.st==='alive').length;
-  $('safe').textContent=P.filter(p=>p.st==='safe').length;
-}
-
-function showOverlay(id) {
-  document.querySelectorAll('.overlay').forEach(el => el.classList.add('hide'));
-  if (id) $(id).classList.remove('hide');
-}
-
-function openMainMenu() {
-  running = false;
-  phase = 'idle';
-  showOverlay('ov-menu');
-}
-
-function startGame() {
-  initAudio();
-  showOverlay(null);
-  init();
-}
-
-// Input bindings
-const hold = v => {
-  held = v;
-  $('run').classList.toggle('on', v);
-};
-
-addEventListener('keydown', e => {
-  if(['Space','ArrowUp','KeyW'].includes(e.code)) {
-    hold(true);
-    e.preventDefault();
+  function togglePause() {
+    if (!running || over) return;
+    paused = !paused;
+    $("pauseOverlay").classList.toggle("hidden", !paused);
+    $("pauseBtn").textContent = paused ? "▶" : "Ⅱ";
+    lastTime = performance.now();
   }
-});
 
-addEventListener('keyup', e => {
-  if(['Space','ArrowUp','KeyW'].includes(e.code)) hold(false);
-});
+  function frame(now) {
+    const dt = Math.min((now - lastTime) / 1000 || 0, .025);
+    lastTime = now;
 
-[$('run'), cv].forEach(el => {
-  el.addEventListener('pointerdown', e => {
-    e.preventDefault();
-    hold(true);
+    if (!paused && running) update(dt);
+    draw();
+    requestAnimationFrame(frame);
+  }
+
+  board.addEventListener("pointermove", e => {
+    const rect = canvas.getBoundingClientRect();
+    pointerX = e.clientX - rect.left;
+    dropX = pointerX;
   });
-});
 
-addEventListener('pointerup', () => hold(false));
-addEventListener('pointercancel', () => hold(false));
-addEventListener('blur', () => hold(false));
+  board.addEventListener("pointerleave", () => {
+    pointerX = null;
+  });
 
-// UI Button actions
-$('btn-start').addEventListener('click', startGame);
-$('btn-win-replay').addEventListener('click', startGame);
-$('btn-win-menu').addEventListener('click', openMainMenu);
-$('btn-loss-retry').addEventListener('click', startGame);
-$('btn-loss-menu').addEventListener('click', openMainMenu);
-$('home-btn').addEventListener('click', openMainMenu);
+  board.addEventListener("pointerdown", e => {
+    if (e.target.closest(".overlay")) return;
+    if (!running || paused || over) return;
+    e.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    pointerX = e.clientX - rect.left;
+    dropX = pointerX;
+    drop();
+  });
 
-// Animation Loop
-let last=0;
-function loop(t){
-  const dt=Math.min(.05, (t-last)/1000 || 0);
-  last=t;
-  update(dt);
-  draw();
-  requestAnimationFrame(loop);
-}
+  $("startBtn").addEventListener("click", startGame);
+  $("restartBtn").addEventListener("click", startGame);
+  $("playAgainBtn").addEventListener("click", startGame);
+  $("pauseBtn").addEventListener("click", togglePause);
+  $("resumeBtn").addEventListener("click", togglePause);
 
-openMainMenu();
-requestAnimationFrame(loop);
+  $("soundBtn").addEventListener("click", () => {
+    sound = !sound;
+    $("soundBtn").textContent = sound ? "🔊" : "🔇";
+    if (sound) playSound(500, .08);
+  });
+
+  $("howBtn").addEventListener("click", () => {
+    alert(
+      "HOW TO PLAY\n\n" +
+      "1. Tap or click where you want to drop your friend.\n" +
+      "2. Two identical friends merge into the next tier.\n" +
+      "3. Chain merges to build a combo and earn bonus points.\n" +
+      "4. Keep the pile below the danger line!\n" +
+      "5. Beat your personal best.\n\n" +
+      "Tip: Don't drop everything in the same spot. Make room for your next merge!"
+    );
+  });
+
+  // Spacebar drops; P pauses. Ignore keyboard shortcuts while typing.
+  window.addEventListener("keydown", e => {
+    if (e.code === "Space" && !e.repeat) {
+      e.preventDefault();
+      drop();
+    }
+    if (e.code === "KeyP") togglePause();
+  });
+
+  setNext();
+  requestAnimationFrame(now => {
+    lastTime = now;
+    requestAnimationFrame(frame);
+  });
+})();
 </script>
 </body>
 </html>
