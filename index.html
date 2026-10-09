@@ -178,8 +178,8 @@ let data=loadData(),W=0,H=0,dpr=1,fruits=[],particles=[],texts=[];
 let score=0,combo=0,bestCombo=0,nextTier=0,dropX=0,pointerX=null;
 let running=false,paused=false,over=false,dangerTime=0,shake=0,mergeClock=0,dropCooldown=0,lastTime=0,audio=null,activePanel=null,toastExpiry=0;
 let sound=data.sound!==false,shakeEnabled=data.shake!==false,guideEnabled=data.guide!==false;
-const radii=friends.map((_,i)=>20+i*1.9).concat([53]);
-const radius=t=>radii[Math.min(t,radii.length-1)],dangerY=()=>83,floorY=()=>H-5,spawnY=()=>44;
+const radii=friends.map((_,i)=>29+i*2.5).concat([68]);
+const radius=t=>radii[Math.min(t,radii.length-1)],dangerY=()=>105,floorY=()=>H-5,spawnY=()=>24;
 const currentTheme=()=>themes.find(t=>t.id===data.selectedTheme)||themes[0];
 function saveData(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(data));localStorage.setItem("fd_best",String(data.best));}catch(e){toast("Progress could not be saved");}}
 function resize(){const r=board.getBoundingClientRect();W=r.width;H=r.height;dpr=Math.min(devicePixelRatio||1,2);canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);dropX=Math.max(25,Math.min(W-25,dropX||W/2));}
