@@ -132,6 +132,50 @@ footer{max-width:920px;margin:10px auto 0;text-align:center;color:#8e829f;font-s
 (() => {
 "use strict";
 
+// =========================================================================
+// ⚙️ CUSTOMIZABLE GAME CONFIGURATION
+// Adjust any of these values to tweak game scaling, odds, physics, and gameplay!
+// =========================================================================
+const GAME_CONFIG = {
+  // Marble Size & Scaling Configuration
+  marbleScale: {
+    baseRadius: 36,        // Size of tier 0 (smallest marble) in pixels
+    growthPerTier: 3.2,     // How many pixels larger each tier gets
+    maxRadius: 82           // Max size for the Ultimate final marble
+  },
+
+  // Drop Spawn Probabilities
+  // Higher weight = higher chance to spawn when dropping a new marble.
+  // Add tier indexes (0-indexed) with relative weight numbers.
+  spawnChances: [
+    { tier: 0, weight: 80 },  // 80% weight for Tier 0
+    { tier: 1, weight: 15 },  // 15% weight for Tier 1
+    { tier: 2, weight: 5 }    // 5% weight for Tier 2
+  ],
+
+  // Special Variant Spawn Odds on Merges (values between 0.0 and 1.0)
+  variantChances: {
+    gold: 0.005,      // 0.5% chance
+    diamond: 0.02,    // 2% chance
+    rainbow: 0.05     // 5% chance
+  },
+
+  // Physics & Gameplay Tuning
+  physics: {
+    gravity: 1250,           // Falling speed/gravity strength
+    bounceRestitution: 0.13, // Floor bounce damping factor
+    dropCooldown: 0.18,      // Minimum delay between drops in seconds
+    dangerLimitTime: 1.15    // Time allowed in the danger zone before game over
+  },
+
+  // Combo Tuning
+  combo: {
+    decayTime: 1.6,          // Seconds before a combo resets
+    multiplierStep: 0.12     // Score bonus factor per combo tier
+  }
+};
+// =========================================================================
+
 const friends = [
  ["Hanbo","Hanbo.jpeg","#ffb6dc"],["Asher","asher.jpeg","#a5e9ff"],
  ["Callum","callum.jpeg","#c4a2ff"],["Gerard","gerard.jpeg","#ffcf94"],
@@ -178,24 +222,54 @@ let data=loadData(),W=0,H=0,dpr=1,fruits=[],particles=[],texts=[];
 let score=0,combo=0,bestCombo=0,nextTier=0,dropX=0,pointerX=null;
 let running=false,paused=false,over=false,dangerTime=0,shake=0,mergeClock=0,dropCooldown=0,lastTime=0,audio=null,activePanel=null,toastExpiry=0;
 let sound=data.sound!==false,shakeEnabled=data.shake!==false,guideEnabled=data.guide!==false;
-const radii=friends.map((_,i)=>36+i*2.5).concat([76]);
+
+// Generate scaled radii array from GAME_CONFIG
+const radii=friends.map((_,i)=>GAME_CONFIG.marbleScale.baseRadius + i * GAME_CONFIG.marbleScale.growthPerTier).concat([GAME_CONFIG.marbleScale.maxRadius]);
 const radius=t=>radii[Math.min(t,radii.length-1)],dangerY=()=>105,floorY=()=>H-5,spawnY=()=>24;
 const currentTheme=()=>themes.find(t=>t.id===data.selectedTheme)||themes[0];
+
 function saveData(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(data));localStorage.setItem("fd_best",String(data.best));}catch(e){toast("Progress could not be saved");}}
 function resize(){const r=board.getBoundingClientRect();W=r.width;H=r.height;dpr=Math.min(devicePixelRatio||1,2);canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);dropX=Math.max(25,Math.min(W-25,dropX||W/2));}
 addEventListener("resize",resize);resize();
+
 function playSound(freq=440,duration=.08,type="sine",volume=.025){if(!sound)return;try{audio ||= new (AudioContext||webkitAudioContext)();if(audio.state==="suspended")audio.resume();const o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.setValueAtTime(freq,audio.currentTime);g.gain.setValueAtTime(volume,audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+duration);o.connect(g);g.connect(audio.destination);o.start();o.stop(audio.currentTime+duration);}catch(e){}}
 function updateStats(){$("score").textContent=score.toLocaleString();$("best").textContent=data.best.toLocaleString();$("combo").textContent="x"+combo;}
 function toast(msg){$("toast").textContent=msg;$("toast").classList.add("show");toastExpiry=performance.now()+1400;}
-function setNext(){nextTier=Math.random()<.9?0:1;$("nextName").textContent=friends[nextTier][0];$("nextPreview").src=images[nextTier].src;}
+
+// Configurable Drop Picker
+function getWeightedRandomTier(){
+  const totalWeight = GAME_CONFIG.spawnChances.reduce((acc, c) => acc + c.weight, 0);
+  let random = Math.random() * totalWeight;
+  for (const item of GAME_CONFIG.spawnChances) {
+    if (random < item.weight) return item.tier;
+    random -= item.weight;
+  }
+  return 0;
+}
+
+function setNext(){
+  nextTier = getWeightedRandomTier();
+  $("nextName").textContent=friends[nextTier][0];
+  $("nextPreview").src=images[nextTier].src;
+}
+
 function spawnFruit(x,y,tier,variant="normal"){const r=radius(tier);fruits.push({x:Math.max(r+3,Math.min(W-r-3,x)),y,vx:0,vy:0,tier,r,variant,age:0,lock:.18,dead:false,squish:.15});}
-function drop(){if(!running||paused||over||dropCooldown>0)return;const r=radius(nextTier),x=Math.max(r+3,Math.min(W-r-3,pointerX??dropX));spawnFruit(x,spawnY()+r,nextTier);data.drops++;saveData();dropCooldown=.18;pointerX=null;setNext();checkAchievements();playSound(280,.06,"triangle",.02);}
+function drop(){if(!running||paused||over||dropCooldown>0)return;const r=radius(nextTier),x=Math.max(r+3,Math.min(W-r-3,pointerX??dropX));spawnFruit(x,spawnY()+r,nextTier);data.drops++;saveData();dropCooldown=GAME_CONFIG.physics.dropCooldown;pointerX=null;setNext();checkAchievements();playSound(280,.06,"triangle",.02);}
 function burst(x,y,color,n=12){for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,v=45+Math.random()*170;particles.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:.4+Math.random()*.35,max:.8,size:2+Math.random()*3,color});}}
 function floating(x,y,text,color="#fff"){texts.push({x,y,text,color,life:.85,max:.85});}
 function variantColor(v,normal){return v==="gold"?"#ffe08b":v==="diamond"?"#76efff":v==="rainbow"?"#ff80e5":normal;}
-function rollVariant(){const n=Math.random();return n<.005?"gold":n<.02?"diamond":n<.05?"rainbow":"normal";}
+
+// Configurable Roll Variant
+function rollVariant(){
+  const n = Math.random();
+  if (n < GAME_CONFIG.variantChances.gold) return "gold";
+  if (n < GAME_CONFIG.variantChances.diamond) return "diamond";
+  if (n < GAME_CONFIG.variantChances.rainbow) return "rainbow";
+  return "normal";
+}
+
 function addPoints(n){score+=n;data.lifetime+=n;if(score>data.best)data.best=score;unlockThemes();updateStats();}
-function merge(a,b){if(a.dead||b.dead||a.tier!==b.tier)return false;a.dead=b.dead=true;const tier=Math.min(a.tier+1,friends.length),x=(a.x+b.x)/2,y=(a.y+b.y)/2,variant=rollVariant(),r=radius(tier);spawnFruit(x,y,tier,variant);const nf=fruits[fruits.length-1];nf.vy=-65;nf.lock=.2;data.merges++;combo++;mergeClock=1.6;bestCombo=Math.max(bestCombo,combo);let points=Math.round((tier+1)*5*(1+Math.min(combo-1,4)*.12));if(variant!=="normal"){points*=variant==="gold"?5:variant==="diamond"?3:2;data.rares++;if(variant==="gold")data.gold++;burst(x,y,variantColor(variant,"#fff"),variant==="gold"?32:18);floating(x,y-r,variant.toUpperCase(),variantColor(variant,"#fff"));toast(variant==="gold"?"GOLDEN FRIEND!":variant==="diamond"?"DIAMOND FRIEND!":"RAINBOW FRIEND!");}addPoints(points);if(tier===friends.length){data.ultimate++;addPoints(250);floating(x,y-35,"ULTIMATE! +250","#ffe08b");burst(x,y,"#ffe08b",35);toast("ULTIMATE FRIEND!");}floating(x,y-r,"+"+points,variantColor(variant,tier>=friends.length?"#ffe08b":friends[tier][2]));burst(x,y,variantColor(variant,"#fff"),10+tier);if(shakeEnabled)shake=Math.min(5,shake+1+tier*.1);playSound(400+tier*35,.1);if(combo>=4)toast("🔥 "+combo+"x COMBO!");saveData();checkAchievements();return true;}
+function merge(a,b){if(a.dead||b.dead||a.tier!==b.tier)return false;a.dead=b.dead=true;const tier=Math.min(a.tier+1,friends.length),x=(a.x+b.x)/2,y=(a.y+b.y)/2,variant=rollVariant(),r=radius(tier);spawnFruit(x,y,tier,variant);const nf=fruits[fruits.length-1];nf.vy=-65;nf.lock=.2;data.merges++;combo++;mergeClock=GAME_CONFIG.combo.decayTime;bestCombo=Math.max(bestCombo,combo);let points=Math.round((tier+1)*5*(1+Math.min(combo-1,4)*GAME_CONFIG.combo.multiplierStep));if(variant!=="normal"){points*=variant==="gold"?5:variant==="diamond"?3:2;data.rares++;if(variant==="gold")data.gold++;burst(x,y,variantColor(variant,"#fff"),variant==="gold"?32:18);floating(x,y-r,variant.toUpperCase(),variantColor(variant,"#fff"));toast(variant==="gold"?"GOLDEN FRIEND!":variant==="diamond"?"DIAMOND FRIEND!":"RAINBOW FRIEND!");}addPoints(points);if(tier===friends.length){data.ultimate++;addPoints(250);floating(x,y-35,"ULTIMATE! +250","#ffe08b");burst(x,y,"#ffe08b",35);toast("ULTIMATE FRIEND!");}floating(x,y-r,"+"+points,variantColor(variant,tier>=friends.length?"#ffe08b":friends[tier][2]));burst(x,y,variantColor(variant,"#fff"),10+tier);if(shakeEnabled)shake=Math.min(5,shake+1+tier*.1);playSound(400+tier*35,.1);if(combo>=4)toast("🔥 "+combo+"x COMBO!");saveData();checkAchievements();return true;}
 function unlockThemes(){let changed=false;for(const t of themes){if(data.lifetime>=t.need&&!data.themes.includes(t.id)){data.themes.push(t.id);changed=true;toast("THEME UNLOCKED: "+t.name);}}if(changed){saveData();renderThemes();}}
 function checkAchievements(){const s={drops:data.drops,merges:data.merges,runScore:score,bestCombo,rares:data.rares,gold:data.gold,ultimate:data.ultimate,lifetime:data.lifetime};let changed=false;for(const a of achievements){if(!data.achievements.includes(a.id)&&a.test(s)){data.achievements.push(a.id);changed=true;toast("🏆 "+a.name);}}if(changed){saveData();renderAchievements();}}
 function renderAchievements(){$("achCount").textContent=data.achievements.length+" / "+achievements.length+" unlocked";$("achList").innerHTML=achievements.map(a=>{const done=data.achievements.includes(a.id);return `<div class="item"><div class="item-icon">${done?a.icon:"🔒"}</div><div class="item-info"><strong>${a.name}</strong><small>${a.desc}</small><div class="progress"><div style="width:${done?100:0}%"></div></div></div><div class="item-status">${done?"UNLOCKED":"LOCKED"}</div></div>`;}).join("");}
@@ -208,11 +282,68 @@ function togglePause(){if(!running||over)return;paused=!paused;$("pauseOverlay")
 function openPanel(id){if(running&&!paused)togglePause();activePanel=id;$(id).classList.remove("hidden");if(id==="achOverlay")renderAchievements();if(id==="themesOverlay")renderThemes();}
 function closeAll(){document.querySelectorAll(".overlay").forEach(o=>o.classList.add("hidden"));activePanel=null;}
 function closePanel(id){$(id).classList.add("hidden");activePanel=null;if(paused)$("pauseOverlay").classList.remove("hidden");}
-function update(dt){if(!running||paused||over)return;dt=Math.min(dt,.025);dropCooldown=Math.max(0,dropCooldown-dt);mergeClock=Math.max(0,mergeClock-dt);const gravity=1250;for(const f of fruits){if(f.dead)continue;f.age+=dt;f.lock=Math.max(0,f.lock-dt);f.squish=Math.max(0,f.squish-dt);f.vy+=gravity*dt;f.vx*=Math.pow(.992,dt*60);f.x+=f.vx*dt;f.y+=f.vy*dt;if(f.x-f.r<2){f.x=f.r+2;f.vx=Math.abs(f.vx)*.2;}if(f.x+f.r>W-2){f.x=W-f.r-2;f.vx=-Math.abs(f.vx)*.2;}if(f.y+f.r>floorY()){f.y=floorY()-f.r;f.vy*= -.13;if(Math.abs(f.vy)<25)f.vy=0;f.vx*=.97;}}
- for(let i=0;i<fruits.length;i++){const a=fruits[i];if(a.dead)continue;for(let j=i+1;j<fruits.length;j++){const b=fruits[j];if(b.dead)continue;let dx=b.x-a.x,dy=b.y-a.y,dist=Math.hypot(dx,dy),min=a.r+b.r;if(dist>=min)continue;if(dist<.001){dx=.01;dist=.01;}if(a.tier===b.tier&&a.lock<=0&&b.lock<=0){if(merge(a,b))continue;}const nx=dx/dist,ny=dy/dist,overlap=min-dist;a.x-=nx*overlap*.5;a.y-=ny*overlap*.5;b.x+=nx*overlap*.5;b.y+=ny*overlap*.5;const rv=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;if(rv<0){const impulse=-rv*.22;a.vx-=impulse*nx;a.vy-=impulse*ny;b.vx+=impulse*nx;b.vy+=impulse*ny;}}}
- fruits=fruits.filter(f=>!f.dead);if(mergeClock<=0&&combo!==0){combo=0;updateStats();}for(const p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=Math.pow(.94,dt*60);p.vy+=300*dt;p.life-=dt;}particles=particles.filter(p=>p.life>0);for(const t of texts){t.y-=30*dt;t.life-=dt;}texts=texts.filter(t=>t.life>0);
- const danger=fruits.some(f=>f.age>.7&&f.y-f.r<dangerY()&&f.y+f.r>dangerY()-18);dangerTime=danger?dangerTime+dt:Math.max(0,dangerTime-dt*1.5);if(dangerTime>1.15)endGame();shake=Math.max(0,shake-dt*18);}
-function drawFruit(f){const r=f.r,t=f.tier,normal=t>=friends.length?"#ffe08b":friends[t][2],color=variantColor(f.variant,normal);ctx.save();ctx.translate(f.x,f.y);if(f.squish>0){const k=Math.sin(f.squish*18)*.06;ctx.scale(1+k,1-k);}ctx.shadowColor=color;ctx.shadowBlur=f.variant==="normal"?7:15;ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();ctx.shadowBlur=0;ctx.save();ctx.beginPath();ctx.arc(0,0,r-2,0,Math.PI*2);ctx.clip();if(t>=friends.length){const g=ctx.createLinearGradient(-r,-r,r,r);g.addColorStop(0,"#ffb7e2");g.addColorStop(.5,"#b69bff");g.addColorStop(1,"#ffe08b");ctx.fillStyle=g;ctx.fillRect(-r,-r,2*r,2*r);for(let i=0;i<images.length;i++){const im=images[i];if(!im.complete||!im.naturalWidth)continue;const a=i/images.length*Math.PI*2,x=Math.cos(a)*r*.45,y=Math.sin(a)*r*.45;ctx.save();ctx.beginPath();ctx.arc(x,y,r*.3,0,Math.PI*2);ctx.clip();ctx.drawImage(im,x-r*.3,y-r*.3,r*.6,r*.6);ctx.restore();}}else{const im=images[t];if(im.complete&&im.naturalWidth){const side=Math.min(im.naturalWidth,im.naturalHeight);ctx.drawImage(im,(im.naturalWidth-side)/2,(im.naturalHeight-side)/2,side,side,-r+1,-r+1,2*r-2,2*r-2);}else{ctx.fillStyle="#49315d";ctx.fillRect(-r,-r,2*r,2*r);ctx.fillStyle="#fff";ctx.font=`bold ${r}px Fredoka`;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("?",0,0);}}ctx.restore();ctx.beginPath();ctx.arc(0,0,r-1,0,Math.PI*2);ctx.lineWidth=f.variant==="normal"?2.5:4;ctx.strokeStyle=f.variant==="normal"?"#ffffffcc":color;ctx.stroke();ctx.beginPath();ctx.ellipse(-r*.28,-r*.48,r*.24,r*.1,-.5,0,Math.PI*2);ctx.fillStyle="#ffffff99";ctx.fill();// Clear level badge on every normal friend ball.
+
+function update(dt){
+  if(!running||paused||over)return;
+  dt=Math.min(dt,.025);
+  dropCooldown=Math.max(0,dropCooldown-dt);
+  mergeClock=Math.max(0,mergeClock-dt);
+  const gravity=GAME_CONFIG.physics.gravity;
+  for(const f of fruits){
+    if(f.dead)continue;
+    f.age+=dt;
+    f.lock=Math.max(0,f.lock-dt);
+    f.squish=Math.max(0,f.squish-dt);
+    f.vy+=gravity*dt;
+    f.vx*=Math.pow(.992,dt*60);
+    f.x+=f.vx*dt;
+    f.y+=f.vy*dt;
+    if(f.x-f.r<2){f.x=f.r+2;f.vx=Math.abs(f.vx)*.2;}
+    if(f.x+f.r>W-2){f.x=W-f.r-2;f.vx=-Math.abs(f.vx)*.2;}
+    if(f.y+f.r>floorY()){
+      f.y=floorY()-f.r;
+      f.vy*= -GAME_CONFIG.physics.bounceRestitution;
+      if(Math.abs(f.vy)<25)f.vy=0;
+      f.vx*=.97;
+    }
+  }
+  for(let i=0;i<fruits.length;i++){
+    const a=fruits[i];if(a.dead)continue;
+    for(let j=i+1;j<fruits.length;j++){
+      const b=fruits[j];if(b.dead)continue;
+      let dx=b.x-a.x,dy=b.y-a.y,dist=Math.hypot(dx,dy),min=a.r+b.r;
+      if(dist>=min)continue;
+      if(dist<.001){dx=.01;dist=.01;}
+      if(a.tier===b.tier&&a.lock<=0&&b.lock<=0){if(merge(a,b))continue;}
+      const nx=dx/dist,ny=dy/dist,overlap=min-dist;
+      a.x-=nx*overlap*.5;
+      a.y-=ny*overlap*.5;
+      b.x+=nx*overlap*.5;
+      b.y+=ny*overlap*.5;
+      const rv=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;
+      if(rv<0){
+        const impulse=-rv*.22;
+        a.vx-=impulse*nx;
+        a.vy-=impulse*ny;
+        b.vx+=impulse*nx;
+        b.vy+=impulse*ny;
+      }
+    }
+  }
+  fruits=fruits.filter(f=>!f.dead);
+  if(mergeClock<=0&&combo!==0){combo=0;updateStats();}
+  for(const p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=Math.pow(.94,dt*60);p.vy+=300*dt;p.life-=dt;}
+  particles=particles.filter(p=>p.life>0);
+  for(const t of texts){t.y-=30*dt;t.life-=dt;}
+  texts=texts.filter(t=>t.life>0);
+
+  const danger=fruits.some(f=>f.age>.7&&f.y-f.r<dangerY()&&f.y+f.r>dangerY()-18);
+  dangerTime=danger?dangerTime+dt:Math.max(0,dangerTime-dt*1.5);
+  if(dangerTime>GAME_CONFIG.physics.dangerLimitTime)endGame();
+  shake=Math.max(0,shake-dt*18);
+}
+
+function drawFruit(f){const r=f.r,t=f.tier,normal=t>=friends.length?"#ffe08b":friends[t][2],color=variantColor(f.variant,normal);ctx.save();ctx.translate(f.x,f.y);if(f.squish>0){const k=Math.sin(f.squish*18)*.06;ctx.scale(1+k,1-k);}ctx.shadowColor=color;ctx.shadowBlur=f.variant==="normal"?7:15;ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();ctx.shadowBlur=0;ctx.save();ctx.beginPath();ctx.arc(0,0,r-2,0,Math.PI*2);ctx.clip();if(t>=friends.length){const g=ctx.createLinearGradient(-r,-r,r,r);g.addColorStop(0,"#ffb7e2");g.addColorStop(.5,"#b69bff");g.addColorStop(1,"#ffe08b");ctx.fillStyle=g;ctx.fillRect(-r,-r,2*r,2*r);for(let i=0;i<images.length;i++){const im=images[i];if(!im.complete||!im.naturalWidth)continue;const a=i/images.length*Math.PI*2,x=Math.cos(a)*r*.45,y=Math.sin(a)*r*.45;ctx.save();ctx.beginPath();ctx.arc(x,y,r*.3,0,Math.PI*2);ctx.clip();ctx.drawImage(im,x-r*.3,y-r*.3,r*.6,r*.6);ctx.restore();}}else{const im=images[t];if(im.complete&&im.naturalWidth){const side=Math.min(im.naturalWidth,im.naturalHeight);ctx.drawImage(im,(im.naturalWidth-side)/2,(im.naturalHeight-side)/2,side,side,-r+1,-r+1,2*r-2,2*r-2);}else{ctx.fillStyle="#49315d";ctx.fillRect(-r,-r,2*r,2*r);ctx.fillStyle="#fff";ctx.font=`bold ${r}px Fredoka`;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("?",0,0);}}ctx.restore();ctx.beginPath();ctx.arc(0,0,r-1,0,Math.PI*2);ctx.lineWidth=f.variant==="normal"?2.5:4;ctx.strokeStyle=f.variant==="normal"?"#ffffffcc":color;ctx.stroke();ctx.beginPath();ctx.ellipse(-r*.28,-r*.48,r*.24,r*.1,-.5,0,Math.PI*2);ctx.fillStyle="#ffffff99";ctx.fill();
 if(t<friends.length){
  const badgeR=Math.max(9,r*.19);
  const badgeY=r*.69;
@@ -222,7 +353,6 @@ if(t<friends.length){
  ctx.fillStyle="#ffffff";ctx.font=`bold ${Math.max(10,badgeR*1.15)}px Fredoka`;
  ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(String(t+1),0,badgeY);
 }
-// Special symbols show rare variants and the final merged friend.
 if(f.variant!=="normal"||t>=friends.length){
  ctx.fillStyle="#fff";ctx.font=`bold ${Math.max(12,r*.55)}px Fredoka`;ctx.textAlign="center";
  ctx.strokeStyle="#180f26";ctx.lineWidth=3;
@@ -230,6 +360,7 @@ if(f.variant!=="normal"||t>=friends.length){
  ctx.strokeText(symbol,0,-r-4);ctx.fillText(symbol,0,-r-4);
 }
 ctx.restore();}
+
 function draw(){if(!W||!H)return;ctx.clearRect(0,0,W,H);ctx.save();if(shakeEnabled&&shake>.1)ctx.translate((Math.random()-.5)*shake,(Math.random()-.5)*shake);for(let x=20;x<W;x+=38)for(let y=20;y<H;y+=38){ctx.fillStyle="#ffffff09";ctx.beginPath();ctx.arc(x,y,1,0,Math.PI*2);ctx.fill();}ctx.save();ctx.setLineDash([7,6]);ctx.lineWidth=2;ctx.strokeStyle=dangerTime>.3?"#ff476f":currentTheme().glow+"99";ctx.beginPath();ctx.moveTo(0,dangerY());ctx.lineTo(W,dangerY());ctx.stroke();ctx.setLineDash([]);ctx.fillStyle=dangerTime>.3?"#ff476f":currentTheme().glow;ctx.font="bold 10px Fredoka";ctx.textAlign="left";ctx.fillText("DANGER ZONE",9,dangerY()-7);ctx.restore();if(running&&!paused&&!over&&guideEnabled){const r=radius(nextTier),x=Math.max(r+3,Math.min(W-r-3,pointerX??dropX));ctx.save();ctx.strokeStyle=currentTheme().glow+"55";ctx.setLineDash([4,5]);ctx.beginPath();ctx.moveTo(x,spawnY());ctx.lineTo(x,H);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=.35;drawFruit({x,y:spawnY()+r,r,tier:nextTier,variant:"normal",squish:0});ctx.restore();}fruits.forEach(drawFruit);for(const p of particles){ctx.globalAlpha=Math.max(0,p.life/p.max);ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,Math.PI*2);ctx.fill();}ctx.globalAlpha=1;for(const t of texts){ctx.globalAlpha=Math.min(1,t.life/.25);ctx.font="bold 17px Fredoka";ctx.textAlign="center";ctx.lineWidth=3;ctx.strokeStyle="#180f26";ctx.strokeText(t.text,t.x,t.y);ctx.fillStyle=t.color;ctx.fillText(t.text,t.x,t.y);}ctx.globalAlpha=1;ctx.restore();}
 function frame(now){const dt=Math.min((now-lastTime)/1000||0,.025);lastTime=now;if(!paused&&running)update(dt);draw();if(toastExpiry&&now>toastExpiry){$("toast").classList.remove("show");toastExpiry=0;}requestAnimationFrame(frame);}
 
@@ -238,18 +369,22 @@ $("quitBtn").onclick=()=>{paused=false;$("pauseOverlay").classList.add("hidden")
 $("howBtn").onclick=()=>openPanel("howOverlay");$("startHowBtn").onclick=()=>openPanel("howOverlay");$("pauseHowBtn").onclick=()=>openPanel("howOverlay");$("collectionBtn").onclick=()=>openPanel("collectionOverlay");$("themesBtn").onclick=()=>openPanel("themesOverlay");$("pauseThemesBtn").onclick=()=>openPanel("themesOverlay");$("achBtn").onclick=()=>openPanel("achOverlay");$("overAchBtn").onclick=()=>openPanel("achOverlay");
 $("settingsBtn")?.addEventListener("click",()=>openPanel("settingsOverlay"));
 document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>closePanel(b.dataset.close));
+
 function refreshSettings(){$("settingsSound").textContent=sound?"ON 🔊":"OFF 🔇";$("shakeBtn").textContent=shakeEnabled?"ON ✨":"OFF";$("guideBtn").textContent=guideEnabled?"ON":"OFF";}
 $("settingsSound").onclick=()=>{sound=!sound;data.sound=sound;saveData();refreshSettings();if(sound)playSound(500,.08);};
 $("shakeBtn").onclick=()=>{shakeEnabled=!shakeEnabled;data.shake=shakeEnabled;saveData();refreshSettings();};
 $("guideBtn").onclick=()=>{guideEnabled=!guideEnabled;data.guide=guideEnabled;saveData();refreshSettings();};
-canvas.addEventListener("pointermove",e=>{const r=canvas.getBoundingClientRect();pointerX=Math.max(10,Math.min(W-10,e.clientX-r.left));dropX=pointerX;});
-canvas.addEventListener("pointerleave",()=>pointerX=null);
-canvas.addEventListener("pointerdown",e=>{if(!running||paused||over)return;e.preventDefault();const r=canvas.getBoundingClientRect();pointerX=e.clientX-r.left;dropX=pointerX;drop();});
-addEventListener("keydown",e=>{if(e.code==="Space"&&!e.repeat&&!e.target.closest("button")&&!e.target.closest("input")){e.preventDefault();drop();}if(e.code==="KeyP")togglePause();if(e.code==="Escape"){if(activePanel)closePanel(activePanel);else if(running)togglePause();}});
-document.addEventListener("visibilitychange",()=>{if(document.hidden&&running&&!paused)togglePause();});
-if(!data.themes.includes("default"))data.themes.push("default");for(const t of themes)if(data.lifetime>=t.need&&!data.themes.includes(t.id))data.themes.push(t.id);
-saveData();applyTheme();setNext();updateStats();renderAchievements();renderThemes();renderTierList();refreshSettings();
-requestAnimationFrame(now=>{lastTime=now;requestAnimationFrame(frame);});
+
+function setPointer(x){const r=board.getBoundingClientRect();pointerX=x-r.left;dropX=pointerX;}
+board.addEventListener("pointermove",e=>setPointer(e.clientX));
+board.addEventListener("pointerdown",e=>{setPointer(e.clientX);drop();});
+addEventListener("keydown",e=>{if(e.code==="Space"){e.preventDefault();drop();}if(e.code==="KeyP")togglePause();});
+
+renderTierList();
+applyTheme();
+refreshSettings();
+updateStats();
+requestAnimationFrame(frame);
 })();
 </script>
 </body>
