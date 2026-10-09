@@ -84,7 +84,6 @@ header{display:flex;align-items:center;justify-content:space-between;gap:8px;mar
 .hero-mark{font-size:40px;margin-bottom:2px}.eyebrow{font-size:10px;letter-spacing:2px;color:var(--pink);font-weight:700;text-transform:uppercase}
 .item-list{display:grid;gap:8px;margin-top:12px}.item{display:flex;align-items:center;gap:10px;padding:8px 10px;background:#ffffff08;border:1px solid #ffffff12;border-radius:12px}.item-icon{font-size:22px;width:32px;text-align:center}.item-info{flex:1;min-width:0}.item-info strong{display:block;font-size:13px}.item-info small{display:block;color:var(--muted);font-size:11px;margin-top:1px}.item-status{font-size:10px;letter-spacing:.5px;color:var(--pink);font-weight:700}.progress{height:4px;background:#ffffff15;border-radius:4px;margin-top:5px;overflow:hidden}.progress div{height:100%;background:var(--pink)}
 
-/* Standardized High-Contrast Friend Cards & Upright Badges */
 .tier-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px;margin-top:12px}
 .tier-chip{border-radius:12px;background:#ffffff0a;border:1px solid #ffffff18;padding:8px 6px;display:flex;flex-direction:column;align-items:center;text-align:center;position:relative;overflow:hidden;transition:transform .18s, border-color .18s, box-shadow .18s}
 .tier-chip:hover{transform:translateY(-2px);border-color:var(--pink);box-shadow:0 6px 15px #ff4fa322}
@@ -104,7 +103,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:8px;mar
 <body>
 <div class="wrap">
 <header>
-  <div><div class="brand">FRIEND <span>DROP</span></div></div>
+  <div><div class="brand" id="brandTitle">FRIEND <span>DROP</span></div></div>
   <div class="header-actions">
     <button class="secondary" id="howBtn">Guide</button>
     <button class="secondary" id="statsBtn">📊 Stats</button>
@@ -210,38 +209,84 @@ header{display:flex;align-items:center;justify-content:space-between;gap:8px;mar
 (() => {
 "use strict";
 
+// ============================================================================
+// ⚙️ FRONT-END CUSTOMIZATION CONFIGURATION (CUSTOMIZE EVERYTHING HERE!)
+// ============================================================================
 const GAME_CONFIG = {
-  marbleScale: {
-    baseRadius: 32,
-    growthPerTier: 3.2,
-    maxRadius: 78
+  // --- UI & Branding ---
+  ui: {
+    titlePrefix: "2O2",
+    titleSuffix: "DROP",
+    toastDuration: 1400,          // Duration of toast popups (in ms)
+    gridSpacing: 38              // Spacing of background dot grid
   },
-  spawnChances: [
+
+  // --- Combo System Customization ---
+  combo: {
+    decayTime: 1,               // Time (in seconds) before combo resets to 0
+    multiplierStep: 0.15,         // Score multiplier gain per combo (e.g. 0.15 = +15% per combo)
+    maxMultiplierCap: 12,          // Maximum combo multiplier level cap
+    
+    // Dynamic theme colors applied based on current active combo count
+    colorTiers: [
+      { minCombo: 12, color: "#ff4fde" },
+      { minCombo: 8,  color: "#a552ff" },
+      { minCombo: 5,  color: "#ff3b3b" },
+      { minCombo: 3,  color: "#ff8800" },
+      { minCombo: 0,  color: "#ff4fa3" }  // Default combo color
+    ],
+
+    // Special mid-screen banner announcements that pop up on reaching specific combos
+    banners: {
+      4:  { title: "4x COMBO!", sub: "+45% BONUS POINTS" },
+      7:  { title: "SUPER 7x!", sub: "+90% BONUS POINTS" },
+      10: { title: "HYPER 10x!", sub: "+120% BONUS POINTS" },
+      12: { title: "GODLIKE 12x!", sub: "MAX SCORE MULTIPLIER" }
+    }
+  },
+
+  // --- Danger Line & Zone Detection ---
+  dangerZone: {
+    lineY: 105,                   // Height of danger line from top (pixels)
+    limitTime: 2,              // How long a ball can touch/cross line before Game Over (seconds)
+    bannerText: "⚠️ Danger Zone!",
+    lineText: "DANGER ZONE"
+  },
+
+  // --- Marble Radii & Spawn Scale ---
+  marbles: {
+    baseRadius: 35,
+    growthPerTier: 7.5,
+    maxRadius: 1000
+  },
+
+  // --- Spawn Rates & Rare Variants ---
+  spawns: [
     { tier: 0, weight: 80 },
     { tier: 1, weight: 15 },
     { tier: 2, weight: 5 }
   ],
-  variantChances: {
-    gold: 0.005,
-    diamond: 0.02,
-    rainbow: 0.05
+  variants: {
+    gold: 0.05,     // 0.5% chance for 5x points
+    diamond: 0.02,   // 2% chance for 3x points
+    rainbow: 0.005    // 5% chance for 2x points
   },
+
+  // --- Physics & Rigid Collision Solver ---
   physics: {
     gravity: 1250,
     friction: 0.98,
     angularDamping: 0.85,
     maxAngularVelocity: 3.5,
-    restitution: 0.15,
-    dropCooldown: 0.18,
-    dangerLimitTime: 1.25,
-    subSteps: 10 // High-precision constraint iterations to stop column stacking overlap
-  },
-  combo: {
-    decayTime: 1.8,
-    multiplierStep: 0.15
+    restitution: 0.15,            // Bounce factor
+    dropCooldown: 0.18,           // Delay between drops (seconds)
+    subSteps: 10                  // Solver passes (higher = zero marble overlap)
   }
 };
 
+// ============================================================================
+// 🎨 THEMES & ACHIEVEMENTS DATA
+// ============================================================================
 const THEMES_CONFIG = [
   { id: "default", name: "Neon Night", desc: "The original arcade", bg: "#191229", glow: "#ff4fa3", preview: "linear-gradient(135deg,#191229,#713f91)", check: () => true, reqText: "Unlocked" },
   { id: "ocean", name: "Dream Ocean", desc: "Reach 2,500 lifetime points", bg: "#0c2338", glow: "#45ddff", preview: "linear-gradient(135deg,#0c2338,#2186a8)", check: s => s.lifetime >= 2500, reqText: s => `2,500 Points (${s.lifetime.toLocaleString()}/2,500)` },
@@ -310,8 +355,8 @@ let running=false,paused=false,over=false,dangerTime=0,shake=0,mergeClock=0,drop
 let countingDown=false, countdownTimerId=null, needsResumeCountdown=false, comboBannerExpiry=0;
 let sound=data.sound!==false,shakeEnabled=data.shake!==false,guideEnabled=data.guide!==false;
 
-const radii=friends.map((_,i)=>GAME_CONFIG.marbleScale.baseRadius + i * GAME_CONFIG.marbleScale.growthPerTier).concat([GAME_CONFIG.marbleScale.maxRadius]);
-const radius=t=>radii[Math.min(t,radii.length-1)],dangerY=()=>105,floorY=()=>H-5,spawnY=()=>24;
+const radii=friends.map((_,i)=>GAME_CONFIG.marbles.baseRadius + i * GAME_CONFIG.marbles.growthPerTier).concat([GAME_CONFIG.marbles.maxRadius]);
+const radius=t=>radii[Math.min(t,radii.length-1)],dangerY=()=>GAME_CONFIG.dangerZone.lineY,floorY=()=>H-5,spawnY=()=>24;
 const currentTheme=()=>THEMES_CONFIG.find(t=>t.id===data.selectedTheme)||THEMES_CONFIG[0];
 
 function saveData(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(data));}catch(e){toast("Progress could not be saved");}}
@@ -329,10 +374,9 @@ addEventListener("resize",resize); resize();
 function playSound(freq=440,duration=.08,type="sine",volume=.025){if(!sound)return;try{audio ||= new (AudioContext||webkitAudioContext)();if(audio.state==="suspended")audio.resume();const o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.setValueAtTime(freq,audio.currentTime);g.gain.setValueAtTime(volume,audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+duration);o.connect(g);g.connect(audio.destination);o.start();o.stop(audio.currentTime+duration);}catch(e){}}
 
 function getComboColor(c){
-  if(c >= 12) return "#ff4fde";
-  if(c >= 8)  return "#a552ff";
-  if(c >= 5)  return "#ff3b3b";
-  if(c >= 3)  return "#ff8800";
+  for(const tier of GAME_CONFIG.combo.colorTiers){
+    if(c >= tier.minCombo) return tier.color;
+  }
   return "#ff4fa3";
 }
 
@@ -349,7 +393,9 @@ function updateStats(){
   $("best").textContent=data.best.toLocaleString();
   $("combo").textContent="x"+combo;
   
-  const multiplier = (1 + Math.min(Math.max(0, combo - 1), 8) * GAME_CONFIG.combo.multiplierStep).toFixed(2);
+  const multiplierStep = GAME_CONFIG.combo.multiplierStep;
+  const maxCap = GAME_CONFIG.combo.maxMultiplierCap;
+  const multiplier = (1 + Math.min(Math.max(0, combo - 1), maxCap) * multiplierStep).toFixed(2);
   $("comboMult").textContent = "+" + Math.round((multiplier - 1) * 100) + "% PTS (" + multiplier + "x)";
 
   const color = getComboColor(combo);
@@ -376,13 +422,13 @@ function showComboBanner(title, sub){
 function toast(msg){
   $("toast").textContent=msg;
   $("toast").classList.add("show");
-  toastExpiry=performance.now()+1400;
+  toastExpiry=performance.now()+GAME_CONFIG.ui.toastDuration;
 }
 
 function getWeightedRandomTier(){
-  const totalWeight = GAME_CONFIG.spawnChances.reduce((acc, c) => acc + c.weight, 0);
+  const totalWeight = GAME_CONFIG.spawns.reduce((acc, c) => acc + c.weight, 0);
   let random = Math.random() * totalWeight;
-  for (const item of GAME_CONFIG.spawnChances) {
+  for (const item of GAME_CONFIG.spawns) {
     if (random < item.weight) return item.tier;
     random -= item.weight;
   }
@@ -412,9 +458,9 @@ function variantColor(v,normal){return v==="gold"?"#ffe08b":v==="diamond"?"#76ef
 
 function rollVariant(){
   const n = Math.random();
-  if (n < GAME_CONFIG.variantChances.gold) return "gold";
-  if (n < GAME_CONFIG.variantChances.diamond) return "diamond";
-  if (n < GAME_CONFIG.variantChances.rainbow) return "rainbow";
+  if (n < GAME_CONFIG.variants.gold) return "gold";
+  if (n < GAME_CONFIG.variants.diamond) return "diamond";
+  if (n < GAME_CONFIG.variants.rainbow) return "rainbow";
   return "normal";
 }
 
@@ -442,8 +488,8 @@ function merge(a,b){
 
   triggerStatPop("comboBox");
 
-  const multPct = Math.round(Math.min(Math.max(0, combo - 1), 8) * GAME_CONFIG.combo.multiplierStep * 100);
-  let points=Math.round((tier+1)*5*(1+Math.min(combo-1,8)*GAME_CONFIG.combo.multiplierStep));
+  const multPct = Math.round(Math.min(Math.max(0, combo - 1), GAME_CONFIG.combo.maxMultiplierCap) * GAME_CONFIG.combo.multiplierStep * 100);
+  let points=Math.round((tier+1)*5*(1+Math.min(combo-1,GAME_CONFIG.combo.maxMultiplierCap)*GAME_CONFIG.combo.multiplierStep));
   
   if(variant!=="normal"){
     points*=variant==="gold"?5:variant==="diamond"?3:2;
@@ -469,10 +515,11 @@ function merge(a,b){
   
   playSound(380 + tier * 30 + combo * 25, .1);
 
-  if(combo === 4) showComboBanner("4x COMBO!", `+${multPct}% BONUS POINTS`);
-  else if(combo === 7) showComboBanner("SUPER 7x!", `+${multPct}% BONUS POINTS`);
-  else if(combo === 10) showComboBanner("HYPER 10x!", `+${multPct}% BONUS POINTS`);
-  else if(combo >= 12) showComboBanner("GODLIKE " + combo + "x!", `MAX SCORE BONUS`);
+  // Check Custom Combo Announcement Banners
+  if(GAME_CONFIG.combo.banners[combo]){
+    const b = GAME_CONFIG.combo.banners[combo];
+    showComboBanner(b.title, b.sub);
+  }
 
   saveData();
   checkAchievements();
@@ -679,7 +726,7 @@ function closePanel(id){
   }
 }
 
-// Rigid Impulse & Positional Solver (Prevents Sinking & Column Penetration)
+// Physics Loop
 function update(dt){
   if(!running||paused||over||countingDown)return;
   dt=Math.min(dt,.025);
@@ -696,7 +743,6 @@ function update(dt){
   }
 
   const steps = GAME_CONFIG.physics.subSteps;
-  const subDt = dt / steps;
   const gravity = GAME_CONFIG.physics.gravity;
 
   // Integrate Velocities
@@ -734,7 +780,6 @@ function update(dt){
           if(merge(a, b)) continue;
         }
 
-        // Add tiny horizontal perturbation for 100% straight vertical stacks
         if(Math.abs(dx) < 0.01){
           dx = (Math.random() - 0.5) * 0.1;
           dist = Math.hypot(dx, dy);
@@ -743,13 +788,13 @@ function update(dt){
         const nx = dx / dist, ny = dy / dist;
         const overlap = minDist - dist;
 
-        // Strict Position Projection (Hard separation)
+        // Hard Non-Penetration Separation
         a.x -= nx * overlap * 0.5;
         a.y -= ny * overlap * 0.5;
         b.x += nx * overlap * 0.5;
         b.y += ny * overlap * 0.5;
 
-        // Velocity Impulse Resolution along contact normal
+        // Impulse Resolution
         const kx = a.vx - b.vx;
         const ky = a.vy - b.vy;
         const p = 2 * (nx * kx + ny * ky) / 2;
@@ -761,7 +806,6 @@ function update(dt){
           b.vy += p * ny * (1 + GAME_CONFIG.physics.restitution);
         }
 
-        // Apply slight roll torque on contact
         const tangentX = -ny, tangentY = nx;
         const relTang = (b.vx - a.vx) * tangentX + (b.vy - a.vy) * tangentY;
         a.va += relTang * 0.001;
@@ -769,7 +813,7 @@ function update(dt){
       }
     }
 
-    // Hard Boundary Box Constraints
+    // Boundary Wall Constraints
     for(const f of fruits){
       if(f.dead) continue;
       if(f.x - f.r < 2){
@@ -796,7 +840,7 @@ function update(dt){
   for(const t of texts){ t.y -= 30*dt; t.life -= dt; }
   texts = texts.filter(t => t.life > 0);
 
-  // Precision Danger Line Detection Logic
+  // Precision Danger Zone Checking
   const danger = fruits.some(f => f.age > 0.45 && f.lock <= 0 && (f.y - f.r <= dangerY()) && Math.abs(f.vy) < 160);
   dangerTime = danger ? dangerTime + dt : Math.max(0, dangerTime - dt * 2.0);
   
@@ -805,7 +849,7 @@ function update(dt){
   if(dangerTime > 0.15){
     boardEl.classList.add("danger-active");
     dangerBanner.style.display = "block";
-    const remTime = Math.max(0, GAME_CONFIG.physics.dangerLimitTime - dangerTime).toFixed(1);
+    const remTime = Math.max(0, GAME_CONFIG.dangerZone.limitTime - dangerTime).toFixed(1);
     $("dangerTimer").textContent = remTime + "s";
     if(Math.random() < 0.1) playSound(180, .05, "sawtooth");
   } else {
@@ -813,11 +857,11 @@ function update(dt){
     dangerBanner.style.display = "none";
   }
 
-  if(dangerTime > GAME_CONFIG.physics.dangerLimitTime) endGame();
+  if(dangerTime > GAME_CONFIG.dangerZone.limitTime) endGame();
   shake = Math.max(0, shake - dt * 18);
 }
 
-// Draw Solid Marbles
+// Canvas Drawing
 function drawFruit(f){
   const r=f.r,t=f.tier,normal=t>=friends.length?"#ffe08b":friends[t][2],color=variantColor(f.variant,normal);
   
@@ -856,7 +900,7 @@ function drawFruit(f){
   ctx.fillStyle="#ffffff99";ctx.fill();
   ctx.restore();
 
-  // Render Always-Upright Fixed Tier Badge at Bottom Center
+  // Upright Tier Badge
   ctx.save();
   ctx.translate(f.x, f.y);
   if(t<friends.length){
@@ -884,17 +928,19 @@ function draw(){
   if(shakeEnabled&&shake>.1)ctx.translate((Math.random()-.5)*shake,(Math.random()-.5)*shake);
   
   const time = performance.now() * 0.001;
-  for(let x=20;x<W;x+=38) for(let y=20;y<H;y+=38){
+  const gridStep = GAME_CONFIG.ui.gridSpacing;
+  for(let x=20;x<W;x+=gridStep) for(let y=20;y<H;y+=gridStep){
     const pulse = Math.sin(time + x + y) * 0.005 + 0.04;
     ctx.fillStyle=`rgba(255,255,255,${pulse})`;
     ctx.beginPath();ctx.arc(x,y,1,0,Math.PI*2);ctx.fill();
   }
 
+  // Draw Danger Line
   ctx.save();ctx.setLineDash([7,6]);ctx.lineWidth=2;
   ctx.strokeStyle=dangerTime>.15?"#ff476f":currentTheme().glow+"99";
   ctx.beginPath();ctx.moveTo(0,dangerY());ctx.lineTo(W,dangerY());ctx.stroke();
   ctx.setLineDash([]);ctx.fillStyle=dangerTime>.15?"#ff476f":currentTheme().glow;
-  ctx.font="bold 10px Fredoka";ctx.textAlign="left";ctx.fillText("DANGER ZONE",9,dangerY()-7);
+  ctx.font="bold 10px Fredoka";ctx.textAlign="left";ctx.fillText(GAME_CONFIG.dangerZone.lineText,9,dangerY()-7);
   ctx.restore();
 
   if(running&&!paused&&!over&&guideEnabled&&!countingDown){
@@ -947,6 +993,10 @@ function setPointer(x){const r=board.getBoundingClientRect();pointerX=x-r.left;d
 board.addEventListener("pointermove",e=>{e.preventDefault();setPointer(e.clientX);});
 board.addEventListener("pointerdown",e=>{e.preventDefault();setPointer(e.clientX);drop();});
 addEventListener("keydown",e=>{if(e.code==="Space"){e.preventDefault();drop();}if(e.code==="KeyP")togglePause();});
+
+// Initialize UI Config
+$("dangerBanner").childNodes[0].nodeValue = GAME_CONFIG.dangerZone.bannerText + " ";
+$("brandTitle").innerHTML = `${GAME_CONFIG.ui.titlePrefix} <span>${GAME_CONFIG.ui.titleSuffix}</span>`;
 
 renderTierList();
 applyTheme();
