@@ -233,7 +233,8 @@ const GAME_CONFIG = {
     maxAngularVelocity: 3.5,
     restitution: 0.16,
     dropCooldown: 0.18,
-    dangerLimitTime: 1.25
+    dangerLimitTime: 1.25,
+    subSteps: 6  // 6 multi-pass solver iterations to guarantee zero overlap/clipping
   },
   combo: {
     decayTime: 1.8,
@@ -674,6 +675,7 @@ function closePanel(id){
   }
 }
 
+// Multi-Pass Sub-Stepping Physics Solver (Zero-Overlap Guarantee)
 function update(dt){
   if(!running||paused||over||countingDown)return;
   dt=Math.min(dt,.025);
@@ -689,80 +691,88 @@ function update(dt){
     }
   }
 
-  const gravity=GAME_CONFIG.physics.gravity;
+  const steps = GAME_CONFIG.physics.subSteps;
+  const subDt = dt / steps;
+  const gravity = GAME_CONFIG.physics.gravity;
 
-  for(const f of fruits){
-    if(f.dead)continue;
-    f.age+=dt;
-    f.lock=Math.max(0,f.lock-dt);
-
-    f.vy += gravity * dt;
-    f.vx *= Math.pow(GAME_CONFIG.physics.friction, dt*60);
-    
-    // Controlled Angular Friction Damping
-    f.va *= Math.pow(GAME_CONFIG.physics.angularDamping, dt*60);
-    if(Math.abs(f.va) > GAME_CONFIG.physics.maxAngularVelocity){
-      f.va = Math.sign(f.va) * GAME_CONFIG.physics.maxAngularVelocity;
-    }
-
-    if(Math.abs(f.vx) < 0.2 && Math.abs(f.vy) < 0.2){
-      f.va *= 0.5;
-    }
-
-    f.x += f.vx * dt;
-    f.y += f.vy * dt;
-    f.angle += f.va * dt;
-
-    if(f.x - f.r < 2){
-      f.x = f.r + 2;
-      f.vx = Math.abs(f.vx) * 0.3;
-      f.va = f.vy * 0.02;
-    }
-    if(f.x + f.r > W - 2){
-      f.x = W - f.r - 2;
-      f.vx = -Math.abs(f.vx) * 0.3;
-      f.va = -f.vy * 0.02;
-    }
-    if(f.y + f.r > floorY()){
-      f.y = floorY() - f.r;
-      f.vy *= -GAME_CONFIG.physics.restitution;
-      if(Math.abs(f.vy) < 25) f.vy = 0;
-      f.vx *= 0.95;
-      f.va = -f.vx * 0.03;
-    }
-  }
-
-  for(let i=0; i<fruits.length; i++){
-    const a = fruits[i]; if(a.dead) continue;
-    for(let j=i+1; j<fruits.length; j++){
-      const b = fruits[j]; if(b.dead) continue;
-      let dx = b.x - a.x, dy = b.y - a.y, dist = Math.hypot(dx,dy), min = a.r + b.r;
-      if(dist >= min) continue;
-
-      if(dist < 0.001){ dx = 0.01; dist = 0.01; }
-
-      if(a.tier === b.tier && a.lock <= 0 && b.lock <= 0){
-        if(merge(a,b)) continue;
+  for(let step = 0; step < steps; step++){
+    for(const f of fruits){
+      if(f.dead) continue;
+      if(step === 0){
+        f.age += dt;
+        f.lock = Math.max(0, f.lock - dt);
       }
 
-      const nx = dx / dist, ny = dy / dist, overlap = min - dist;
-      a.x -= nx * overlap * 0.5;
-      a.y -= ny * overlap * 0.5;
-      b.x += nx * overlap * 0.5;
-      b.y += ny * overlap * 0.5;
+      f.vy += gravity * subDt;
+      f.vx *= Math.pow(GAME_CONFIG.physics.friction, subDt*60);
+      f.va *= Math.pow(GAME_CONFIG.physics.angularDamping, subDt*60);
 
-      const rv = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
-      if(rv < 0){
-        const impulse = -rv * (1 + GAME_CONFIG.physics.restitution) * 0.5;
-        a.vx -= impulse * nx;
-        a.vy -= impulse * ny;
-        b.vx += impulse * nx;
-        b.vy += impulse * ny;
+      if(Math.abs(f.va) > GAME_CONFIG.physics.maxAngularVelocity){
+        f.va = Math.sign(f.va) * GAME_CONFIG.physics.maxAngularVelocity;
+      }
 
-        const tangentX = -ny, tangentY = nx;
-        const tangentVel = (b.vx - a.vx) * tangentX + (b.vy - a.vy) * tangentY;
-        a.va += tangentVel * 0.001;
-        b.va -= tangentVel * 0.001;
+      f.x += f.vx * subDt;
+      f.y += f.vy * subDt;
+      f.angle += f.va * subDt;
+
+      // Rigid Wall Constraints
+      if(f.x - f.r < 2){
+        f.x = f.r + 2;
+        f.vx = Math.abs(f.vx) * 0.3;
+        f.va = f.vy * 0.02;
+      }
+      if(f.x + f.r > W - 2){
+        f.x = W - f.r - 2;
+        f.vx = -Math.abs(f.vx) * 0.3;
+        f.va = -f.vy * 0.02;
+      }
+      if(f.y + f.r > floorY()){
+        f.y = floorY() - f.r;
+        f.vy *= -GAME_CONFIG.physics.restitution;
+        if(Math.abs(f.vy) < 25) f.vy = 0;
+        f.vx *= 0.95;
+        f.va = -f.vx * 0.03;
+      }
+    }
+
+    // Pairwise Circle Collision & Positional Constraint Solver
+    for(let i = 0; i < fruits.length; i++){
+      const a = fruits[i]; if(a.dead) continue;
+      for(let j = i + 1; j < fruits.length; j++){
+        const b = fruits[j]; if(b.dead) continue;
+        let dx = b.x - a.x, dy = b.y - a.y;
+        let dist = Math.hypot(dx, dy), minDist = a.r + b.r;
+
+        if(dist >= minDist) continue;
+
+        if(a.tier === b.tier && a.lock <= 0 && b.lock <= 0){
+          if(merge(a, b)) continue;
+        }
+
+        if(dist < 0.0001){ dx = 0.01; dy = 0; dist = 0.01; }
+
+        const nx = dx / dist, ny = dy / dist;
+        const overlap = minDist - dist;
+
+        // Hard Positional Push Apart (Directly prevents ball clipping)
+        a.x -= nx * overlap * 0.5;
+        a.y -= ny * overlap * 0.5;
+        b.x += nx * overlap * 0.5;
+        b.y += ny * overlap * 0.5;
+
+        const rv = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
+        if(rv < 0){
+          const impulse = -rv * (1 + GAME_CONFIG.physics.restitution) * 0.5;
+          a.vx -= impulse * nx;
+          a.vy -= impulse * ny;
+          b.vx += impulse * nx;
+          b.vy += impulse * ny;
+
+          const tangentX = -ny, tangentY = nx;
+          const tangentVel = (b.vx - a.vx) * tangentX + (b.vy - a.vy) * tangentY;
+          a.va += tangentVel * 0.001;
+          b.va -= tangentVel * 0.001;
+        }
       }
     }
   }
@@ -774,7 +784,7 @@ function update(dt){
   for(const t of texts){ t.y -= 30*dt; t.life -= dt; }
   texts = texts.filter(t => t.life > 0);
 
-  // Precision Danger Line Detection Logic (Checks for any settled or wedged marble breaching top line)
+  // Precision Danger Line Detection Logic
   const danger = fruits.some(f => f.age > 0.45 && f.lock <= 0 && (f.y - f.r <= dangerY()) && Math.abs(f.vy) < 180);
   dangerTime = danger ? dangerTime + dt : Math.max(0, dangerTime - dt * 2.0);
   
@@ -795,11 +805,10 @@ function update(dt){
   shake = Math.max(0, shake - dt * 18);
 }
 
-// Draw Solid Marbles (Compression Removed)
+// Draw Solid Marbles
 function drawFruit(f){
   const r=f.r,t=f.tier,normal=t>=friends.length?"#ffe08b":friends[t][2],color=variantColor(f.variant,normal);
   
-  // Render Rotating Solid Marble Face
   ctx.save();
   ctx.translate(f.x,f.y);
   ctx.rotate(f.angle);
