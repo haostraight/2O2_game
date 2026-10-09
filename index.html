@@ -20,7 +20,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;ma
 .layout{display:block;max-width:920px;margin:auto}
 .panel{background:#211a32cc;border:1px solid #ffffff17;border-radius:20px;box-shadow:0 15px 40px #0003;overflow:hidden}
 .game-panel{padding:10px;background:transparent;border:0;box-shadow:none;overflow:visible}
-.stats{position:absolute;z-index:2;left:10px;right:10px;bottom:10px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:0;pointer-events:none}
+.stats{position:static;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:10px 0 0;pointer-events:none}
 .stat{background:#140e20d9;border:1px solid #ffffff18;border-radius:12px;text-align:center;padding:6px 4px;backdrop-filter:blur(8px)}
 .stat small{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:1px}
 .stat strong{display:block;font-size:clamp(18px,3vw,25px);margin-top:2px}
@@ -48,7 +48,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;ma
 .setting-row{display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px solid #ffffff13;gap:10px}.setting-row:last-child{border-bottom:0}.setting-row span{color:#e9dff4}
 footer{max-width:920px;margin:10px auto 0;text-align:center;color:#8e829f;font-size:11px}
 @media(max-width:760px){body{padding:8px}.header-actions{gap:5px}.header-actions button{padding:8px 10px;font-size:11px}#board{height:min(76vh,700px);min-height:390px}.game-panel{padding:4px}.brand{font-size:clamp(24px,5vw,32px)}}
-@media(max-width:430px){header{align-items:flex-start}.brand{font-size:25px}.sub{font-size:10px}.header-actions{max-width:145px;justify-content:flex-end}.header-actions button{padding:7px 8px;font-size:10px}#board{height:72vh;min-height:360px}.stats{left:7px;right:7px;bottom:7px;gap:4px}.stat{padding:5px 2px}.stat small{font-size:9px;letter-spacing:.5px}.stat strong{font-size:17px}.theme-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:430px){header{align-items:flex-start}.brand{font-size:25px}.sub{font-size:10px}.header-actions{max-width:145px;justify-content:flex-end}.header-actions button{padding:7px 8px;font-size:10px}#board{height:72vh;min-height:360px}.stats{gap:4px;margin-top:7px}.stat{padding:5px 2px}.stat small{font-size:9px;letter-spacing:.5px}.stat strong{font-size:17px}.theme-grid{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
@@ -70,12 +70,12 @@ footer{max-width:920px;margin:10px auto 0;text-align:center;color:#8e829f;font-s
       <div class="board-top">
         <div class="pill nextbox"><div><small style="display:block;color:#b9aecb">NEXT</small><strong id="nextName">Hanbo</strong></div><img id="nextPreview" src="images/Hanbo.jpeg" alt="Next friend"></div>
       </div>
-      <div class="stats">
-        <div class="stat"><small>Score</small><strong id="score">0</strong></div>
-        <div class="stat"><small>Best</small><strong id="best">0</strong></div>
-        <div class="stat"><small>Combo</small><strong id="combo">x0</strong></div>
-      </div>
       <div id="toast"></div>
+    </div>
+    <div class="stats">
+      <div class="stat"><small>Score</small><strong id="score">0</strong></div>
+      <div class="stat"><small>Best</small><strong id="best">0</strong></div>
+      <div class="stat"><small>Combo</small><strong id="combo">x0</strong></div>
     </div>
     <div class="controls">
       <button id="startBtn">▶ Start game</button>
