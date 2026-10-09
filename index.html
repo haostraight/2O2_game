@@ -21,13 +21,18 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;ma
 .panel{background:#211a32cc;border:1px solid #ffffff17;border-radius:20px;box-shadow:0 15px 40px #0003;overflow:hidden}
 .game-panel{padding:10px;background:transparent;border:0;box-shadow:none;overflow:visible}
 
-/* Stats Header & Combo Widget */
+/* Stats Header & Dynamic Multi-Layer Combo Box */
 .stats{position:static;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:10px 0 0;pointer-events:none}
-.stat{background:#140e20d9;border:1px solid #ffffff18;border-radius:12px;text-align:center;padding:6px 4px;backdrop-filter:blur(8px);position:relative;overflow:hidden;transition:transform .1s cubic-bezier(.175,.885,.32,1.275)}
+.stat{background:#140e20d9;border:1px solid #ffffff18;border-radius:12px;text-align:center;padding:6px 4px;backdrop-filter:blur(8px);position:relative;overflow:hidden;transition:transform .15s cubic-bezier(.175,.885,.32,1.275), border-color .2s, box-shadow .2s}
 .stat small{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:1px}
-.stat strong{display:block;font-size:clamp(18px,3vw,25px);margin-top:2px;transition:color .2s}
-.stat.combo-box strong{color:var(--combo-color)}
-.stat.pop{transform:scale(1.08)}
+.stat strong{display:block;font-size:clamp(18px,3vw,25px);margin-top:2px;transition:color .2s, transform .15s}
+
+/* High-Energy Combo Visual Transformations */
+.stat.combo-box strong{color:var(--combo-color);text-shadow:0 0 12px color-mix(in srgb, var(--combo-color) 60%, transparent)}
+.stat.combo-active{border-color:var(--combo-color);box-shadow:0 0 20px color-mix(in srgb, var(--combo-color) 45%, transparent);animation:comboPulse .8s infinite alternate}
+@keyframes comboPulse { from{transform:scale(1)} to{transform:scale(1.04)} }
+.stat.pop{transform:scale(1.18) rotate(-1deg) !important}
+.combo-mult-badge{font-size:10px;font-weight:800;color:#fff;background:var(--combo-color);padding:1px 6px;border-radius:6px;display:inline-block;margin-top:2px;letter-spacing:.5px;box-shadow:0 2px 5px #0005}
 
 /* Smooth Combo Decay Progress Bar */
 .combo-meter{position:absolute;bottom:0;left:0;height:4px;width:100%;background:#ffffff10;overflow:hidden}
@@ -42,11 +47,11 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;ma
 .pill{border:1px solid #ffffff20;background:#140e20c9;border-radius:12px;padding:7px 10px;font-size:12px;backdrop-filter:blur(8px)}
 .nextbox{display:flex;align-items:center;gap:8px}.nextbox img{width:43px;height:43px;object-fit:cover;border-radius:50%;border:2px solid var(--pink);box-shadow:0 0 15px color-mix(in srgb,var(--pink) 35%,transparent)}
 
-/* Emergency Danger Banner & Meter */
+/* Emergency Danger Banner */
 #dangerBanner{position:absolute;left:50%;top:18%;transform:translateX(-50%);background:#ff1144;color:#fff;font-weight:800;font-size:13px;letter-spacing:1px;padding:6px 16px;border-radius:20px;text-transform:uppercase;box-shadow:0 0 25px #ff1144;display:none;z-index:15;animation:pulseDanger .4s infinite alternate}
 @keyframes pulseDanger { from{transform:translateX(-50%) scale(1)} to{transform:translateX(-50%) scale(1.08)} }
 
-/* Countdown Unpause Overlay */
+/* Countdown Overlay */
 #countdownOverlay{position:absolute;inset:0;background:#000000a6;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:25;backdrop-filter:blur(6px);pointer-events:none;opacity:0;transition:opacity .2s}
 #countdownOverlay.show{opacity:1;pointer-events:all}
 #countNum{font-size:90px;font-weight:800;color:var(--pink);text-shadow:0 0 40px var(--pink);animation:countPop .5s cubic-bezier(.175,.885,.32,1.275)}
@@ -67,14 +72,14 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;ma
 .hero-mark{font-size:48px;margin-bottom:4px}.eyebrow{font-size:11px;letter-spacing:2px;color:var(--pink);font-weight:700;text-transform:uppercase}
 .item-list{display:grid;gap:9px;margin-top:15px}.item{display:flex;align-items:center;gap:11px;padding:10px;background:#ffffff08;border:1px solid #ffffff12;border-radius:13px}.item-icon{font-size:25px;width:36px;text-align:center}.item-info{flex:1;min-width:0}.item-info strong{display:block}.item-info small{display:block;color:var(--muted);font-size:12px;margin-top:2px}.item-status{font-size:10px;letter-spacing:.5px;color:var(--pink);font-weight:700}.progress{height:4px;background:#ffffff15;border-radius:4px;margin-top:7px;overflow:hidden}.progress div{height:100%;background:var(--pink)}
 
-/* Friend Collection Cards with Tiers */
+/* Standardized High-Contrast Friend Cards & Badges */
 .tier-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(105px,1fr));gap:10px;margin-top:15px}
 .tier-chip{border-radius:14px;background:#ffffff0a;border:1px solid #ffffff18;padding:10px 8px;display:flex;flex-direction:column;align-items:center;text-align:center;position:relative;overflow:hidden;transition:transform .18s, border-color .18s, box-shadow .18s}
 .tier-chip:hover{transform:translateY(-3px);border-color:var(--pink);box-shadow:0 8px 20px #ff4fa322}
 .tier-chip .img-box{width:58px;height:58px;border-radius:50%;overflow:hidden;border:2px solid #ffffff30;margin-bottom:6px;box-shadow:0 4px 10px #0004}
 .tier-chip .img-box img{width:100%;height:100%;object-fit:cover}
 .tier-chip .friend-name{font-size:12px;font-weight:700;color:#fff;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
-.tier-badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:8px;background:var(--pink);color:#fff;margin-top:5px;letter-spacing:.5px;text-transform:uppercase;box-shadow:0 2px 6px #0003}
+.tier-badge{font-size:10px;font-weight:800;padding:3px 8px;border-radius:8px;background:#ffffff;color:#100d1d;margin-top:6px;letter-spacing:.5px;text-transform:uppercase;box-shadow:0 2px 6px #0004}
 
 .theme-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:15px}.theme-card{border:1px solid #ffffff17;background:#ffffff08;border-radius:14px;padding:10px;min-width:0}.theme-preview{height:62px;border-radius:9px;margin-bottom:9px}.theme-card strong{display:block}.theme-card small{display:block;color:var(--muted);font-size:11px;min-height:30px;margin:4px 0 9px}.theme-card button{width:100%;padding:8px;font-size:12px}
 .stats-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:15px}
@@ -117,6 +122,7 @@ footer{max-width:920px;margin:10px auto 0;text-align:center;color:#8e829f;font-s
       <div class="stat combo-box" id="comboBox">
         <small>Combo</small>
         <strong id="combo">x0</strong>
+        <div id="comboMult" class="combo-mult-badge">1.0x PTS</div>
         <div class="combo-meter"><div id="comboFill" class="combo-meter-fill"></div></div>
       </div>
     </div>
@@ -214,7 +220,8 @@ const GAME_CONFIG = {
   physics: {
     gravity: 1350,
     friction: 0.988,
-    angularDamping: 0.95,
+    angularDamping: 0.88,      // Increased friction to stop continuous spin
+    maxAngularVelocity: 4.5,   // Cap max spin speed
     restitution: 0.18,
     dropCooldown: 0.18,
     dangerLimitTime: 1.25
@@ -289,7 +296,8 @@ function loadData(){
 
 let data=loadData(),W=0,H=0,dpr=1,fruits=[],particles=[],texts=[];
 let score=0,combo=0,bestCombo=0,nextTier=0,dropX=0,pointerX=null;
-let running=false,paused=false,over=false,dangerTime=0,shake=0,mergeClock=0,dropCooldown=0,lastTime=0,audio=null,activePanel=null,toastExpiry=0,countingDown=false;
+let running=false,paused=false,over=false,dangerTime=0,shake=0,mergeClock=0,dropCooldown=0,lastTime=0,audio=null,activePanel=null,toastExpiry=0;
+let countingDown=false, countdownTimerId=null, needsResumeCountdown=false;
 let sound=data.sound!==false,shakeEnabled=data.shake!==false,guideEnabled=data.guide!==false;
 
 const radii=friends.map((_,i)=>GAME_CONFIG.marbleScale.baseRadius + i * GAME_CONFIG.marbleScale.growthPerTier).concat([GAME_CONFIG.marbleScale.maxRadius]);
@@ -315,7 +323,7 @@ function triggerStatPop(id){
   el.classList.remove("pop");
   void el.offsetWidth;
   el.classList.add("pop");
-  setTimeout(()=>el.classList.remove("pop"), 120);
+  setTimeout(()=>el.classList.remove("pop"), 150);
 }
 
 function updateStats(){
@@ -323,9 +331,19 @@ function updateStats(){
   $("best").textContent=data.best.toLocaleString();
   $("combo").textContent="x"+combo;
   
+  const multiplier = (1 + Math.min(Math.max(0, combo - 1), 8) * GAME_CONFIG.combo.multiplierStep).toFixed(2);
+  $("comboMult").textContent = "+" + Math.round((multiplier - 1) * 100) + "% PTS (" + multiplier + "x)";
+
   const color = getComboColor(combo);
   document.documentElement.style.setProperty("--combo-color", color);
   
+  const comboEl = $("comboBox");
+  if(combo >= 2) {
+    comboEl.classList.add("combo-active");
+  } else {
+    comboEl.classList.remove("combo-active");
+  }
+
   const fillPct = combo > 0 ? (mergeClock / GAME_CONFIG.combo.decayTime) * 100 : 0;
   $("comboFill").style.width = Math.max(0, fillPct) + "%";
 }
@@ -494,13 +512,13 @@ function renderStats(){
 
 function applyTheme(){const t=currentTheme();board.style.background=`radial-gradient(ellipse at center,${t.bg},#100d1d 120%)`;document.documentElement.style.setProperty("--pink",t.glow);}
 
-/* Updated Friend Collection UI showing Tier 1..15 */
+/* Standardized Friends List Badges */
 function renderTierList(){
   const items = friends.map((f, i) => `
     <div class="tier-chip" style="border-color:${f[2]}44">
       <div class="img-box" style="border-color:${f[2]}"><img src="images/${f[1]}" alt="${f[0]}" loading="lazy" onerror="this.remove();"></div>
       <div class="friend-name">${f[0]}</div>
-      <div class="tier-badge" style="background:${f[2]}">Tier ${i + 1}</div>
+      <div class="tier-badge">Tier ${i + 1}</div>
     </div>
   `).join("");
   
@@ -508,7 +526,7 @@ function renderTierList(){
     <div class="tier-chip" style="border-color:#ffe08b88">
       <div class="img-box" style="border-color:#ffe08b;background:linear-gradient(135deg,#ffb7e2,#ffe08b)"><span style="font-size:24px;line-height:52px">👑</span></div>
       <div class="friend-name">Ultimate</div>
-      <div class="tier-badge" style="background:linear-gradient(135deg,#ff4fa3,#ffe08b)">Final Tier</div>
+      <div class="tier-badge">Final Tier</div>
     </div>
   `;
   
@@ -516,8 +534,9 @@ function renderTierList(){
 }
 
 function resetRun(){
+  cancelCountdown();
   fruits=[];particles=[];texts=[];score=0;combo=0;bestCombo=0;dangerTime=0;shake=0;mergeClock=0;dropCooldown=0;
-  running=true;paused=false;over=false;countingDown=false;dropX=W/2;pointerX=null;
+  running=true;paused=false;over=false;dropX=W/2;pointerX=null;
   $("board").classList.remove("danger-active");
   $("dangerBanner").style.display="none";
   data.runs++; saveData();
@@ -529,6 +548,7 @@ function resetRun(){
 
 function endGame(){
   if(over)return;
+  cancelCountdown();
   over=true;running=false;
   $("board").classList.remove("danger-active");
   $("dangerBanner").style.display="none";
@@ -546,10 +566,17 @@ function endGame(){
   playSound(160,.3,"sawtooth",.02);
 }
 
-/* Smooth 3... 2... 1... Countdown Unpause */
+function cancelCountdown(){
+  if(countdownTimerId){ clearInterval(countdownTimerId); countdownTimerId = null; }
+  countingDown = false;
+  $("countdownOverlay").classList.remove("show");
+}
+
+/* Interruptible Resume Countdown System */
 function triggerCountdownUnpause(){
-  if(!paused || countingDown) return;
+  cancelCountdown();
   countingDown = true;
+  needsResumeCountdown = false;
   $("pauseOverlay").classList.add("hidden");
   const overlay = $("countdownOverlay");
   const numEl = $("countNum");
@@ -559,7 +586,7 @@ function triggerCountdownUnpause(){
   numEl.textContent = count;
   playSound(400, .1);
 
-  const timer = setInterval(() => {
+  countdownTimerId = setInterval(() => {
     count--;
     if(count > 0){
       numEl.textContent = count;
@@ -568,25 +595,24 @@ function triggerCountdownUnpause(){
       numEl.style.animation = "countPop .5s cubic-bezier(.175,.885,.32,1.275)";
       playSound(400 + (3 - count) * 100, .1);
     } else {
-      clearInterval(timer);
+      cancelCountdown();
       numEl.textContent = "GO!";
       playSound(800, .15);
       setTimeout(() => {
-        overlay.classList.remove("show");
         paused = false;
-        countingDown = false;
         $("pauseBtn").textContent = "Ⅱ";
         lastTime = performance.now();
-      }, 400);
+      }, 300);
     }
-  }, 600);
+  }, 500);
 }
 
 function togglePause(){
-  if(!running||over||countingDown)return;
-  if(paused){
+  if(!running||over)return;
+  if(paused || countingDown){
     triggerCountdownUnpause();
   } else {
+    cancelCountdown();
     paused=true;
     $("pauseOverlay").classList.remove("hidden");
     $("pauseBtn").textContent="▶";
@@ -594,7 +620,14 @@ function togglePause(){
 }
 
 function openPanel(id){
-  if(running && !paused && id !== "pauseOverlay") paused = true;
+  if(countingDown){
+    cancelCountdown();
+    needsResumeCountdown = true;
+  }
+  if(running && !paused && id !== "pauseOverlay") {
+    paused = true;
+    needsResumeCountdown = true;
+  }
   activePanel=id;
   $(id).classList.remove("hidden");
   if(id==="achOverlay")renderAchievements();
@@ -603,6 +636,7 @@ function openPanel(id){
 }
 
 function closeAll(){
+  cancelCountdown();
   document.querySelectorAll(".overlay").forEach(o=>o.classList.add("hidden"));
   activePanel=null;
 }
@@ -610,11 +644,13 @@ function closeAll(){
 function closePanel(id){
   $(id).classList.add("hidden");
   activePanel=null;
-  if(paused && running && !over) {
+  
+  if(running && !over && (paused || needsResumeCountdown)) {
     triggerCountdownUnpause();
   }
 }
 
+// Fixed Physics Update & Angular Damping Logic
 function update(dt){
   if(!running||paused||over||countingDown)return;
   dt=Math.min(dt,.025);
@@ -640,7 +676,17 @@ function update(dt){
 
     f.vy += gravity * dt;
     f.vx *= Math.pow(GAME_CONFIG.physics.friction, dt*60);
+    
+    // Apply Angular Air Damping & Cap Spin Rate
     f.va *= Math.pow(GAME_CONFIG.physics.angularDamping, dt*60);
+    if(Math.abs(f.va) > GAME_CONFIG.physics.maxAngularVelocity){
+      f.va = Math.sign(f.va) * GAME_CONFIG.physics.maxAngularVelocity;
+    }
+
+    // Micro-velocity sleep dampening when wedged or resting
+    if(Math.abs(f.vx) < 0.1 && Math.abs(f.vy) < 0.1){
+      f.va *= 0.7;
+    }
 
     f.x += f.vx * dt;
     f.y += f.vy * dt;
@@ -649,19 +695,19 @@ function update(dt){
     if(f.x - f.r < 2){
       f.x = f.r + 2;
       f.vx = Math.abs(f.vx) * 0.3;
-      f.va = f.vy * 0.05;
+      f.va = f.vy * 0.03;
     }
     if(f.x + f.r > W - 2){
       f.x = W - f.r - 2;
       f.vx = -Math.abs(f.vx) * 0.3;
-      f.va = -f.vy * 0.05;
+      f.va = -f.vy * 0.03;
     }
     if(f.y + f.r > floorY()){
       f.y = floorY() - f.r;
       f.vy *= -GAME_CONFIG.physics.restitution;
       if(Math.abs(f.vy) < 25) f.vy = 0;
       f.vx *= 0.95;
-      f.va = -f.vx * 0.08;
+      f.va = -f.vx * 0.05;
     }
   }
 
@@ -692,10 +738,11 @@ function update(dt){
         b.vx += impulse * nx;
         b.vy += impulse * ny;
 
+        // Controlled rotational friction dampening
         const tangentX = -ny, tangentY = nx;
         const tangentVel = (b.vx - a.vx) * tangentX + (b.vy - a.vy) * tangentY;
-        a.va += tangentVel * 0.003;
-        b.va -= tangentVel * 0.003;
+        a.va += tangentVel * 0.0015;
+        b.va -= tangentVel * 0.0015;
       }
     }
   }
@@ -707,7 +754,6 @@ function update(dt){
   for(const t of texts){ t.y -= 30*dt; t.life -= dt; }
   texts = texts.filter(t => t.life > 0);
 
-  // Danger Warning Emergency Effects
   const danger = fruits.some(f => f.age > .7 && f.y - f.r < dangerY() && f.y + f.r > dangerY() - 18);
   dangerTime = danger ? dangerTime + dt : Math.max(0, dangerTime - dt * 1.5);
   
